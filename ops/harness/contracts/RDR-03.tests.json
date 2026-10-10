@@ -1,0 +1,8 @@
+{
+ "tests/rdr_03/rdr03_helpers.py": "dfd78538d28c3341d3d3d2a66561f35b551d71b73289838e173d5fa4376e8488",
+ "tests/rdr_03/test_rdr03_api.py": "7172ffe95b9a87a3627872515a3ad90ab6106d94c80d64fb8b14c2697399f274",
+ "tests/rdr_03/test_rdr03_bc.py": "9de76e380fb6b1139054ab16e1f07c38eedd40406882315c3dcbaaa4cceaf715",
+ "tests/rdr_03/test_rdr03_gpu.py": "6e204f7ea2a5571cdcfa345059a1266caccfb6514d463eaf8c29c576c9107ff0",
+ "tests/rdr_03/test_rdr03_grad.py": "046868da9b9a28f8676aebc7ebac24c47e9cedc052aaf040e8ae46178c7cab05",
+ "tests/rdr_03/test_rdr03_raster.py": "33752055b3f089bdcfe7693c20f8146ee14e8487b9f3fc3c2c24c32d7fd133ac"
+}

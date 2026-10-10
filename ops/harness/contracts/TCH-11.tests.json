@@ -1,0 +1,7 @@
+{
+ "tests/tch_11/tch11_fakes.py": "006f21b8c67633ceeea58d3215133c96e67018182d77a6721707481f6da25d82",
+ "tests/tch_11/test_tch11_gpu.py": "b9ee39d0353d2bcf5ac7b63ab1315a4983e5236056ecb82cbe6c7d63719096c0",
+ "tests/tch_11/test_tch11_io.py": "a7c518eb15b9b29a58dde8cadb472f2710535a43bcadf62654687899a71f9d0c",
+ "tests/tch_11/test_tch11_loop.py": "cf089d25d7ff65d1f0d898ef3eb41c3bbbfa0834daa4d712660e11d9b569d9a9",
+ "tests/tch_11/test_tch11_text.py": "7eaaee428d5959247e4d0c73e87ccea5501d1468cfdc4723994598e3a97e07a3"
+}

@@ -57,3 +57,5 @@
 {"id": "TCH-09", "ts": 1791671218, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "TCH-07", "ts": 1791671926, "event": "done", "models": "contract:sonnet,build:sonnet,review:opus", "note": ""}
 {"id": "TCH-10", "ts": 1791671926, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: None. The contract lists no requests outside the owned paths, and the GPU backends (tensorrt, nunchaku) are only needed in the GPU runner environment."}
+{"id": "TCH-11", "ts": 1791673193, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: 없음"}
+{"id": "RDR-03", "ts": 1791673193, "event": "done", "models": "contract:opus,build:opus,review:opus", "note": "요청: For the GPU runner: run `pytest -m gpu tests/rdr_03` on a machine with CUDA and nvcc to confirm the kernel compiles and the CUDA-vs-torch tests pass. If compilation fails, `load_extension` raises BackendUnavailable and `backend=\"auto\"` falls back to torch with a warning, so nothing downstream breaks."}
