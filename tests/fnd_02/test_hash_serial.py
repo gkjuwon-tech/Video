@@ -76,7 +76,9 @@ def test_roundtrip_preserves_arrays_exactly():
     assert np.array_equal(back.image_lin, read.image_lin)
     assert np.isinf(back.depth[0, 0]) and np.array_equal(back.depth, read.depth)
     assert back.obs.K.dtype == np.float64 and np.array_equal(back.obs.K, read.obs.K)
-    assert back.theta_in.focal_mm == 50.0 and back.fallbacks == read.fallbacks or list(back.fallbacks) == ["R3"]
+    assert back.theta_in.focal_mm == 50.0
+    assert tuple(back.fallbacks) == ("R3",)
+    assert back.prov.taint == read.prov.taint and back.prov.ns == "user_vault"
 
 
 def test_ndarray_encoding_shape():

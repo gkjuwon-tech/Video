@@ -108,9 +108,26 @@ def test_segment_reduce_validation():
         det.segment_reduce(v, np.array([0, 1, 1]), 3, view_ids=np.array([0, 1]))
     with pytest.raises(ValueError):
         det.segment_reduce(v, np.array([0, 1, 1]), 3, weights=np.ones(2))
-    big = np.full((4, 1), 2.0**36, dtype=np.float64)
-    with pytest.raises(OverflowError):  # 항마다는 안전하지만 합이 int64를 넘는 경우
-        det.segment_reduce(big, np.zeros(4, dtype=np.int64), 1, frac_bits=24)
+    # 항마다는 안전(2^36 * 2^24 = 2^60)하지만 합이 int64를 넘는 경우: 감김 없이 OverflowError
+    big = np.full((16, 1), 2.0**36, dtype=np.float64)
+    with pytest.raises(OverflowError):
+        det.segment_reduce(big, np.zeros(16, dtype=np.int64), 1, frac_bits=24)
+    with pytest.raises(OverflowError):  # 정확히 2^63
+        det.segment_reduce(big[:8], np.zeros(8, dtype=np.int64), 1, frac_bits=24)
+    with pytest.raises(OverflowError):  # 음수 방향 (-2^63 - 2^60)
+        det.segment_reduce(-big[:9], np.zeros(9, dtype=np.int64), 1, frac_bits=24)
+    # int64 안에 들어가는 큰 합(2^62, 2^63 - 2^60)은 정확히 돌려준다
+    ok4 = det.segment_reduce(big[:4], np.zeros(4, dtype=np.int64), 1, frac_bits=24)
+    assert ok4.tolist() == [[1 << 62]]
+    ok7 = det.segment_reduce(big[:7], np.zeros(7, dtype=np.int64), 1, frac_bits=24)
+    assert ok7.tolist() == [[7 << 60]]
+    okn = det.segment_reduce(-big[:8], np.zeros(8, dtype=np.int64), 1, frac_bits=24)
+    assert okn.tolist() == [[-(1 << 63)]]
+    # 중간 부분합이 넘쳐도 최종 합이 범위 안이면 정확해야 한다(정수 합은 결합법칙이 성립)
+    # 순서가 달라도 같은 결과여야 하므로(순서 불변), 부분합의 중간 넘침은 오류가 아니다.
+    mix = np.concatenate([big[:8], -big[:8], np.ones((1, 1))])
+    for p in (np.arange(17), np.arange(17)[::-1], np.random.default_rng(3).permutation(17)):
+        assert det.segment_reduce(mix[p], np.zeros(17, dtype=np.int64), 1, frac_bits=24).tolist() == [[1 << 24]]
     with pytest.raises(ValueError):
         det.segment_reduce(np.array([np.nan], dtype=np.float32), np.array([0]), 1)
 

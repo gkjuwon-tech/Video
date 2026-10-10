@@ -65,6 +65,14 @@
     {
      "ts": 1791642997,
      "event": "claimed"
+    },
+    {
+     "ts": 1791644339,
+     "event": "reset"
+    },
+    {
+     "ts": 1791644346,
+     "event": "claimed"
     }
    ]
   },
@@ -95,6 +103,14 @@
    "log": [
     {
      "ts": 1791642997,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791644339,
+     "event": "reset"
+    },
+    {
+     "ts": 1791644346,
      "event": "claimed"
     }
    ]
