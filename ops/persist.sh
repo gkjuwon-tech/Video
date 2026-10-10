@@ -20,7 +20,7 @@ if [ -n "$SP" ] && [ -d "$SP" ]; then
 fi
 
 cd "$REPO" || exit 1
-git add -A ops work docs README.md .claude 2>/dev/null
+git add -A 2>/dev/null
 if git diff --cached --quiet; then echo "persist: 변경 없음"; exit 0; fi
 # 비밀 검문소: 로컬 비밀 파일의 값이 커밋 내용에 섞여 있으면 중단한다(값은 레포에 두지 않고 실행 시 읽는다).
 for secret_file in "$HOME/.config/vastai/vast_api_key" "$HOME/.cache/huggingface/token"; do

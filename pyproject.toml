@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "buc"
+version = "0.0.1"
+description = "Block Universe Cinema: build a world once, film it with a physical camera."
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "scipy>=1.11", "pillow>=10", "torch>=2.4"]
+
+[project.optional-dependencies]
+gpu = ["diffusers>=0.36", "transformers>=4.46", "accelerate>=1.0", "safetensors", "huggingface_hub", "hf_transfer", "sentencepiece"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+include = ["buc*"]
+
+[tool.pytest.ini_options]
+markers = ["gpu: CUDA GPU가 필요한 테스트(CPU 게이트에서는 제외)"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
