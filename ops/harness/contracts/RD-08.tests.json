@@ -1,0 +1,7 @@
+{
+ "tests/rd_08/rd08_helpers.py": "3411e1c0a4fe469d053850dbc8b4fdb36625dcf4e839c3557739817bab2e5166",
+ "tests/rd_08/test_rd08_authored.py": "8acf4cbac4b811d10ea9f72765f52b86cffc4c8facba03436099fe0aa06e08db",
+ "tests/rd_08/test_rd08_guard.py": "5a7139aa16bc92a2e70f539705cd1a67f81fe5e43dc543aa813a3578e1ba7d8d",
+ "tests/rd_08/test_rd08_math.py": "76dd97e0d5a21910e34108993a2b4580a51cc1270a73623773cb1d104b0c147d",
+ "tests/rd_08/test_rd08_montecarlo.py": "6b5c72e3803dfa778e15e5f90b707185edc26e8ecc697ba7b2f5bd78f100773f"
+}
