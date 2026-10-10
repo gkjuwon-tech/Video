@@ -2293,12 +2293,18 @@
    "slice": true,
    "rank": 72,
    "why": "v0은 LDI 층+far-field+meta 부분집합만",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791658134,
      "event": "claimed"
+    },
+    {
+     "ts": 1791659669,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": "요청: 없음"
     }
    ]
   },
@@ -2883,12 +2889,18 @@
    "slice": true,
    "rank": 93,
    "why": "MRH 합성 데이터의 원천. v0 RoomGen을 먼저",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791658134,
      "event": "claimed"
+    },
+    {
+     "ts": 1791659669,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: 없음. 의존성 추가도 필요 없었다(numpy, scipy 불필요, numba는 선택)."
     }
    ]
   },
