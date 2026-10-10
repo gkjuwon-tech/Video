@@ -111,11 +111,12 @@ Phase 2는 별개의 시스템이 아니다. Phase 1에 시간 축 하나를 더
 
 | 문서 | 내용 |
 |---|---|
-| [`docs/PARADIGM.md`](docs/PARADIGM.md) | **기준 문서.** 통합 명세 v1.0: 렌즈 충돌 판결록, 핵심 수식, STRATA, DP-0, 파이프라인, 승리 조건, Phase 2 로드맵, 플라이휠, 90일 계획, 리스크, 창업자가 결정할 열린 질문 |
+| [`docs/PARADIGM-v2.md`](docs/PARADIGM-v2.md) | **현행 기준 문서.** 통합 명세 v2.1 (2×T4 + 수십M from-scratch + 미감 연방제): 컴퓨트 장부, 빌림/계산/TTO/만듦 4분류, 엔진 교사 + Soul 미감 교사와 방화벽, 2×T4 파이프라인, 수십M 모델 카탈로그(약 380M), 데이터 주조소, STRATA-lite, Phase 2 on 2×T4, 첫 90일, 리스크, 열린 질문, 변경 이력 |
+| [`docs/PARADIGM.md`](docs/PARADIGM.md) | **v1 기준 문서.** 통합 명세 v1.0: 렌즈 충돌 판결록, 핵심 수식, STRATA, DP-0, 파이프라인, 승리 조건, Phase 2 로드맵, 플라이휠, 90일 계획, 리스크, 창업자가 결정할 열린 질문 |
 | [`docs/research/landscape-2026-10.md`](docs/research/landscape-2026-10.md) | 2026-10 기준 지형도: 상용 비디오 모델, "세계 먼저" 계열 선행작, 실패 모드 근거, 평가 지표, 데이터셋, 빈자리 G1–G9 |
 | [`docs/lenses/`](docs/lenses/) | 렌즈 4개(이론가, 표현, 촬영감독, Phase 2)의 독립 원안 |
 | [`docs/lenses/premortem/`](docs/lenses/premortem/) | 각 렌즈의 건설적 프리모템(실패 지점 → 업그레이드)과 개정안 |
-| [`docs/v2-2xT4/`](docs/v2-2xT4/) | **2×T4 + 수십M from-scratch 제약 재설계 워크숍:** T4 현실 리서치, 렌즈 4개(컴퓨트·솔버, 작은 파운데이션 모델·데이터 엔진, 표현·렌더러·데모, Phase 2·플라이휠)의 원안과 프리모템. 통합 명세 `docs/PARADIGM-v2.md`는 작성 중 |
+| [`docs/v2-2xT4/`](docs/v2-2xT4/) | **2×T4 + 수십M from-scratch 제약 재설계 워크숍:** T4 현실 리서치, 렌즈 4개(컴퓨트·솔버, 작은 파운데이션 모델·데이터 엔진, 표현·렌더러·데모, Phase 2·플라이휠)의 원안과 프리모템. 통합본은 `docs/PARADIGM-v2.md` |
 
 ## 상태
 
