@@ -115,6 +115,7 @@ Phase 2는 별개의 시스템이 아니다. Phase 1에 시간 축 하나를 더
 | [`docs/research/landscape-2026-10.md`](docs/research/landscape-2026-10.md) | 2026-10 기준 지형도: 상용 비디오 모델, "세계 먼저" 계열 선행작, 실패 모드 근거, 평가 지표, 데이터셋, 빈자리 G1–G9 |
 | [`docs/lenses/`](docs/lenses/) | 렌즈 4개(이론가, 표현, 촬영감독, Phase 2)의 독립 원안 |
 | [`docs/lenses/premortem/`](docs/lenses/premortem/) | 각 렌즈의 건설적 프리모템(실패 지점 → 업그레이드)과 개정안 |
+| [`docs/v2-2xT4/`](docs/v2-2xT4/) | **2×T4 + 수십M from-scratch 제약 재설계 워크숍:** T4 현실 리서치, 렌즈 4개(컴퓨트·솔버, 작은 파운데이션 모델·데이터 엔진, 표현·렌더러·데모, Phase 2·플라이휠)의 원안과 프리모템. 통합 명세 `docs/PARADIGM-v2.md`는 작성 중 |
 
 ## 상태
 
