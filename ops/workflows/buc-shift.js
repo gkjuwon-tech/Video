@@ -97,7 +97,7 @@ const summary = []
 phase('Pick')
 await agent(`명령 하나만 실행하라: cd ${R} && python3 ops/harness/pick.py --k 0 --reset-doing ; 출력 JSON을 그대로 items(빈 배열)와 함께 반환하라.`, { label: 'reset', phase: 'Pick', model: 'haiku', effort: 'low', schema: PICK })
 for (let bi = 0; bi < BATCHES; bi++) {
-  const p = await agent(`명령 하나만 실행하라: cd ${R} && python3 ops/harness/pick.py --k ${K} --claim ; 출력 JSON을 그대로 구조화해 반환하라(items의 모든 필드를 빠짐없이).`,
+  const p = await agent(`명령 하나만 실행하라: cd ${R} && python3 ops/harness/pick.py --k ${K} --claim${args && args.slice_only ? ' --slice-only' : ''} ; 출력 JSON을 그대로 구조화해 반환하라(items의 모든 필드를 빠짐없이).`,
     { label: `pick:${bi + 1}`, phase: 'Pick', model: 'haiku', effort: 'low', schema: PICK })
   if (!p || !p.items || !p.items.length) { log(`batch ${bi + 1}: ready 단위 없음, 교대조 종료`); break }
   log(`batch ${bi + 1}/${BATCHES}: ${p.items.map(x => x.id).join(', ')} (완료 ${p.done}/${p.total}, 대기 ${p.ready})`)
