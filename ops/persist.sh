@@ -8,7 +8,7 @@ SP="${BUC_SCRATCH:-$(ls -d /tmp/claude-*/*/*/scratchpad 2>/dev/null | head -1)}"
 BRANCH="$(git -C "$REPO" rev-parse --abbrev-ref HEAD)"
 
 if [ -n "$SP" ] && [ -d "$SP" ]; then
-  for d in wf3; do
+  for d in $(cd "$SP" && ls -d wf3 wf5 wf6 wf7 2>/dev/null); do
     [ -d "$SP/$d" ] || continue
     mkdir -p "$REPO/work/$d"
     # 큰 바이너리는 제외하고 텍스트 산출물만 옮긴다. 로컬 절대 경로는 자리표시자로 바꾼다.
