@@ -21,6 +21,13 @@ def vast(*args, timeout=60):
     return json.loads(r.stdout)
 
 
+def destroy(iid):
+    # destroy는 [y/N] 확인을 묻고 JSON을 내지 않는다. 확인을 넣고, 목록에서 사라졌는지로 성공을 판정한다.
+    subprocess.run(["vastai", "destroy", "instance", str(iid)], input="y\n", capture_output=True, text=True, timeout=60)
+    time.sleep(5)
+    return all(x.get("id") != iid for x in vast("show", "instances"))
+
+
 def record(**kw):
     kw["updated"] = int(time.time())
     json.dump(kw, open(REC, "w"), ensure_ascii=False, indent=1)
@@ -73,7 +80,8 @@ def main():
             break
         print("기한 초과: 인스턴스", iid, "파기 후 대체", flush=True)
         try:
-            vast("destroy", "instance", str(iid))
+            if not destroy(iid):
+                print("destroy 확인 실패: 인스턴스", iid, "가 아직 목록에 있다", flush=True)
         except Exception as e:
             print("destroy 실패:", e, flush=True)
         offer = pick_offer(bad)
