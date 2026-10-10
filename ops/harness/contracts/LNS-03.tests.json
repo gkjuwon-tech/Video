@@ -1,0 +1,7 @@
+{
+ "tests/lns_03/lns03_helpers.py": "16d6ee18be3c8a14afc655a1e2599f28b621eccb9960fd1996430f0800cea83c",
+ "tests/lns_03/test_lns03_api.py": "d93f21524d0edc553a4c3fb3ff69d9312ff61ec61a23386319f0ebdabfbf2ec7",
+ "tests/lns_03/test_lns03_frames_misc.py": "ab07a2930275b40a6ee85739db78f625191a112ad8932e4a958031b930d36f6e",
+ "tests/lns_03/test_lns03_rotation.py": "fb6cb4b2a14256937b3f0209aee0d7f6d8e987a2ba00c29c522aba70f27dddc2",
+ "tests/lns_03/test_lns03_translation_rolling.py": "4154a7daade7197c7bef381e9df6a739286d6b6210fe1a8b428b1dfa65656882"
+}

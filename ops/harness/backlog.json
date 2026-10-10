@@ -1298,9 +1298,20 @@
    "slice": true,
    "rank": 38,
    "why": "호모그래피 적분 수식. 단위 테스트로 검증",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791653796,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791655128,
+     "event": "done",
+     "models": "contract:opus,build:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "LNS-04",
@@ -1325,9 +1336,20 @@
    "slice": true,
    "rank": 39,
    "why": "순수 수식. 가장 싸고 가장 먼저 눈에 띔",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791653796,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791655128,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: 계약서의 범위 밖 요청 두 건이 그대로 남아 있다. (1) wb_kelvin/wb_tint를 적용할 단위가 백로그에 없다. LNS-08이 맡을지 결정이 필요하다. (2) LNS-02/03 출력 Frames는 표시값이라 >1 하이라이트가 없다. 할레이션 품질이 필요하면 상류가 선형 부동소수 AOV를 제공해야 한다."
+    }
+   ]
   },
   {
    "id": "LNS-05",

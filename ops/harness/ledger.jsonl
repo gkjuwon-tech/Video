@@ -23,3 +23,5 @@
 {"id": "LNS-01", "ts": 1791652500, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: pyproject.toml에 PyYAML 의존을 추가해야 한다(FND 단위 몫). buc/lens/theta.py가 yaml을 import한다."}
 {"id": "RDR-08", "ts": 1791653783, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "LNS-02", "ts": 1791653783, "event": "done", "models": "contract:opus,build:sonnet", "note": ""}
+{"id": "LNS-03", "ts": 1791655128, "event": "done", "models": "contract:opus,build:sonnet", "note": ""}
+{"id": "LNS-04", "ts": 1791655128, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: 계약서의 범위 밖 요청 두 건이 그대로 남아 있다. (1) wb_kelvin/wb_tint를 적용할 단위가 백로그에 없다. LNS-08이 맡을지 결정이 필요하다. (2) LNS-02/03 출력 Frames는 표시값이라 >1 하이라이트가 없다. 할레이션 품질이 필요하면 상류가 선형 부동소수 AOV를 제공해야 한다."}
