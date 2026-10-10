@@ -1,0 +1,7 @@
+{
+ "tests/dat_05/dat05_oracle.py": "586c0d6755bbeb5759b2a1d652a1b622691b8ac1b65753c0a34c020c58d50924",
+ "tests/dat_05/test_firewall.py": "75fbafd09c70078c97fccac0c90c037fe8820d7b9471f1e3bd306c922e9dfe2a",
+ "tests/dat_05/test_integrity.py": "4d9f52d9af4978eb74dc66781d91d52edc32f4b4f06e004406add37712459c57",
+ "tests/dat_05/test_layout.py": "480681a34e38e723400603620a98946a6c89d7f5512cb8982d4e96299fdd4315",
+ "tests/dat_05/test_roundtrip.py": "b5d197569d51ef492a9b0e1fb70ba5f61f13941a649cbbbf1d91795f7798fdae"
+}
