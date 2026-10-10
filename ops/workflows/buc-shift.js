@@ -44,8 +44,12 @@ async function repair(it, model, effort, why, label) {
     { label: `repair:${it.id}:${label}`, phase: 'Gate', model, effort, schema: DONE })
 }
 
+// 절약 모드(기본 켬, 2026-10-10 7일 사용량 경고): Opus는 난이도·위험 5 단위의 계약서와 검토에만 쓴다.
+// 2차 수리는 Sonnet이 다른 각도로 한 번 더. args.economy === false 이면 원래 배정(≥4 Opus)으로 돌아간다.
+const ECO = !(args && args.economy === false)
+
 async function runUnit(it) {
-  const upper = it.diff >= 4 || it.risk >= 4 || it.impl_model === 'opus'
+  const upper = ECO ? (it.diff >= 5 || it.risk >= 5 || it.impl_model === 'opus') : (it.diff >= 4 || it.risk >= 4 || it.impl_model === 'opus')
   const used = []
   // 1) 계약서 + 테스트 (구현자와 다른 에이전트)
   const cm = upper ? 'opus' : 'sonnet'
@@ -68,16 +72,18 @@ ok=true는 계약서와 테스트를 쓰고 동결까지 했을 때만.`,
     const r1 = await repair(it, 'sonnet', 'high', g && g.raw, 'r1'); used.push('repair:sonnet')
     g = await gate(it, 'g2')
     if (!g || !g.pass) {
-      const r2 = await repair(it, 'opus', 'high', g && g.raw, 'r2'); used.push('repair:opus')
+      const r2m = ECO ? 'sonnet' : 'opus'
+      const r2 = await repair(it, r2m, 'high', `${g && g.raw}\n(2차 수리: 1차 수리가 실패했다. 가정을 처음부터 다시 점검하라.)`, 'r2'); used.push(`repair:${r2m}`)
       g = await gate(it, 'g3')
       if (!g || !g.pass) return { id: it.id, status: 'blocked', models: used.join(','), note: `게이트 3회 실패: ${(g && g.raw || '').slice(0, 400)} ${r2 ? r2.notes : ''}` }
     }
   }
   // 4) 위험 단위 검토 (상위)
+  const rvm = ECO && it.risk < 5 && it.review !== 'F' ? 'sonnet' : 'opus'
   if (it.risk >= 4 || it.review === 'F') {
     const rv = await agent(`${RULES}\n${head(it)}\n\n너는 **검토자**다. 계약서, 동결 테스트, 구현(git diff 및 소유 파일)을 읽고 판정하라: 계약서의 수용 기준을 실제로 만족하는가, 테스트가 수용 기준을 제대로 검증하는가, 하류 이음매(공개 API·데이터 형태)가 사양과 맞는가, 명백한 버그·비결정성·비밀 노출·소유 경로 밖 수정이 있는가. 사소한 스타일은 무시. 고쳐야 할 것이 있으면 verdict=fix와 구체적 지시 목록.`,
-      { label: `review:${it.id}`, phase: 'Review', model: 'opus', effort: 'low', schema: REVIEW })
-    used.push('review:opus')
+      { label: `review:${it.id}`, phase: 'Review', model: rvm, effort: rvm === 'opus' ? 'low' : 'medium', schema: REVIEW })
+    used.push(`review:${rvm}`)
     if (rv && rv.verdict === 'fix' && rv.issues.length) {
       await repair(it, 'sonnet', 'high', `검토 지적:\n- ${rv.issues.join('\n- ')}`, 'rv'); used.push('repair:sonnet')
       g = await gate(it, 'g4')

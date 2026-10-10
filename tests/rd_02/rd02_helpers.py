@@ -208,7 +208,9 @@ def render_polygon(W, H, corners, inside=0.2, outside=0.8, ss=4):
     vv, uu = np.mgrid[0:H, 0:W].astype(np.float64)
     acc = np.zeros((H, W))
     n = len(corners)
-    sgn = np.sign(np.cross(corners[1] - corners[0], corners[2] - corners[1]))
+    # 2D 외적의 z 성분. numpy 2는 2차원 벡터의 np.cross를 거부한다.
+    e0, e1 = corners[1] - corners[0], corners[2] - corners[1]
+    sgn = np.sign(e0[0] * e1[1] - e0[1] * e1[0])
     for oy in offs:
         for ox in offs:
             x, y = uu + ox, vv + oy
