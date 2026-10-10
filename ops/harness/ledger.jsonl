@@ -53,3 +53,5 @@
 {"id": "TCH-04", "ts": 1791669591, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "TCH-05", "ts": 1791670454, "event": "done", "models": "contract:sonnet,build:sonnet,review:opus", "note": ""}
 {"id": "TCH-06", "ts": 1791670454, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: Optional: TCH-02 could expose public versions of the private helpers listed in the notes."}
+{"id": "TCH-08", "ts": 1791671218, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "TCH-09", "ts": 1791671218, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}

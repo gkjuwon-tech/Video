@@ -1,0 +1,9 @@
+{
+ "tests/tch_08/tch08_fakes.py": "6e8fc7969dbad09edcb9ba720f13d6d24897f270f2cd8c7f12143e231536cf68",
+ "tests/tch_08/test_tch08_gpu_real.py": "5767bb61eec689625db578404846588668b98bc41332be919360cf88541537a5",
+ "tests/tch_08/test_tch08_load_klein.py": "0667ccaea99d0b442a5375596d146169d5779641f58ba1e9175dc78ee24fe136",
+ "tests/tch_08/test_tch08_ring_parts.py": "bccda4cac3a23ce40ad3adb87fc679dffebaa232b6b7f4f589d9018e569a2272",
+ "tests/tch_08/test_tch08_ring_sample.py": "25dd24222d212e0d394ea66c4491508125067d8926629de3a7905c7205d61e8f",
+ "tests/tch_08/test_tch08_slot_ladder.py": "472a619dbcdfd332a6aed07497a7f9743e27fdcd4a24f53b7c684c6db1e1286f",
+ "tests/tch_08/test_tch08_spec_license.py": "4f7471ba2bb2333703dd0c4db6824177457b6e395f39804a022b5164f0fe253e"
+}

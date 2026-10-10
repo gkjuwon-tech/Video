@@ -1,0 +1,9 @@
+{
+ "tests/tch_09/tch09_toys.py": "f3a8fe75ea7216dab833cff0d022b3968764329b79b2d7656395f9188d4ca516",
+ "tests/tch_09/test_equivalence.py": "d4779aacbd91c5e230c99d9c6de582eadc1e99a1c83b124f89187e45bb946f29",
+ "tests/tch_09/test_fp16_rescue.py": "8bdf6e0b3640f1773a9d5a84bf8dabad2b1ed748321b05df5e06a5d23a78ff2c",
+ "tests/tch_09/test_gpu_real.py": "6ef6316f4be57c13c4edcc8c2b3aad84b42f9f3ea8b198c3861fec675e0253ca",
+ "tests/tch_09/test_islands_sdpa.py": "a0b5f2254c05f090ef3e8afb04dc209b47933f8572647144b3d3f7518aedde77",
+ "tests/tch_09/test_primitives_plan.py": "ca702c80b6472f11c1c61f4ac1497078ecd514a6af086e1ff8076bc340e6a60f",
+ "tests/tch_09/test_profiler_scale_audit.py": "b1b7ff43b02794e98307f3fdf1fd5b0de33dcc9b925cdd3b2beb157eed2d071e"
+}
