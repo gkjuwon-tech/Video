@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.join(HERE, "..", "night1"))
 import m2_latent_lift as M  # noqa: E402
 import tae_train as T  # noqa: E402
 
+torch.set_num_threads(1)   # tiny CPU ops: multi-threading only adds spin overhead (and is far slower here)
+
 C = 4            # latent channels of the fake corpus (the code must not hardcode 16)
 SQ = (128, 128)  # fake "1024^2" image: lat 16x16, zd 8x8
 WIDE = (256, 96)  # fake "1344x576" image: lat 12x32, zd 6x16
@@ -281,7 +283,7 @@ def test_zd_cache_values_resume_and_bad_items(tmp_path):
         w, h = img_size(i)
         assert zd.dtype == np.float16 and zd.shape == (C, h // 16, w // 16)
         # = (Enc(down2(x)) - shift) * scale with down2 = exact 2x2 area average
-        x = torch.from_numpy(np.asarray(Image.open(os.path.join(root, "img", f"{i:08d}.webp")).convert("RGB")))
+        x = torch.from_numpy(np.array(Image.open(os.path.join(root, "img", f"{i:08d}.webp")).convert("RGB")))
         x = x.permute(2, 0, 1)[None].float() / 127.5 - 1
         ref = M.encode_normalized(FakeVAE(), M.down2(x))[0]
         assert np.allclose(zd.astype(np.float32), ref.numpy(), atol=2e-3)

@@ -14,6 +14,8 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..", "..")))
 import m13_rigid as M  # noqa: E402
 
+torch.set_num_threads(1)     # tiny models: OpenMP spin-waiting only hurts on a shared/loaded CPU
+
 TINY = json.dumps({"d": 32, "conv_ch": [16, 32, 32], "layers": 1, "heads": 2, "ff": 64})
 TOKEN = "hf_AbCdEfGhIjKl0123456789"
 NO_NOISE = M.NoiseCfg(rot_deg=(0.0, 0.0), trans_frac=(0.0, 0.0), missing_frac=0.0)
@@ -389,9 +391,21 @@ def test_loss_masks_aux_and_is_finite():
     assert torch.isfinite(out0["loss"]) and float(out0["aux"].detach()) == 0.0
     assert torch.allclose(out0["loss"], out0["ce"])
     out1 = M.compute_loss(m, x, mask, y, aux, torch.ones(4, M.N_AUX))
-    assert float(out1["aux"]) > 0 and float(out1["loss"]) > float(out0["loss"])
+    assert float(out1["aux"].detach()) > 0 and float(out1["loss"].detach()) > float(out0["loss"].detach())
     out1["loss"].backward()
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in m.parameters())
+
+
+def test_bf16_autocast_path_runs():
+    torch.manual_seed(0)
+    m = M.RigIDNet(**json.loads(TINY))
+    d = M.gen_unit("val", 0, 14)
+    x = torch.from_numpy(d["x"]).float()
+    mask = M.lens_to_mask(torch.from_numpy(d["len"].astype(np.int64)))
+    out = M.compute_loss(m, x, mask, torch.from_numpy(d["y"].astype(np.int64)), torch.from_numpy(d["aux"]),
+                         torch.from_numpy(d["aux_mask"]), amp=True, device_type="cpu")
+    out["loss"].backward()
+    assert torch.isfinite(out["loss"]) and out["logits"].dtype == torch.float32
 
 
 def test_lr_schedule():
