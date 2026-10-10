@@ -15,7 +15,7 @@
 > - 근거: [검증] 1차 출처, [2차] 2차 출처, (추정) 계산 가정, (실측) E0에서 숫자로 바꿀 값.
 > - 배치 태그: `P1-코어`, `P1-확장`, `P2`, `장기`.
 > - 4분류: (a) 빌림(오픈 엔진 교사), (a′) 빌림(닫힌 미감 교사 Soul, 콘텐츠 전용), (b) 계산(학습 없는 구조), (c) 테스트타임 최적화(TTO), (d) 만듦(수십M from scratch).
-> - 승인 단계: **Plan A**(승인 없이: 콘텐츠와 사람 경유 룩), **A+**(세계 피팅 승인), **S**(소형 모델 학습 승인). §3.7.4.
+> - 승인 단계: **Plan A**(승인 없이: 콘텐츠와 사람 경유 룩), **A+**(세계 피팅 승인), **S**(소형 모델 학습 승인). §3.7.4. S의 하위 단계 S1·S2는 파이프라인 단계 S0–S11(§4.2)과 다른 이름이다. 스케일 원칙은 SC1–SC9(§10.3)로 쓴다.
 > - 계보 태그: `SOUL`(Soul 원본 픽셀), `SOUL-DERIVED`(Soul 픽셀을 입력으로 계산한 산출물), `SOUL-INSPIRED`(사람이 Soul 스틸을 보고 만든 파라미터·스크립트). §6.6.
 
 ---
@@ -103,7 +103,7 @@
 | # | 쟁점 | 대립안 | 판결 | 근거 |
 |---|---|---|---|---|
 | CT1 | 빌릴 교사 | SDXL [TF(o), RR(o)] vs Z-Image-Turbo [CB, TF(u), RR(u), P2] | **엔진 교사 = Z-Image-Turbo(현직).** E1에서 klein 4B, Z-Image Base, ERNIE-Image-Turbo와 엔진 점수로 재오디션한다(§3.2). SDXL은 1–2주차 개발 대조군으로만 쓴다. **미감은 CT31로 분리했다** | v2.0의 근거(Elo 941 대 678, 기대 승률 82%)는 엔진 교사의 재질 품질로서 여전히 유효하다. 다만 미감 상한은 이제 연방(CT36)이 정한다. 라이선스는 Apache-2.0 하나로 끝난다 |
-| CT2 | 교사 천장 합격선 | 55% [TF(u), BT 역산] vs 60% [RR(u), CB(u)] | **엔진 트랙: 녹색 ≥60%, 황색 55–60%(DTC, Gaffer, LoRA 의무), 적색 <55%.** 하이브리드 트랙: Soul 천장 SP_S(E1-S)를 재고, 우리 렌더 대 Soul 스틸 게이트를 **TP_S\* = 1 − SP_S**로 둔다. **이 게이트는 하이브리드 트랙의 진단 게이트이고 승리 조건이 아니다**(§8.1은 그대로) | Bradley–Terry에서 logit은 더해진다. SP_ours = 50%이려면 TP = 1 − SP_anchor다. v1의 TP ≥45%는 SP_E = 55%에 정확히 대응한다 |
+| CT2 | 교사 천장 합격선 | 55% [TF(u), BT 역산] vs 60% [RR(u), CB(u)] | **엔진 트랙: 녹색 ≥60%, 황색 55–60%(DTC, Gaffer, LoRA 의무), 적색 <55%.** 하이브리드 트랙: Soul 천장 SP_S(E1-S)를 재고, 우리 렌더 대 Soul 스틸 기준선을 **TP_S\* = 1 − SP_S**로 둔다. **이 기준선은 사람 보고서의 진단 항목이다. 게이트도 승리 조건도 아니고, 엔진 교사 잠금·승급·트랙 개방에 쓰지 않는다**(§8.1은 그대로, Q6) | Bradley–Terry에서 logit은 더해진다. SP_ours = 50%이려면 TP = 1 − SP_anchor다. v1의 TP ≥45%는 SP_E = 55%에 정확히 대응한다 |
 | CT3 | 판정 경로 | Base(판정) + Turbo(샘플) [P2] vs Turbo 단독 + σ 스냅 [CB, RR] | **기본은 Turbo 단일 가중치 + 학습된 σ 점 스냅.** Base 병용은 창업자 Q1. E0에서 Turbo의 DR 판별 AUC가 0.7 미만이면 SR-LoRA(t-densify LoRA, 약 70M, 1.1%)에 착수한다 | 미감이 Soul로 넘어가면서 Base(비증류, 연속 σ, CFG)의 상대 가치가 올랐다. Q1을 재상정한다 |
 | CT4 | 학습 실효 TFLOPS | 20 [CB(o)], 15 [CB(u)], 13 [RR], 12 [TF, P2] | **큰 GEMM 모델(d≥512) 15 TF/장, 소형(<50M, d≤448) 12 TF/장, 3D conv 6–8** | HGEMM 실측 최고 41.6 TF [검증], 70W 쓰로틀, roofline 능선 130(실측)–203(피크) FLOP/B |
 | CT5 | 비용 화폐 | TFU [CB], NFE-eq [TF], 교사-초 [RR], TC@512² [P2] | **TFU 하나.** Z-Image 1024² forward = 6.2×10¹³ FLOPs. 512² = 0.25 TFU, 768² = 0.56 TFU. TF의 NFE-eq와 같은 단위다. Soul은 T4를 쓰지 않으므로 **크레딧**으로 따로 센다 | 모든 실험과 게이트를 한 단위로 비교하려는 것이다 |
@@ -142,7 +142,7 @@
 | **CT38** | **벤치 트랙** | — | **Engine(Soul 0) / Hybrid-A(사람이 측정한 룩 프리셋 라이브러리, 4주차 동결) / Hybrid-A+(프롬프트별 MCP 개념 아트) 분리 보고.** 공개 Kaggle 벤치는 Engine과 Hybrid-A만 | 닫힌 모델과 크레딧은 공개 재현이 안 된다. 프롬프트별 사람 개입은 T1·T2 규칙 위반이므로 프리셋은 사전 동결한다 |
 | **CT39** | **카탈로그 이름** | 렌즈별 상이(MRH/Free-rider/GeoHead, LBO-S/BO-40/ICX-LBO/TexelFM, TAE-T/TL, G-Adapter/GB-Adapter, Hand/Path/CRM 등) | **정본 이름 + 한국어 별명 + 별칭표**(§5.2). 문서, 코드, 체크포인트, Lineage 노드가 정본 ID를 쓴다 | 계보 CI는 이름으로 조상을 추적한다. 이름이 둘이면 누수 검사가 뚫린다 |
 | **CT40** | **미감 격차를 재는 법** | 동일 가중 축 세기 [FD 1–4판] vs 영향력 | **"카메라만 바꿨을 때 격차가 얼마나 닫히나"를 블라인드로 직접 잰다**(X-LA, 미감 부검 3분해: 카메라·조명 몫 / 연출 몫 / 개념 몫) | 야크 판: 축 개수로는 물리 78%가 유지되지만 영향력의 대부분은 개념 해석이었다. 축 세기에는 맹점이 있다 |
-| **CT41** | **TP의 기준 스틸** | v1 TP = 교사 스틸 대비 | **v1 TP(엔진 교사 스틸 대비 ≥45%)는 그대로 둔다.** TP_S(우리 렌더 대 Soul 스틸)를 진단 지표로 추가하고, 게이트는 TP_S\* = 1 − SP_S(E1-S)에서 도출한다 | 목표는 낮추지 않고 측정만 늘린다 |
+| **CT41** | **TP의 기준 스틸** | v1 TP = 교사 스틸 대비 | **v1 TP(엔진 교사 스틸 대비 ≥45%)는 그대로 둔다.** TP_S(우리 렌더 대 Soul 스틸)를 진단 지표로 추가하고, 진단 기준선 TP_S\* = 1 − SP_S(E1-S)를 함께 보고한다(게이트 아님, Q6) | 목표는 낮추지 않고 측정만 늘린다 |
 
 ### 0.6 v1 판결 C1–C15의 운명
 
@@ -434,7 +434,7 @@ $$
 | D2 | 표본 배당 | 같은 연산당 독립 장면 수가 이미지 쪽이 **약 300배(1024²)–1,500배(저해상 혼합)** | 이미지 표본은 토큰 4k, 1080p 10초 비디오 클립은 약 49만 토큰. 빌린 이미지 교사는 같은 연산으로 훨씬 많은 장면을 봤다 |
 | D3 | dedup | 10초 영상에서 r = 10–25, 재방문이 있는 60초에서 r = 60–150 | 우리는 프레임이 아니라 **고유 텍셀** 단위로 비용을 낸다. 비디오 모델은 같은 벽을 프레임마다 다시 그린다 |
 | D4 | 스펙트럼 배당 (가난선) | 옥타브 하나를 넘길 때마다 교사 픽셀이 1/4. 방 하나의 재질 패스에서 교사 뷰 443 → 100 | §4.1 P1 |
-| D5 | 재사용 | 세계 1개 × 리그 6종 × 스타일 50종. 8K120 10초 샷 하나의 한계비용 약 10 T4-분 | 세계 단위 과금의 원가 근거 |
+| D5 | 재사용 | 세계 1개 × 리그 6종 × 스타일 50종. 4K120 10초 샷 하나의 한계비용 약 7–15 T4-분(8K120이면 약 25–60 T4-분, §7.7) | 세계 단위 과금의 원가 근거 |
 | D6 | 해상도 | 8K120은 렌더 비용만 든다. 비디오 모델은 토큰 80배, 어텐션 6,400배 | 출력 포맷과 세계 연산이 분리된다 |
 
 - **KPI: FLOPs/고유 텍셀.** CB(u)의 교정값으로 우리 약 1.6×10⁸, Seedance 약 2×10⁸–10⁹(dedup r = 10–25, L20 한 장 가정)이다. CB(o)의 "1.4×10⁸ vs ≤3×10⁸"은 교정 전 값이라 쓰지 않는다. 가정이 많은 비교라 **내부 KPI로만** 쓰고 마케팅 문구에는 쓰지 않는다.
@@ -501,8 +501,9 @@ $$
   - 보조: 정면 텍스처 뷰 vs CC0 사진 텍스처("스톡 텍스처 함정"), 엔진 후보별
 - **판정.**
   - 엔진 트랙(CT2): C1 기준 E1-E ≥60%면 녹색, 55–60%면 황색, <55%면 적색.
-  - 하이브리드 트랙: SP_S = E1-S 승률을 기록하고 **TP_S\* = 1 − SP_S**를 하이브리드 게이트로 도출한다(§3.8.5).
-  - 엔진 트랙이 적색이어도 하이브리드 트랙이 열려 있으면 승급하지 않는다. 대신 X-LA로 어느 몫이 비는지 찾는다.
+  - 하이브리드 트랙: SP_S = E1-S 승률을 기록하고 **TP_S\* = 1 − SP_S**를 진단 기준선으로 보고한다(§3.8.5). 보고 항목이고 게이트가 아니다.
+  - 엔진 교사 잠금과 승급은 E1-E와 ES로만 판정한다. Soul 앵커 결과(SP_S)는 이 판정에 쓰지 않는다(Q6). 엔진 트랙이 적색이면 황색 의무(DTC, Gaffer, LoRA)를 지고 X-LA로 어느 몫이 비는지 찾는다. 미감 미달은 승급 사유가 아니다(§3.3 항목 3).
+  - 하이브리드 트랙 개방은 창업자 결정(CT31)이다. SP_S로 정하지 않는다.
 - **의미.** Elo로는 비디오 프레임 대비 미감을 예측할 수 없다. 대형 팀은 파이프라인을 다 만든 뒤에야 천장을 안다. **우리는 3주차에 두 천장을 다 안다.**
 - **규칙(RR(u) 계승).** SP 게이트를 세계 기계로 메우려는 시도는 금지한다. 천장이 모자라면 원인을 재고 그 몫을 소유한 부품을 고친다.
 
@@ -530,7 +531,7 @@ $$
 3. f8 공간 정렬 latent여야 한다. WNF와 대역 소유권이 균일한 footprint에 기대기 때문이다.
 4. σ에 접근할 수 있어야 한다(오픈 가중치).
 5. 상업적 사용 라이선스여야 한다.
-6. E1-E에서 녹색 또는 황색이거나, 하이브리드 트랙이 열려 있어야 한다.
+6. E1-E에서 녹색 또는 황색이어야 한다. 적색이면 §3.4대로 황색 의무를 지고 X-LA로 빈 몫을 찾는다. Soul 앵커 결과는 이 판정에 쓰지 않는다.
 7. **선택식:** ES 증분 / 수용 세계당 T4-h 최대(CT35).
 
 **(B) 미감 교사 계약 [v2.1]**
@@ -572,7 +573,7 @@ $$
 1. **흐름 규칙.** Soul 픽셀은 세계 W(콘텐츠)와 최종 렌더로만 흐른다. 어떤 데이터셋, 손실, 보상, 보정 테이블, 체크포인트로도 흐르지 않는다.
 2. **태그.** `SOUL`(원본 픽셀), `SOUL-DERIVED`(Soul 픽셀을 입력으로 계산한 것: 판독 결과, Soul 스틸을 통과시킨 엔진 교사 호출의 Exhaust, θ_soul 자동 피팅, LUT 자동 피팅, Soul 관측으로 피팅한 세계), `SOUL-INSPIRED`(사람이 보고 만든 것: 수동 θ 프리셋, 전사한 WorldScript). STRATA 블록의 `own`에는 Soul이 저술한 셀(A+)을 표시하고, `meta.prov`에 자산 해시·모델·버전·날짜·플랜을 기록한다. Merkle 키에 `prov`가 들어간다.
 3. **조상 검사.** 시스템 경로의 학습·보정 산출물의 계보 DAG에 `SOUL` 또는 `SOUL-DERIVED` 조상이 있으면 빌드를 실패시킨다. `SOUL-INSPIRED`는 콘텐츠와 프리셋에는 허용하고, 학습에는 법무 의견 전까지 기본 제외한다(Q17). S 승인 범위에서만 해금한다. **태그는 상속된다.** `SOUL-INSPIRED` 프리셋(θ_soul 수동 측정)으로 렌더한 프레임과 그 프레임이 든 사람 판정 쌍도 `SOUL-INSPIRED`다(X-LA arm C·D·K, Hybrid-A 렌더 포함). Q17 판정 전까지 CamFM-CRM·MRH-Aes 학습 쌍은 수제 프리셋(§7.6 출처 i)으로 렌더한 프레임으로만 모은다.
-4. **격리.** `soul_vault/`는 학습 잡 계정이 마운트할 수 없는 별도 저장소다(권한 기반 격리). 학습 샤드 빌더, Texel Bank 색인기, TexelFM 래칫 샘플러, MRH 자가 라벨 선택기, Exhaust 학습 분할기, MRH-Aes·CamFM-CRM 쌍 빌더, HeroProxy-S·ChronoProxy-S 증류기, TFU 보정기가 모두 `prov` 검사를 거친다. **기생 학습 경로도 같다.** Feature-Tap Bus 링버퍼 기록기(TF(o)의 온라인 헤드 학습), TRT INT8/W4A4 양자화 보정셋 빌더, 교사 VAE enc/dec 쌍 수집기(TAE-T 데이터)도 `prov` 검사를 거친다. soul=1 호출(S1′ Soul 판독, S8.5 세계 경유 POLISH)은 **Tap Bus를 끈 별도 프로세스**에서 돌고, 그 탭·latent·VAE 쌍은 링버퍼에 들어가지 않는다. Exhaust 학습 분할 검사는 사후 분할만 막으므로 이 실시간 경로를 따로 막는다.
+4. **격리.** `soul_vault/`는 학습 잡 계정이 마운트할 수 없는 별도 저장소다(권한 기반 격리). 학습 샤드 빌더, Texel Bank 색인기, TexelFM 래칫 샘플러, MRH 자가 라벨 선택기, Exhaust 학습 분할기, MRH-Aes·CamFM-CRM 쌍 빌더, HeroProxy-S·ChronoProxy-S 증류기, TFU 보정기가 모두 `prov` 검사를 거친다. **기생 학습 경로도 같다.** Feature-Tap Bus 링버퍼 기록기(TF(o)의 온라인 헤드 학습), TRT INT8/W4A4 양자화 보정셋 빌더, 교사 VAE enc/dec 쌍 수집기(TAE-T 데이터)도 `prov` 검사를 거친다. soul=1 호출은 `W.prov.soul ≠ none`인 세계의 모든 엔진 교사 호출이다(S1′ Soul 판독, S8.5 세계 경유 POLISH, 그리고 그 세계의 S2c·S4·S7·S8. §4.1 P5의 soul 비트 정의와 같다). 이 호출은 **Tap Bus를 끈 별도 프로세스**에서 돌고, 그 탭·latent·VAE 쌍은 링버퍼에 들어가지 않는다. Exhaust 학습 분할 검사는 사후 분할만 막으므로 이 실시간 경로를 따로 막는다.
 5. **사람 평가 쌍.** Soul 계보 태그(`SOUL`/`SOUL-DERIVED`/`SOUL-INSPIRED`)가 붙은 자산이 든 2AFC 쌍(E1-S, TP_S, X-LA, Hybrid-A 렌더 쌍)은 MRH-Aes, CamFM-CRM 학습에서 제외한다. 사람 라벨이어도 Soul 출력을 "개선에 쓰는" 것이기 때문이다.
 6. **카나리아.** 주 1회 가짜 `SOUL` 태그 샘플을 학습 샤드 빌더와 **Feature-Tap Bus 링버퍼**에 주입한다. CI가 실패해야 정상이다.
 7. **세계 단위.** Soul이 닿은 세계는 라이브러리·벤치·데모 콘텐츠로 쓸 수 있지만 래칫 데이터가 아니다. 엔진 트랙 세계만 플라이휠을 돌린다.
@@ -847,19 +848,21 @@ $$
 | **S11 스틸 광택 (선택)** [v2.1] | 최종 렌더의 히어로 키프레임 → 광택 스틸(키 아트, 포스터, 썸네일) | Soul 구조 보존 편집 (a′). 세계 밖 산출물이고 세계로 돌아오지 않는다 | 클라우드 | 0 | 0 | MCP·웹 2–8회, **A** |
 
 - **합계 (엔진 트랙 G0).** S1 112 + S2c 81 + S2d 32 + S2e 30 + S4 300 + S7 110 + S8 50 = **715 TFU(약 700)**, INT8로 교사 약 31 T4-분이다.
-- **G3 ≤520의 산정.** S4 외 단계를 G0 그대로(415) 두는 보수 산정이라 S4가 105까지 내려가야 한다(−65%). 이 감소는 o_s 한 옥타브 상향(재질 ≥50%), Spec 수락률 a ≥0.6, Router 의미 셀 비율에 달려 있다. Day 60에 실측 S4로 다시 맞춘다. S4가 170에 머물면 세계 TFU는 약 585(계획 T4-h 약 2.0)이고, Day 90 TFU 게이트는 미달로 보고한다. 목표는 낮추지 않는다.
+- **G3 ≤520의 산정.** S4 외 단계를 G0 그대로(415) 두는 보수 산정이라 S4가 105까지 내려가야 한다(−65%). 이 감소는 o_s 한 옥타브 상향(재질 ≥50%), Spec 수락률 a ≥0.6, Router 의미 셀 비율에 달려 있다. Day 60에 실측 S4로 다시 맞춘다. S4가 170에 머물면 세계 TFU는 약 585(계획 T4-h 약 1.85)이고, Day 90의 TFU 게이트(≤520)와 계획 T4-h 게이트(≤1.8)는 미달로 보고한다. 목표는 낮추지 않는다.
 - **순서.** S8.5(세계 경유 POLISH)는 반드시 S9–10 렌더 **전**이다. commit-before-shoot(§7.1 원칙 6)과 비회귀 조항 2를 지키기 위해서다. S11 스틸 광택만 렌더 뒤에 온다.
 
 ### 4.3 의사코드: WSSC-T4 v2.1
 
 ```text
-procedure WSSC_T4(y, mode∈{text, directed}, bench∈{off, location-lite}, plan∈{A, A+, S}, track∈{E, H-A, H-A+}):
+procedure WSSC_T4(y, mode∈{text, directed}, bench∈{off, location-lite}, plan∈{A, A+, S}, track∈{E, H-A, H-A+}, gloss∈{off, still, world}):
   # ---- −1. 미감 교사 레인 (Soul: 닫힌, 콘텐츠 전용, 방화벽) ----
   C ← ∅
   assert not (track = H-A+ and plan < A+)                # H-A+는 A+ 승인 뒤에만
   if track = H-A+ or (track ≠ E and mode = directed):
       C ← SoulConcept(y)                                  # directed: 사람이 웹에서 / H-A+: MCP. prov=SOUL → soul_vault
   assert not (bench ≠ off and track = H-A and C ≠ ∅)      # H-A 벤치는 동결 프리셋만, 프롬프트별 Soul 없음 (CT38)
+  assert not (track = E and gloss ≠ off)                  # Engine 트랙은 Soul 0 (CT38)
+  assert not (bench ≠ off and track = H-A and gloss ≠ off)   # H-A 벤치는 광택도 없음 (CT38)
   θ_look ← (track = E) ? LookFromCaption(y)               # 엔진 트랙: 캡션 규칙만
           : (track = H-A+ and plan ≥ A+ and C≠∅) ? InverseLook(C)   # A+: 자동 역추정 (SOUL-DERIVED)
           : LookPresetLibrary.select(y) ⊕ HumanLook(C)    # A: 사람 측정 프리셋 (SOUL-INSPIRED)
@@ -878,12 +881,13 @@ procedure WSSC_T4(y, mode∈{text, directed}, bench∈{off, location-lite}, plan
     G_H ← MRH(taps(H));  s ← SizePrior(slots) ⊕ MRH.FOV          # semantic metric prior
     P   ← MassingFM(E, lift(G_H, s))                   # shell, slot(OBB, shape16), 광원, matter, occ 32³
   W     ← Instantiate(P, Grammar ∪ CC0 assets)           # SDEdit 초기값일 뿐, L1 소유권 없음
+  W.prov.soul ← max(prov(C), prov(θ_look), prov(H))     # none < inspired < derived < authored. 사람 전사한 C는 inspired. CoW 브랜치는 상속 (§3.7.3 3)
   W.L0_light ← Bake(OptiX | Warp-BVH, lights ← FitLights(H, MRH.shading) | DSL ⊕ θ_look.sun/haze)
   charts ← xatlas_WorldAxis(W);  folds ← FoldGraph(charts)
   # 의미 패스: 레이아웃 소유 = H (frustum 안) | P (밖)
   V_c ← DP0.demand(W) ∪ Coverage(Π) → 48 cine views @768²
   for σ_k in Snap(Turbo_sched, start≈0.6, K=3):          # 큰 σ는 W4A4, 이후 INT8
-      ∀v lockstep: (x̂0_v, taps_v) ← Teacher(z_v, σ_k, E_v; GAdapter(Gbuf_v(W)))
+      ∀v lockstep: (x̂0_v, taps_v) ← Teacher(z_v, σ_k, E_v; GAdapter(Gbuf_v(W))) @isolated(TapBus=off) if W.prov.soul ≠ none
                    ĝ_v ← MRH(taps_v);  Exhaust.log(v, σ_k, x̂0_v, taps_v, soul=(W.prov.soul ≠ none))
       W ← FitThroughCamera_TSQ(W, {x̂0_v, ĝ_v, θ_v~p̂_T}; L0_light 고정, TAE-T by NoiseMaskRule)
       ∀v: z_v ← step(z_v, γ_k·Enc(Cam_θ R_v(W)) + (1−γ_k)·x̂0_v, WNF(seed, l_g, ·, k))
@@ -904,13 +908,13 @@ procedure WSSC_T4(y, mode∈{text, directed}, bench∈{off, location-lite}, plan
      V   ← OTBI(Own, l, apron=25%) ∪ FoldViews(folds, l) ∪ SeamOwner(수평 모서리, l)
      Z_tex[l] ← LatentUp(Z_tex[l−1]) noised by WNF[l] at σ_start(l)
      for σ_k in Snap(window(l)) (2 step + 같은 σ 재판정, commit 스텝은 FP16 수술판):
-        ∀v∈V (두 장, Jacobi): x̂0_v ← Teacher(crop(Z_tex[l]) ⊕ ContextRing_coarse(v), σ_k, E_v)
+        ∀v∈V (두 장, Jacobi): x̂0_v ← Teacher(crop(Z_tex[l]) ⊕ ContextRing_coarse(v), σ_k, E_v) @isolated(TapBus=off) if W.prov.soul ≠ none
         Z_tex[l] ← FixedPointSegmentSum_v(own_v · x̂0_v, apron multiband)   # TABP 닫힌형, 역전파 0, VAE 0
         Z_tex[l] ← Z_tex[l] + LatentUp(Z_tex[l−1]^commit − LatentDown(Z_tex[l]))   # 효도 투영
      HardCommit(l): graphcut(chart) + multiband; RGB[l] ← VAEdec(Z_tex[l]) (1회);
                     RGB[l] ← LaplacianLowSwap(RGB[l], RGB[l−1]); RGB[l, acc] ← draft[acc];
                     seed 동결; Merkle(+engine hash, +prov);
-                    if W.prov.soul = none and track = E: Exhaust → TexelFM 래칫 데이터     # 방화벽
+                    if W.prov.soul = none and track = E: Exhaust → TexelFM 래칫 데이터     # 방화벽. track = E면 gloss = off(assert)라 6.5단이 돌지 않고 prov.soul = none이 끝까지 유지된다
      RGB[l, B_X] ← TexelFM(...)                           # 같은 레벨 형제, 순서 없음
   # ---- 4. 미세 패스 (가난선 아래, native, T8) ----
   for l ∈ L_S: RGB[l] ← TexelFM(parent, WNF, S, Wear, mat, h_l);  Audit 5% (1 NFE)
@@ -920,7 +924,7 @@ procedure WSSC_T4(y, mode∈{text, directed}, bench∈{off, location-lite}, plan
   Γ ← DP0.search(W; CamFM-CRM + β·MRH-Aes + β_FL·ForegroundLayering + β_sc·ScaleRecipe − λ·TFU(Γ))
   L_shot ← Gaffer(W, Γ; init=θ_look.rigs)
   # ---- 6.5 세계 경유 POLISH (선택, A+, v2.1): 반드시 렌더 전 (commit-before-shoot) ----
-  if gloss = world and plan ≥ A+:
+  if gloss = world and plan ≥ A+:                        # track ≠ E, H-A 벤치 아님 (위 assert)
       G ← SoulGloss(R_{keyframes(Γ)}(W)) @isolated(TapBus=off)       # Soul 구조 보존 편집, gauge 제거
       W ← PolishRound_CoW(W, G, mask=own∧band≤Nyquist_2K)   # CoW로 다시 연 1개 Jacobi 라운드, 엔진 교사 뷰와 동시
       엔진 교사 재판정(DR_rel ≤ 1.2);  Commit(+prov=authored); Merkle(+prov)
@@ -1093,7 +1097,7 @@ CI에서 `order_purity_check`를 돌린다. 수요 순서(P2는 창 순서)를 8
 
 | ID | 모델 | 역할 (대체하는 v1 부품) | 파라미터·아키텍처 | 입력 → 출력 | 데이터 (사전학습 모델 0, Soul 0) | 학습 FLOPs / T4-h | 추론 / 메모리 | 왜 수십M이면 되나 |
 |---|---|---|---|---|---|---|---|---|
-| M1 | **TAE-T** | 루프 안 VAE 대리 (곡면 경로, 프리뷰, DP) | 2.5M. conv 64ch f8 AE (enc 1.2 + dec 1.3) | RGB [B,3,H,W] ↔ z [B,16,H/8,W/8] | 교사 VAE enc/dec 쌍(교사의 일부) × 128² 크롭 400만(RAW, CC0, 우리 렌더, 교사 샘플). L1 + T-LPIPS-S + from-scratch PatchGAN 3M + 교사 x̂0 일관성 항 | 5×10¹⁷ / 27 (타깃 7 포함) | 1024² decode 25–40 ms / <0.5 GB | TAESD 선례(약 1.2M). latent는 국소적이다 |
+| M1 | **TAE-T** | 루프 안 VAE 대리 (곡면 경로, 프리뷰, DP) | 2.5M. conv 64ch f8 AE (enc 1.2 + dec 1.3) | RGB [B,3,H,W] ↔ z [B,16,H/8,W/8] | 교사 VAE enc/dec 쌍(교사의 일부) × 128² 크롭 400만(RAW, CC0, 우리 렌더(`prov.soul = none`만), 교사 샘플). L1 + T-LPIPS-S + from-scratch PatchGAN 3M + 교사 x̂0 일관성 항 | 5×10¹⁷ / 27 (타깃 7 포함) | 1024² decode 25–40 ms / <0.5 GB | TAESD 선례(약 1.2M). latent는 국소적이다 |
 | M2 | **LatentDown/Up-S** [신규] | 레벨 간 latent 효도 투영 | 각 1M. latent 3×3 conv 6층 128ch | Z [128²×16] ↔ Z [64²×16] | M1 크롭의 (Enc(x), Enc(down2 x)) 쌍 | 10¹⁶ / 3 | <5 ms / 0.1 GB | 거의 선형인 국소 연산자 |
 | M3 | **MRH** | dreamer depth head, DA3/VGGT/MoGe/DUSt3R/TRELLIS lift, SigLIP sem, 미감 판사, DTC p̂_T, σ̂² | 24M. Frozen PCA 탭(층 8/15/23, 3840→256 고정) → DPT reassemble + fusion neck 256ch(RCU 12, FiLM t) 14M + 전역 xfmr d384 L4 + register 8개 7M + 헤드 10개 2M | 탭 3×[(H/16)²×3840] + t + pooled TE → @H/4: log-depth 1(affine-inv, metric은 크기 사전), normal 3, albedo 3, rough/metal 2, shading 1, defocus 1, sem 768(TE PCA), σ̂ 4대역, Aes 1, 전역 8(FOV, 초점, EV, WB, 수평선) | (a) 운송/Realify 15만: 우리 렌더러 GT AOV + 교사 SDEdit t∈스냅[0.2, 0.7], 2–3 NFE, 결정 곡선 대역 마스크. (b) 실사 MVS 3–6만: 자체 촬영 300장면, COLMAP SIFT + GLOMAP + PatchMatch + raw LiDAR 스케일. (c) W\* 자가 라벨 ≤25%(엔진 트랙 세계만). (d) σ̂: X1-slim seed 간 분산. (e) Aes: 우리 렌더·엔진 교사 스틸·CC0 사진끼리의 사람 쌍 2–3만(데일리, X2, X7, E1-E 보조 arm). **경쟁 API 프레임(§9.2: API 출력은 학습 금지) 또는 Soul 계보 태그(`SOUL`/`SOUL-DERIVED`/`SOUL-INSPIRED`)가 든 쌍은 제외** | 헤드 2×10¹⁷ / 5–10. 특징 공장 약 80 T4-h는 데이터로 계상 | NFE당 +40–60 ms(FP16 1024² 기준 ≤1.5%, INT8 기준 1.5–2.3%) / 1.5 GB | 이해는 6B 교사가 이미 했다. 헤드는 readout일 뿐이다(Beyond Surface Statistics, Probing 3D Awareness) |
 | — | **Teacher-DCA** [조합] | 미감 판사 보조(리워드 해킹 내성) | 0 파라미터 | 교사 조건 2개 × t 2개의 denoising 오차 차 | — | 0 | 후보당 4 fwd, 상위 16개에만 | Diffusion Classifier 선례 |
@@ -1150,13 +1154,13 @@ CI에서 `order_purity_check`를 돌린다. 수요 순서(P2는 창 순서)를 8
 | G-Adapter (조건부, E3) | M4 | 25M | 1.9–5.8×10¹⁸ (1–3 epoch, 동결 교사 역전파가 지배) | 36–110 | +0.75–2.3일 |
 | BRP (`P1-확장`) | M8 | 42M | 2.9×10¹⁷ | 7–15 (3D conv MFU 낮음) | +0.15–0.3일 |
 | **P1 합계** | | **213.5M** | **9.2–13.1×10¹⁸** (90일 예산의 약 4–6%) | **226–323** | **4.7–6.7일** |
-| P2 2a–2b | N1–N8 | 104M (MoPri-S 16M) → 120M (32M) | 약 6×10¹⁸ + 교사 경유 연산 약 2.5×10¹⁸ | 약 315–325 (Chrono-LoRA 15–25 포함) | 6.7일 |
+| P2 2a–2b | N1–N8 | 104M (MoPri-S 16M) → 120M (32M) | 약 6×10¹⁸ + 교사 경유 연산 약 2.5×10¹⁸ | 약 286–353 (Chrono-LoRA 15–25, N8 렌더 15–37 포함) | 6.0–7.4일 |
 | P2 2c 추가 | N9–N10 | +46M | — | Expr-S 10–20, TTS·Voc 200–400 | 2c 시점 |
 | 교사 어댑터 | A1, A2, Chrono, fake-score, identity | 동시 장착 ≤123M | — | A1 17–45, A2 약 20, fake-score는 MAN-S에 포함, identity 캐릭터당 5–10 | — |
-| **전체 (P1 + P2 2c까지, 어댑터 제외)** | | **약 380M** (fp16 0.76 GB, 엔진 교사의 약 1/16) | P1 + P2 2a–2b 약 1.8–2.2×10¹⁹ (**90일 예산의 약 8–9%**) | P1 + P2 2a–2b 1세대 **546–643** | **11.4–13.4일** |
+| **전체 (P1 + P2 2c까지, 어댑터 제외)** | | **약 380M** (fp16 0.76 GB, 엔진 교사의 약 1/16) | P1 + P2 2a–2b 약 1.8–2.2×10¹⁹ (**90일 예산의 약 8–9%**) | P1 + P2 2a–2b 1세대 **512–676** | **10.7–14.1일** |
 
 - **1 T4-h** = 4.3×10¹⁶ FLOPs(12 TF) ~ 5.4×10¹⁶(15 TF). 소형 모델은 12 TF로 계상했다.
-- **FLOPs 몫(약 8–9%)보다 T4-h 몫(546–643, 90일 용량의 13–15%)이 큰 이유:** 소형 모델은 커널 런치, LayerNorm, optimizer 비중이 커서 MFU가 낮고, G-Adapter와 MAN-S는 교사 경유 연산이 지배한다.
+- **FLOPs 몫(약 8–9%)보다 T4-h 몫(512–676, 90일 용량의 12–16%)이 큰 이유:** 소형 모델은 커널 런치, LayerNorm, optimizer 비중이 커서 MFU가 낮고, G-Adapter와 MAN-S는 교사 경유 연산이 지배한다.
 - **TF(u)의 "카탈로그 전체 약 100 T4-h"와의 차이:** TF는 ICX-LBO 1세대를 8×10¹⁷(20억 토큰)로 잡았다. 정본 TexelFM-35는 CB 기준 1,000만 샘플(4.8×10¹⁸, 세대당 약 90 T4-h)로 보수적으로 계상한다. 1세대를 TF 규모로 줄이면 P1 합계가 약 75 T4-h 줄어든다.
 - 90일 배분(§11.5)의 소형 모델 학습 650 T4-h = P1 1세대 226–323 + 핵심 2–3세대(TexelFM gen2·gen3 약 180, MRH·MassingFM 재학습 약 30) + sweep·ablation 약 120. P2 1세대의 대부분은 Phase 2 시드 버킷(470)에 들어간다.
 
@@ -1271,7 +1275,7 @@ Merkle 주소 WebDataset 샤드 + 라벨 계보 장부(Lineage) ── prov 검�
 | 글리프 | 폰트 × 렌더러 × 운송 | 무제한 | 200만 |
 | 물리 롤아웃 (P2) | CPU MuJoCo / Warp | 약 10¹⁰ env-step/일 | Chaos Bank 10⁶ |
 
-- **데이터 SDEdit은 INT8로 돌린다**(E0 (c) 통과 시). FP16(약 2.5만/T4-day)으로 돌리면 Realify만 약 145–170 T4-h가 되어 §6.5 합계는 약 380–420, §11.5 교사 데이터 공장 버킷은 420이 된다(차액은 예비에서).
+- **데이터 SDEdit은 INT8로 돌린다**(E0 (c) 통과 시). FP16(약 2.5만/T4-day)으로 돌리면 Realify만 약 145–170 T4-h가 되어 §6.5 합계는 약 360–420, §11.5 교사 데이터 공장 버킷은 420이 된다(차액은 예비에서).
 
 ### 6.5 데이터 장부 [신규 운용] (주간 리뷰에서 실측과 비교)
 
@@ -1288,7 +1292,7 @@ Merkle 주소 WebDataset 샤드 + 라벨 계보 장부(Lineage) ── prov 검�
 | band-iso 타일 공장 | 51 | — | 솔브 부산물로 대체 가능 |
 | 견본 학습셋 (2만 × 512² 4 NFE) | 24 | — | 측량 모드 |
 | 재생성·버퍼 (운송 768² 비중 확대, 실패 재실행) | 50–60 | — | 주간 리뷰에서 회수 |
-| **합계** | **약 293–328** (§11.5 버킷 330. TAE 타깃 7 T4-h는 §5.3 M1에 계상) | **약 2,700** | — |
+| **합계** | **약 295–330** (§11.5 버킷 330과 상단 일치. TAE 타깃 7 T4-h는 §5.3 M1에 계상) | **약 2,700** | — |
 
 원안에 숨어 있던 비용(Cycles GT 15만 장 1,250–5,000 T4-h, Infinigen 300만 장면 40–65만 CPU-h, 학습 손실 안의 6B 교사 역전파)을 **약 1/20로 줄였다.** Soul 생성은 이 장부에 없다(데이터가 아니므로).
 
@@ -1311,7 +1315,7 @@ Merkle 주소 WebDataset 샤드 + 라벨 계보 장부(Lineage) ── prov 검�
   - 모든 데이터, 라벨, 가중치에 계보 DAG 해시를 붙인다.
   - 시스템 경로 학습 아티팩트의 조상 노드로 허용하는 것은 엔진 교사, 우리 학습, 고전 알고리즘, 센서, 사람뿐이다. 다른 것이 섞이면 빌드를 실패시킨다.
   - 자동 검사: import 금지 목록(`eval/` 패키지), Blender 디노이저 설정, COLMAP feature_type과 vocab tree, 체크포인트 해시, 폰 영상 메타데이터.
-  - **[v2.1] Soul 검사:** 조상에 `SOUL`·`SOUL-DERIVED`가 있으면 실패. `SOUL-INSPIRED`는 학습 아티팩트의 조상이면 실패(기본값). soul_vault 경로가 학습 잡의 마운트 목록에 있으면 실패. Exhaust 학습 분할에 soul=1 엔트리가 있으면 실패. 사람 평가 쌍 빌더가 Soul 자산 해시 또는 `prov.soul ≠ none`인 렌더를 포함하면 실패. TRT 캘리브레이션 캐시, Feature-Tap Bus 링버퍼 덤프, 교사 VAE 쌍 캐시의 조상에 `SOUL`·`SOUL-DERIVED`가 있으면 실패. 주 1회 카나리아를 학습 샤드 빌더와 링버퍼에 주입하는 테스트. 비디오 렌더 경로에 SoulGloss 호출이 있으면 실패(CT37).
+  - **[v2.1] Soul 검사:** 조상에 `SOUL`·`SOUL-DERIVED`가 있으면 실패. `SOUL-INSPIRED`는 학습 아티팩트의 조상이면 실패(기본값). soul_vault 경로가 학습 잡의 마운트 목록에 있으면 실패. Exhaust 학습 분할에 soul=1 엔트리가 있으면 실패. 사람 평가 쌍 빌더가 Soul 자산 해시 또는 `prov.soul ≠ none`인 렌더를 포함하면 실패. TRT 캘리브레이션 캐시, Feature-Tap Bus 링버퍼 덤프, 교사 VAE 쌍 캐시의 조상에 `SOUL`·`SOUL-DERIVED`가 있으면 실패. `SOUL-INSPIRED`가 있어도 실패(기본값, Q17). 주 1회 카나리아를 학습 샤드 빌더와 링버퍼에 주입하는 테스트. 비디오 렌더 경로에 SoulGloss 호출이 있으면 실패(CT37).
 - **Sensor Purity Test** [조합]
   - 1 kHz 이진 카운터 LED 10개 + 피에조 클릭 보드($30–80).
   - 보간된 프레임은 카운터 상태가 섞여 보이므로 검출할 수 있다.
@@ -1594,7 +1598,7 @@ World (STRATA-lite v2.1)
   2. 사람 검토: 알려진 캐릭터, 로고, 유명 작품과 닮았는지 체크리스트로 본다(신수 야크가 기존 애니메이션 캐릭터와 닮을 위험 등).
   3. 사람이 운용하는 역이미지 검색(평가 전용 도구, 시스템 경로 밖).
   4. 상업 데모는 법무 서명.
-  5. 결과를 soul_vault 메타에 기록한다. 걸리면 재생성(웹 예비 100회)하거나 개념을 바꾼다.
+  5. 결과를 soul_vault 메타에 기록한다. 걸리면 재생성(웹 'IP 재생성·대체' 100회, 부족하면 예비 900에서)하거나 개념을 바꾼다.
 
 ### 8.4 FREEZE-TAG on 2×T4
 
@@ -1886,15 +1890,15 @@ AlphaZero와의 대응: 탐색은 SMC와 캐스케이드, 정책은 EPD-S와 MoP
 
 | # | 원칙 |
 |---|---|
-| S1 | **텐서 계약을 고정한다.** 모델 크기는 구현 디테일이다. 슬롯에 큰 모델을 끼우면 된다 |
-| S2 | **μP와 같은 데이터 파이프라인.** 30M에서 찾은 하이퍼파라미터가 3B로 넘어간다 |
-| S3 | **탐색과 상각 사이의 다이얼.** 컴퓨트가 늘면 먼저 학생을 키우고, N과 L3 커버리지와 교사 관할을 줄인다 |
-| S4 | Merkle 블록, Exhaust, Lineage, Swatch, Chaos Bank, 룩 프리셋 라이브러리는 모델과 독립인 **복리 자산**이다 |
-| S5 | 엔진 교사는 Dreamer 계약 슬롯에 끼운다. 가격표와 Exhaust는 버전 태그로 다시 보정한다 |
-| S6 | 고전 부품(물리, 광학, 음향)은 **감가상각이 없다.** 정확도 다이얼만 돌린다 |
-| S7 | FP16-safe 코드는 bf16·fp8에서 그대로 돈다. INT8 critic은 배포 계층에만 둔다 |
-| S8 | `z_slot`은 Phase 1.5 latent 정본 학생(세계 VAE)을 위해 예약해 둔 자리다 |
-| **S9 [v2.1]** | **미감 교사도 슬롯이다.** Soul이 다른 닫힌 모델이나 미래의 오픈 미감 모델로 바뀌어도 인터페이스(개념 아트, θ_look, 스틸 광택, 평가 앵커)는 같다. θ_look은 물리 파라미터라 교사와 독립이다. 승인 S가 오면 §5.7 순서대로 해금 브랜치를 연다 |
+| SC1 | **텐서 계약을 고정한다.** 모델 크기는 구현 디테일이다. 슬롯에 큰 모델을 끼우면 된다 |
+| SC2 | **μP와 같은 데이터 파이프라인.** 30M에서 찾은 하이퍼파라미터가 3B로 넘어간다 |
+| SC3 | **탐색과 상각 사이의 다이얼.** 컴퓨트가 늘면 먼저 학생을 키우고, N과 L3 커버리지와 교사 관할을 줄인다 |
+| SC4 | Merkle 블록, Exhaust, Lineage, Swatch, Chaos Bank, 룩 프리셋 라이브러리는 모델과 독립인 **복리 자산**이다 |
+| SC5 | 엔진 교사는 Dreamer 계약 슬롯에 끼운다. 가격표와 Exhaust는 버전 태그로 다시 보정한다 |
+| SC6 | 고전 부품(물리, 광학, 음향)은 **감가상각이 없다.** 정확도 다이얼만 돌린다 |
+| SC7 | FP16-safe 코드는 bf16·fp8에서 그대로 돈다. INT8 critic은 배포 계층에만 둔다 |
+| SC8 | `z_slot`은 Phase 1.5 latent 정본 학생(세계 VAE)을 위해 예약해 둔 자리다 |
+| **SC9 [v2.1]** | **미감 교사도 슬롯이다.** Soul이 다른 닫힌 모델이나 미래의 오픈 미감 모델로 바뀌어도 인터페이스(개념 아트, θ_look, 스틸 광택, 평가 앵커)는 같다. θ_look은 물리 파라미터라 교사와 독립이다. 승인 S가 오면 §5.7 순서대로 해금 브랜치를 연다 |
 
 | 컴퓨트 | 무엇을 키우나 |
 |---|---|
@@ -1928,7 +1932,10 @@ AlphaZero와의 대응: 탐색은 SMC와 캐스케이드, 정책은 EPD-S와 MoP
 
 **P2 공동 항목:** P2의 TJC(Teacher-as-Judge Calibration) 판정 보정과 H1b(Base·Turbo+SR 판정 경로 비교)는 E0 (f)에 통합했고, 그 25 T4-h를 E0에 되살렸다. **합계:** P1 344(E0 62 + E1 26 + E2 27 + E3 82 + E4 70 + E5 36 + E6 30 + X0 5 + X-LA0 6) + P2 142 = **486 T4-h**.
 
-**Kaggle 모드의 30일 실험 [v2.1 복원: TF·RR·P2 렌즈].** Kaggle 1배: E0·E1·E2·E6·X-LA0은 전량, E3·E4는 절반(E4는 방 2장면, facet world 12개), E5는 TexelFM-35/p8만, P2는 P2-E2·P2-E4만(약 70 T4-h 중 일부), 일정은 +2주. Kaggle 2배: 위에 더해 E3 실사 차선을 1/2로 줄이고 P2 시드는 0. 목표는 그대로다. 모든 잡은 8 h 단위로 쪼갠다.
+**Kaggle 모드의 30일 실험 [v2.1 복원: TF·RR·P2 렌즈, 사후 검증에서 §11.5 버킷에 맞춤].** 범위는 §11.5의 Kaggle 열 버킷(1배 126, 2배 74) 안에 든다.
+- **Kaggle 1배 (합 126).** E0는 진실표와 NaN 감사만(37, TJC·H1b 25는 빼고 Q1은 기본안), E1 26, E2 27, X-LA0 6은 전량, E6는 절반(15, 오라클 5장면), E3는 Realify와 MRH 헤드 축소판(15, 비교군·G-Adapter·Soul풍 arm 제외). E4(방 2장면, facet world 12개, 약 35)와 E5(TexelFM-35/p8만, 약 8)는 Day 30 이후로 미루고 같은 열의 세계 솔브(120)와 소형 모델 학습(250) 버킷에서 쓴다. 두 실험의 판정은 +2주 뒤에 한다. P2는 P2-E2·P2-E4만(합 50 중 §11.5 Kaggle 1배 P2 시드 35 안에서). 일정은 +2주.
+- **Kaggle 2배 (합 74).** E0 37, E1 26, X-LA0 6, E2는 결정 곡선 (a)만(약 5). 나머지(E2 (b)–(d), E3, E4, E5, E6)는 Day 30 이후 같은 열의 소형 모델 학습(140)과 세계 솔브(60) 버킷에서 줄여 돌린다. P2 시드는 0이다.
+- 목표는 그대로다. 모든 잡은 8 h 단위로 쪼갠다.
 
 ### 11.2 이후 실험 (31–90일)
 
@@ -2104,7 +2111,7 @@ v1($0.3–0.45M) 대비 **컴퓨트 비용이 100분의 1 이하로 줄었다.**
 |---|---|---|---|
 | R1 | **미감 천장** (엔진 교사 Z-Image Elo 941, 상용 1위 대비 기대 승률 19%) | E1-E <60%, E1-S, D60 SP <35%, X-LA 몫별 격차 | **하이브리드: Soul 개념 아트 + θ_look 연방으로 몫별 수리(X-LA).** 엔진 황색이면 DTC + Gaffer + A1 LoRA + hero N=256 의무. ES가 전원 미달일 때만 Qwen Image Max 2512 INT4(Q3). 교사가 이기는 범주부터 게이트를 연다 |
 | R2 | bf16 교사의 FP16 오버플로 | NaN 비율, 블록 max-abs | FP16 Rescue(잔차 재스케일 + SwiGLU 재균형), FP32 섬 확대, Mode B 파이프라인 분할, W8A16 |
-| R3 | INT8/INT4가 T4에서 안 되거나 판정이 표류 | E0 (b)(c)(d), 주간 FP16 재판정 괴리 | Mode C(commit은 FP16), INT4는 탐색·초안·데이터에만. 최악 경로도 세계당 약 3 T4-h |
+| R3 | INT8/INT4가 T4에서 안 되거나 판정이 표류 | E0 (b)(c)(d), 주간 FP16 재판정 괴리 | Mode C(commit은 FP16), INT4는 탐색·초안·데이터에만. 최악 경로도 세계당 계획 약 6 T4-h(순수 3.0) |
 | R4 | Turbo의 임의 σ SDEdit 실패, DR 판별력 부족 | 결정 폭 >1.5옥타브, E0 (e) AUC <0.7 | σ 점 스냅, Π_b 엄격 제한, 레벨 간격 2옥타브, SR-LoRA, Q1(Base) |
 | R5 | 차트·OTBI 이음매, 코너 위상 불일치 | seam 2AFC >60%, 코너 위상 오차 | apron 25%→40%, Fold 뷰, seam-owner 투시 뷰 확대, 텍스처 마스킹이 큰 곳에 seam, LatentUp/Down 효도 투영 |
 | R6 | CG 룩, 데칼 룩 (절차 기하와 교사 꿈의 불일치) | TP <35%, 데칼 지수 | Picture-First, 관할 재배정(프로그램은 L0만), G-Adapter 앞당김, 의미 패스 뷰 48→64, θ_look 마모·그레이딩 |
@@ -2133,13 +2140,13 @@ v1($0.3–0.45M) 대비 **컴퓨트 비용이 100분의 1 이하로 줄었다.**
 | **R29** | **크레딧 소진·가격 인상** | 주간 소진표(§11.6) | 배분표 우선순위(벤치 > 데모 스틸 > 감시). 크레딧이 부족하면 MCP 용도를 축소한다(Hybrid-A+ 160 → 80 세계, 버전 감시는 분기 1회). 웹으로 옮기는 것은 원래 사람 경로 용도(데모 개념 아트, 스틸 광택, 룩 레퍼런스)에 한한다. **자동 파이프라인 입력(Hybrid-A+ 벤치 등)을 사람이 웹에서 대신 생성해 공급하지 않는다**(CT34, Hybrid-A+의 완전 자동 정의). 추가 구매는 창업자 승인. **웹 자동화 금지** |
 | **R30** | **2K 상한** | — | Soul 픽셀은 4K·8K 영상 미세 대역의 원천이 아니다(Nyquist 이하만, A+). 원경은 Corman–Shannon이 2K 충분성을 판정. 스틸 광택은 2K로 납품하거나 표기 |
 | **R31** | **미감 불일치**(Soul의 구운 조명·광학이 물리 세계와 충돌, 개념 frustum과 MassingFM 뒷면 사이의 Janus) | TP_S 정체, 조명·이음매 2AFC | θ_soul로 설명 제거(DTC), Gaffer 재적합, Janus 규칙(frustum 안 = Soul 개념, 밖 = MassingFM), BRP·엔진 교사가 개념과 일관되게 채움. A에서는 사람이 물리에 맞게 번역해 전사 |
-| **R32** | **IP 유사**(Soul 출력이 기존 캐릭터·작품과 닮음) | IP 점검 절차(§8.3) | 프롬프트 위생, 사람 검토, 역이미지 검색, 법무 서명, 재생성(웹 예비 100) |
+| **R32** | **IP 유사**(Soul 출력이 기존 캐릭터·작품과 닮음) | IP 점검 절차(§8.3) | 프롬프트 위생, 사람 검토, 역이미지 검색, 법무 서명, 재생성(웹 'IP 재생성·대체' 100회, 부족하면 예비 900에서) |
 | **R33** | **승인 거절** | 메일 회신 | **Plan A로 운용**: 룩 프리셋 라이브러리(Hybrid-A), 사람 전사, 스틸 콘텐츠, 평가 앵커. X-LA가 개념 몫을 수치로 보여 주면 directed 모드와 아트 디렉션 인력에 투자한다. 목표는 그대로 |
 | **R34** | **업로드 콘텐츠 유출**(비Enterprise는 Higgsfield가 업로드로 학습 가능) | 업로드 로그 | 미공개 세계·데모·제3자 이미지 업로드 금지, 텍스트 프롬프트 위주, Enterprise 조건 문의, X-Soul 레퍼런스는 공개가 확정된 프레임만, 미공개 데모의 세계 경유 POLISH는 공개 확정 뒤 또는 Enterprise 조건에서만(§3.6 B4) |
 | **R35** | **방화벽 누수** | 카나리아 실패, 계보 감사 | 권한 격리, CI, 누수 시 해당 아티팩트 격리 후 재학습(소형 모델이라 수일 안), 감사 로그 보존 |
 | **R36** | **벤치 재현성·공정성 비판**(닫힌 모델이 파이프라인에) | 외부 피드백 | 트랙 분리(CT38), Engine·Hybrid-A 공개, Hybrid-A+ 자산 해시 공개, 승리 주장에 트랙 표기 |
 | **R37** | **MCP에 Soul Cinema가 없음** | MCP 도구 목록 | Soul 2.0으로 MCP, Cinema는 웹 사람 경로. 버전 태그로 구분. 메일로 일정 문의 |
-| **R38** | **정체성 희석·벤더 종속**("그리지 말고 찍어라"인데 그리는 모델에 기댄다) | 이해관계자 반응 | Soul은 미술팀(개념과 레퍼런스)이지 촬영이 아니다. 영상의 모든 프레임은 세계를 찍은 것이다. 제거 가능성 원칙, 미감 교사 슬롯(S9) |
+| **R38** | **정체성 희석·벤더 종속**("그리지 말고 찍어라"인데 그리는 모델에 기댄다) | 이해관계자 반응 | Soul은 미술팀(개념과 레퍼런스)이지 촬영이 아니다. 영상의 모든 프레임은 세계를 찍은 것이다. 제거 가능성 원칙, 미감 교사 슬롯(§10.3 SC9) |
 | **R39** | **광택 스틸과 영상 프레임의 혼동**(마케팅에서 Soul 광택 스틸을 영상 프레임처럼 보임) | 공개물 검토 | 스틸 광택 산출물 표기 규칙, Proof-of-Shot에서 구분, 영상 A/B에는 광택 스틸을 쓰지 않는다 |
 | **R40** | **미감 점수 리워드 해킹** [RR(u) R13 복원]: MRH-Aes가 hero search, Gaffer CEM 200회, DP-0 β·MRH-Aes, Corman β_a에 동시에 쓰이고, Soul·경쟁 API 쌍을 빼서 학습 쌍이 2–3만으로 줄었다 | held-out 사람 판정과 MRH-Aes 점수의 괴리, 탐색 상위 후보의 사람 2AFC 정체 | MRH-Aes ⊕ Teacher-DCA 앙상블 고정, 탐색 상위 k의 10% 사람 스팟 체크, 판정 쌍으로 주기 재학습, Gaffer·Corman에서 MRH-Aes 단독 사용 금지(최종 재순위는 앙상블) |
 
@@ -2227,7 +2234,7 @@ v1($0.3–0.45M) 대비 **컴퓨트 비용이 100분의 1 이하로 줄었다.**
 
 ## 부록 C. v2.1 변경 이력
 
-**v2.1 감사 반영 (정합성 비평 C1–C40, 누락 비평 V1–V36).** 76건을 모두 반영했다. 그중 9건은 다른 지시와 충돌하거나 원문 렌즈와 대조한 결과에 따라 고쳐서 반영했다(아래 C.2). 지시 전체를 반영하지 않은 항목은 없다.
+**v2.1 감사 반영 (정합성 비평 C1–C40, 누락 비평 V1–V36).** 76건을 모두 반영했다. 그중 15건(C.2의 9개 항목)은 다른 지시와 충돌하거나 원문 렌즈와 대조한 결과에 따라 고쳐서 반영했다(아래 C.2). 지시 전체를 반영하지 않은 항목은 없다.
 
 ### C.1 반영 요약
 
