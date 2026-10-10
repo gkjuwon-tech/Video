@@ -8,7 +8,7 @@
 - 작업 폴더: `/workspace/night1` (환경 변수 `N1_ROOT`로 바꿀 수 있게).
 - 비밀: 환경 변수 `HF_TOKEN`(쓰기 권한). **값을 절대 출력·로그·파일에 쓰지 않는다.** 없으면 업로드를 건너뛰고 로그에 `hf_token=no`만 남긴다.
 - HF 비공개 금고: `repo_id="sdsdsdsdsdsdsd123/buc-artifacts"`, `repo_type="model"`. 업로드는 `huggingface_hub.HfApi(token=os.environ["HF_TOKEN"]).upload_file(...)` 또는 `upload_folder(...)`. 업로드 실패는 경고만 찍고 계속 간다(잡을 죽이지 않는다).
-- 로그: 표준출력 한 줄 JSON 마커로 낸다. 오케스트레이터는 `vastai logs`(마지막 수백 줄)로만 본다. 마커 접두어는 잡별로 `N1_VID`, `N1_GEN`, `N1_TAE`. 10분에 한 번 이상 진행 마커를 찍는다.
+- 로그: 표준출력 한 줄 JSON 마커로 낸다. **`vastai logs`는 한 줄을 약 489자에서 자른다 → 마커 한 줄은 400자 이하로 유지한다.** 오케스트레이터는 `vastai logs`(마지막 수백 줄)로만 본다. 마커 접두어는 잡별로 `N1_VID`, `N1_GEN`, `N1_TAE`. 10분에 한 번 이상 진행 마커를 찍는다.
 - 마감: 환경 변수 `N1_DEADLINE`(유닉스 초). 이 시각이 되면 하던 일을 정리(마지막 저장·업로드)하고 정상 종료한다.
 - 모든 잡은 **중간에 죽어도 다시 실행하면 이어서** 간다(이미 만든 파일은 건너뛴다).
 

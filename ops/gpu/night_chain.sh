@@ -16,7 +16,7 @@ log = open(sys.argv[1], errors="replace").read() if __import__("os").path.exists
 m = re.findall(r"E0_RESULT (\{.*\})", log)
 res = json.loads(m[-1]) if m else {"error": "E0_RESULT 없음", "tail": log[-1500:]}
 json.dump(res, open("ops/gpu/e0_result.json", "w"), ensure_ascii=False, indent=1)
-chunks = re.findall(r"E0_IMG (\S+)", log)
+chunks = [d for _, d in sorted((int(i), d) for i, d in re.findall(r"E0_IMG (\d+) (\S+)", log))]
 if chunks:
     open(sys.argv[2] + "/e0_soju.jpg", "wb").write(base64.b64decode("".join(chunks)))
 print("E0 결과:", {k: res.get(k) for k in list(res)[:8]})

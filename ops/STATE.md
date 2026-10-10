@@ -9,6 +9,7 @@
 - **D15 데모 지정 (창업자, 2026-10-10T15:00Z):** 초원의 하얀 거대 야크 이미지 한 장으로 멈춘 세계 + 다양한 카메라 무브. 사양 `docs/DEMO-D15.md`, 원본은 HF 금고 `demo/d15_hero_yak.webp`(공개 레포에 넣지 않음). RDR-01·RDR-08·RD-18·RD-05를 수직 슬라이스로 승격, 관련 단위에 `demo: d15-yak` 태그.
 - **공장장 체크인:** 공장장은 send_later 권한이 막혀 있어 오케스트레이터가 매시간 :03에 공장장 세션을 깨우는 트리거 `trig_01GL7Ww48KbFj51yDHhG5EQW`를 걸었다. 창업자가 공장장 세션에서 직접 교대조 상시 가동을 지시했다(14:57Z).
 - **밤샘 잡 night1 (창업자 지적: "학습도 영상도 안 하면 뭘 하냐" → GPU 밤새 가동):** 명세 `ops/gpu/night1/SPEC.md`. ① 야크 바닥선 영상 6샷(순진한 깊이 워프, 평가 전용) ② Z-Image 교사 코퍼스(이미지+VAE 잠재, HF `corpus/night1/`) ③ M1 TAE-T 스파이크 학습(HF `ckpt/night1/tae_t/`). 마감 22:45Z(07:45 KST) 뒤 스스로 정지. 코드는 워크플로 night1-gpu-jobs(Sonnet 구현·Opus 검토)가 작성.
+- **E0 통과 (15:26Z, 인스턴스 55234730):** Z-Image-Turbo BF16 on RTX 5090 = **1024² 3.04 s/장**(9 스텝, 0.38 s/fwd), 512² 0.9 s, 로드 후 VRAM 20.7 GB, 정점 23.3 GB, 다운로드 237 s, diffusers 0.41.0, torch 2.9.1+cu128, CPU 16. 결과 `ops/gpu/e0_result.json`. 시험 이미지는 vastai logs가 줄을 489자에서 잘라 회수 실패(마커는 400자 이하로).
 - **GPU 교체 (15:17Z):** 한국 5090 55227600이 50분간 기동 실패 → 자동 교체 **55234730**(한국, machine 143424, $0.508/h 디스크 포함). 옛 55227600은 창업자가 권한을 허용한 뒤 오케스트레이터가 파기했다(15:3x Z). ensure_up의 destroy는 [y/N] 확인 프롬프트 때문에 실패했었다 → 확인 입력 후 목록으로 검증하도록 고침.
 - **밤사이 GPU 체인:** `ops/gpu/night_chain.sh` = 기동 보장(ensure_up) → E0 결과 회수(`ops/gpu/e0_result.json`) → **GPU 정지**(유휴 과금 방지, 디스크만 과금) → 커밋. 러너 단위(RUN-*)가 준비되면 `vastai start instance ID`로 다시 켠다.
 - **한도 리셋 직후 깨우기:** `trig_01PcFv7tauA9qF4ycUjpFgc9`(1회, 19:12Z)가 공장장을 깨운다.
