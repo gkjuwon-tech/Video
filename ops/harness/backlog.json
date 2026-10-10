@@ -928,12 +928,18 @@
    "slice": true,
    "rank": 27,
    "why": "primary 래스터. sm_120 JIT 위험",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791651080,
      "event": "claimed"
+    },
+    {
+     "ts": 1791652500,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
     }
    ],
    "demo": "d15-yak"
@@ -1207,12 +1213,18 @@
    "slice": true,
    "rank": 36,
    "why": "물리 범위는 Opus가 확정",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791651080,
      "event": "claimed"
+    },
+    {
+     "ts": 1791652500,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: pyproject.toml에 PyYAML 의존을 추가해야 한다(FND 단위 몫). buc/lens/theta.py가 yaml을 import한다."
     }
    ]
   },

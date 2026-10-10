@@ -11,7 +11,7 @@ import torch
 from buc.render import splat2d
 from buc.render.splat2d import (BackendUnavailable, SplatOpts, SplatRender, Surfels, render,
                                 resolve_backend)
-from rdr01_helpers import K_of, fronto, make_surfels, pose, rot_axis
+from rdr01_helpers import K_of, make_surfels, pose, rot_axis
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 W, H = 32, 24

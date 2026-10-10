@@ -61,13 +61,13 @@ def psnr(a, b, mask=None) -> float              # 10·log10(1/MSE), 같으면 in
 ```
 - `init_from_points`: means=xyz; 스케일(두 축) = `max(min_scale, scale_mult·k_nn 최근접 거리 평균)`(k는 `min(k,N−1)`); 노멀 = `k_normal` 이웃 PCA 최소 고유벡터, `cam_centers`가 있으면 가장 가까운 카메라 쪽(`n·(c−p)≥0`); `R(q)[:,2]=n`, det +1. rgb: uint8 → `color.srgb8_to_linear`, float → 선형 그대로, None → 0.5. 불투명도 `opacity`. N<2·비유한 → ValueError.
 - `init_from_rgbd`: 유효 화소(유한·양수 깊이, α>1e-3)마다 하나, 행·열 `0, stride, …`. 접선 = 카메라 x·y축(정면 surfel), 중심 = `geom.unproject_world`, 스케일 `scale_mult·stride·depth/fx`(·/fy), 불투명도 `opacity·α`.
-- `fit`: Adam(파라미터 그룹별 lr), 손실 `(1−λ_ssim)·L1 + λ_ssim·(1−SSIM 11×11 σ1.5)` + 2DGS 왜곡·노멀 정합 정규화(λ>0일 때). `batch_views=0`이면 매 반복 전 뷰. 같은 seed·장치 → 비트 동일. `init` 불변. `prune_opacity>0`이면 끝에 그 미만 surfel 제거.
+- `fit`: Adam(파라미터 그룹별 lr), 손실 `(1−λ_ssim)·L1 + λ_ssim·(1−SSIM 11×11 σ1.5)` + 2DGS 왜곡·노멀 정합 정규화(λ>0일 때). `batch_views=0`이면 매 반복 전 뷰, k>0이면 seed 순열로 k개. `mask`(H,W bool)는 손실을 그 화소로 한정. 같은 seed·장치 → 비트 동일. `init` 불변. `prune_opacity>0`이면 끝에 그 미만 surfel 제거.
 
 ## 불변식
 결정론(같은 입력 → 같은 바이트, CPU) · 입력 불변 · NaN/경고 없음(카메라 뒤·edge-on 포함) · float64 경로에서 autograd = 중앙 차분 · 입력 순서 무관(정렬 후 동일).
 
 ## 수용 기준 (`tests/rdr_01/`, CPU <60 s)
-API·검증·지연 import·백엔드 선택 · 단일 surfel: 피크 = o, 질량 `2πσ²o`(5%), σ_px = fx·s/z(4%), 중심 착지 = `geom.project`(0.03 px), 비등방 축 각(1°) · 기울어진 surfel 깊이 = 광선-평면 교점(1e-4 상대)·노멀 · over 합성 공식(1e-5) · 컬링 · FD 기울기(float64) · dual-cut 블렌드·스냅·클램프·λ-연속·타일 평균·통계 · COLMAP txt/bin 동치 · 초기화 수치 · rgbd 항등 재현 · 피팅 수렴(손실 ≤1/4, PSNR) · 결정론 · 속도(64×48, 1000개 fwd+bwd <8 s). `@pytest.mark.gpu`: gsplat ↔ torch 수치 일치(2e-3)·기울기 코사인 >0.99.
+API·검증·지연 import·백엔드 선택 · 단일 surfel: 피크 = o, 질량 `2πσ²o`(5%), σ_px = fx·s/z(4%), 중심 착지 = `geom.project`(0.03 px), 비등방 축 각(1°) · 기울어진 surfel 깊이 = 광선-평면 교점(1e-4 상대)·노멀 · over 합성 공식(1e-5) · 컬링 · FD 기울기(float64) · dual-cut 블렌드·스냅·클램프·λ-연속·타일 평균·통계 · COLMAP txt/bin 동치 · 초기화 수치 · rgbd 항등 재현 · 피팅 수렴(150회에 손실 ≤1/10, 학습 PSNR ≥35 dB, COLMAP 왕복 홀드아웃 ≥28 dB) · 결정론 · 속도(64×48, 1000개 fwd+bwd <8 s). `@pytest.mark.gpu`: gsplat ↔ torch 수치 일치(2e-3)·기울기 코사인 >0.99.
 
 ## 하류 이음매
 RDR-03(TSQ)은 `Surfels`·`render` 시그니처와 합성 규칙을 확장, RDR-08 체적은 같은 정렬·합성에 합류, WLD-03은 `init_from_rgbd`/`init_from_points`, WLD-07은 `fit`/`render`, RUN-08은 `render(backend="gsplat")` 시간 측정. `SplatRender.numpy()`의 `rgb/alpha/depth`는 RDR-02 `QuadRender`와 같은 뜻(선형, z-깊이, +inf).

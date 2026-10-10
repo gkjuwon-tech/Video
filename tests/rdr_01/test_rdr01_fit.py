@@ -10,7 +10,7 @@ import torch
 from buc.core import color, geom
 from buc.render.fit import (ColmapPoints, FitOpts, FitResult, FitView, fit, init_from_points, init_from_rgbd, psnr,
                             read_colmap_points3d)
-from buc.render.splat2d import SplatOpts, Surfels, render
+from buc.render.splat2d import Surfels, render
 from rdr01_helpers import K_of, make_surfels, pose, rot_axis, to_np
 
 PTS = [  # id, xyz, rgb, err, track
@@ -233,8 +233,8 @@ def test_fit_converges_and_keeps_input():
     res = fit(init, views, FitOpts(iters=150, **OPTS))
     assert isinstance(res, FitResult) and len(res.losses) == 150
     assert all(math.isfinite(x) for x in res.losses)
-    assert res.losses[-1] <= 0.25 * res.losses[0], (res.losses[0], res.losses[-1])
-    assert len(res.psnr) == 3 and min(res.psnr) >= 28.0, res.psnr
+    assert res.losses[-1] <= 0.1 * res.losses[0], (res.losses[0], res.losses[-1])
+    assert len(res.psnr) == 3 and min(res.psnr) >= 35.0, res.psnr
     for p in res.surfels.params():
         assert not p.requires_grad
     for p, q in zip(before, init.params()):
@@ -299,9 +299,9 @@ def test_colmap_to_fit_roundtrip(tmp_path):
     init = init_from_points(cp.xyz, cp.rgb, opacity=0.5, cam_centers=[c[:3, 3] for c in CAMS])
     views = _views(gt)
     res = fit(init, views, FitOpts(iters=150, **OPTS))
-    assert min(res.psnr) >= 25.0, res.psnr
+    assert min(res.psnr) >= 32.0, res.psnr
     hold = render(gt, c2w=HOLD, K=FK, width=FW, height=FH).rgb.numpy()
     got = render(res.surfels, c2w=HOLD, K=FK, width=FW, height=FH).rgb.numpy()
-    assert psnr(got, hold) >= 22.0
+    assert psnr(got, hold) >= 28.0
     init_img = render(init, c2w=HOLD, K=FK, width=FW, height=FH).rgb.numpy()
-    assert psnr(got, hold) > psnr(init_img, hold) + 3.0
+    assert psnr(got, hold) > psnr(init_img, hold) + 6.0

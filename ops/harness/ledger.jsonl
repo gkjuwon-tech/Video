@@ -19,3 +19,5 @@
 {"id": "TCH-01", "ts": 1791650331, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "TCH-02", "ts": 1791651052, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "TCH-03", "ts": 1791651052, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: 없음"}
+{"id": "RDR-01", "ts": 1791652500, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "LNS-01", "ts": 1791652500, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: pyproject.toml에 PyYAML 의존을 추가해야 한다(FND 단위 몫). buc/lens/theta.py가 yaml을 import한다."}
