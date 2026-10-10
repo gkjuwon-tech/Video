@@ -4304,12 +4304,18 @@
    "slice": true,
    "rank": 141,
    "why": "최대 레버(반복 횟수)의 엔진",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791665404,
      "event": "claimed"
+    },
+    {
+     "ts": 1791666327,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ],
    "demo": "d15-yak"
@@ -4949,12 +4955,18 @@
    "slice": true,
    "rank": 163,
    "why": "걷는 해골. 계약만 지키면 되는 단순 코드",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791665404,
      "event": "claimed"
+    },
+    {
+     "ts": 1791666327,
+     "event": "done",
+     "models": "contract:sonnet,build:haiku",
+     "note": ""
     }
    ]
   },

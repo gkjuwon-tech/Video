@@ -43,3 +43,5 @@
 {"id": "GOV-01", "ts": 1791664575, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: `.github` CI 워크플로에 `python3 ci/lineage_check.py` 단계 추가. `ci/checkpoint_denylist.json`은 운영 단위가 실제 공개 가중치 해시로 생성."}
 {"id": "GOV-03", "ts": 1791665372, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: Add a CI workflow under .github that runs `python3 -m buc.gov.lints` (operations unit, per the GOV-03 contracts downstream-seam section). No dependency changes are needed."}
 {"id": "PRD-01", "ts": 1791665372, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: buc/pipeline/__init__.py는 만들지 않았다(namespace package로 테스트 통과). 필요하면 PRD 단위가 만들어야 한다. 의존성 추가 요청은 없다."}
+{"id": "EVL-02", "ts": 1791666327, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "PRD-03", "ts": 1791666327, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
