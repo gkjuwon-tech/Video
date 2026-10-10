@@ -1,0 +1,2 @@
+# 추가만 하는 장부는 양쪽 줄을 모두 살려 병합한다(동시 교대조·오케스트레이터 충돌 방지).
+ops/harness/ledger.jsonl merge=union
