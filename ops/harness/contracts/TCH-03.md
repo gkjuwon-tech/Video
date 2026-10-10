@@ -1,0 +1,27 @@
+# TCH-03 Feature-Tap Bus v0 — 층 8/15/23 훅 · 고정 PCA-128 int8 · 링버퍼 · ext 바이패스
+
+**목적.** 교사(Z-Image-Turbo) forward 한 번에서 층 8/15/23의 이미지 토큰 은닉(3840-d)을 **고정 PCA-128 int8**로 즉시 사영해 MRH 입력(탭)으로 낸다. 학습 탭만 링버퍼에 쌓고, ext(USER 계열·EXTGEN 계열·BIO) 호출은 링에 **절대** 들어가지 않는다(라이브 판독용 임시 탭만). 하류: DAT-02/04(탭 추출·샤드), MDL-03(MRH 학습 입력), RD-07(판독 호출).
+**소유.** `buc/teacher/taps.py`, 테스트 `tests/tch_03/`(동결). 의존: TCH-01(`teacher.layers`, 길이 30), FND-04(`buc.gov.prov`: `as_record, ext_bit, train_ok, assert_train_ok, merkle_parts, FirewallError`), FND-03(`buc.core.det`: `hash_parts, hash_array`). torch만 쓴다. import는 CUDA·diffusers·transformers 없이 되고 부작용이 없다.
+**소유 밖 요청.** 없음.
+
+## 공개 API (`buc.teacher.taps`)
+- 상수 `TAP_LAYERS=(8,15,23)`(0-기반 `layers[i]` 블록 출력), `PCA_DIM=128`, `INT8_MAX=127`, `BASIS_TAG="buc.tch03.basis.v1"`, `TAP_TAG="buc.tch03.tap.v1"`.
+- 예외: `TapError(RuntimeError)` ⊃ `TapSpecError(+ValueError)`, `TapBasisError`, `TapNumericError(+FloatingPointError)`. 방화벽 위반은 FND-04의 `FirewallError`.
+- `PCABasis(layers, mean[L,D], comps[L,D,k], scale[L,k], meta=None)`: float32로 **복사**·동결(`requires_grad` 없음). 속성 `layers, dim, k, mean, comps, scale, meta, fingerprint(bytes32)`. 지문 = `hash_parts(BASIS_TAG, dim, k, layers, hash_array(mean/comps/scale))`(meta 제외). 검증: 층 중복·개수·모양 불일치·`scale<=0` `TapSpecError`, 비유한 `TapNumericError`. `verify()`: 지문 재계산, 변조면 `TapBasisError`. `project(layer, x[...,D]) -> int8[...,k]` = `clamp(round((x.float()-mean)@comps / scale), -127, 127)`(-128 없음, 반올림 half-even, 기저 밖 층·차원 불일치 `TapSpecError`, 비유한 `TapNumericError`). `dequantize(layer, q)->float32[...,k]`(= `q*scale`, int8 아니면 `TapSpecError`), `reconstruct(layer, q)->[...,D]`. `save(path)`(원자적 tmp+replace) / `PCABasis.load(path)`(없으면 `FileNotFoundError`, 깨짐·태그 불일치·저장 지문 불일치 `TapBasisError`).
+- `fit_pca_basis(samples: Mapping[int, Tensor[N,D]], *, prov, k=128, meta=None) -> PCABasis`. **적합은 1회**, 이후 고정. 규칙: `prov` 키워드 필수(없거나 None `TypeError`)이고 `assert_train_ok(prov)`(위반 `FirewallError`); `N>=k+1`, `k<=D`, `k>=1`, 2차원, 층 간 D 동일(위반 `TapSpecError`); 비유한 `TapNumericError`. 알고리즘: float64, 평균 제거, 공분산(N-1) `eigh` 상위 k를 분산 내림차순, 성분마다 절댓값 최대 원소가 양수(부호 규약), `scale[c]=max|z_c|/127`(0이면 1.0), `meta["fit_n"]` 기록. 같은 입력 → 같은 지문.
+- `TapSet`(frozen dataclass): `layers: dict[int, int8 Tensor[B,k,gh,gw]]`, `grid=(gh,gw)`, `basis_fp`, `prov: ProvRecord`, `ephemeral: bool`(= `ext_bit(prov)`), `key: str|None`. `nbytes`(= 층별 numel 합). `features(basis)->dict[int, float32[B,k,gh,gw]]`(기저 지문 불일치 `TapBasisError`; MRH neck 입력). `digest()->bytes32` = `hash_parts(TAP_TAG, basis_fp, *merkle_parts(prov), gh, gw, key or "", 층별 (id, hash_array(q)))`.
+- `TapBus(basis, layers=TAP_LAYERS)`: 층이 기저에 없거나 중복·빈 목록 `TapSpecError`. `attach(blocks)->self`: `blocks[l].register_forward_hook`을 정확히 `layers`에만 건다(기저 `verify()` 먼저, 인덱스 범위 위반은 훅을 하나도 걸기 전에 `TapSpecError`, 이중 부착 `TapError`). `detach()`(멱등). `attached`, `hook_count`, `stats={"captures","pushed","bypassed"}`.
+  `capture(prov, *, grid, token_offset=0, key=None, ring=None)`: 컨텍스트 매니저, 객체 `.tapset`은 정상 종료 뒤에만(그 전 `TapError`). `prov` 필수(`as_record` 규칙: None·단일 str `TypeError`, 알 수 없는 태그 `ValueError`). `grid`는 양의 정수 2-튜플, `token_offset`은 0 이상 정수(bool 불가), 위반 `TapSpecError`. 미부착·중첩 `TapError`.
+
+## 훅 의미
+층 출력(Tensor 또는 첫 원소가 Tensor인 tuple/list)은 `[B,S,D]`여야 한다(아니면 `TapSpecError`, `D==basis.dim`, `S>=token_offset+gh*gw`). 이미지 토큰 = `out[:, off:off+gh*gw]`, **행 우선(gh,gw)** → `[B,gh,gw,D]` 사영 → `[B,k,gh,gw]`. 훅은 출력을 바꾸지 않고(비트 동일, autograd 보존) 활성을 보관하지 않으며 `no_grad`로 사영한다. 캡처 밖 forward는 아무것도 기록하지 않는다. 캡처 하나에서 각 탭 층은 **정확히 한 번** 발화해야 한다(두 번이면 `TapError`, 빠지면 종료 시 `TapError`). 어떤 오류 뒤에도 버스는 재사용 가능하다.
+
+## ext 바이패스 · 링 (불변식)
+`TapRing(basis_or_fp, *, max_entries, max_bytes=None)`: FIFO. `push(ts)->seq`(seq는 단조 증가, 재사용 없음, 실패한 push는 소모하지 않음). 순서: `TapSet`이 아니면 `TypeError` → `ts.ephemeral` 또는 `ext_bit(ts.prov)`이면 `FirewallError` → `assert_train_ok(ts.prov)`(HOLDOUT·COMP·NC·D3·IP-FLAG 가림 전·라이선스 미상 ASSET 등, **플래그를 믿지 않고 prov로 판정**) → 기저 지문 불일치 `TapBasisError` → 항목이 `max_bytes`보다 크면 `TapError`. 실패는 링을 바꾸지 않는다. 통과하면 필요한 만큼 오래된 것부터 축출(`evicted`), 텐서는 **복사해 보관**하고 `get`도 복사본을 낸다. 링 진입 규칙 = `train_ok(prov) and not ext_bit(prov)`. `get(seq)`(없으면 `KeyError`), `seqs()`, `latest(n)`(오래된 것 먼저), `sample(n, seed)`(결정론, 오름차순 seq, n 범위 밖 `ValueError`), `clear()`, `len`, `nbytes`.
+`capture(..., ring=ring)`: 링 진입 불가(ext 또는 not train_ok)면 **예외 없이** `stats["bypassed"]+=1`, 가능하면 push·`pushed+=1`. 호출자는 어느 경우든 라이브 `TapSet`을 받는다(ext면 `ephemeral=True`, 탭 값은 동일). 버스는 캡처 종료 뒤 탭(텐서·TapSet)에 대한 강한 참조를 0으로 둔다.
+
+## 수용 기준
+`tests/tch_03/` 전부 통과(CPU, 가짜 교사, 약 1–3 s): PCA 적합 float64 오라클·부호 규약·양자화 오차 ≤ scale/2·-128 없음·지문 민감도·저장/적재/변조 거부·적합 prov 차단; 훅 정확히 3개·토큰 슬라이스/행 우선 오라클·출력 비트 동일·정확히 한 번 발화·오류 복구·bf16·tuple 출력; 링 FIFO·바이트 예산·복사 격리·결정론 표본; 카나리아 C1(`USER`)·C5(`EXTGEN:test`)와 153개 태그 조합에서 링 규칙 = `train_ok ∧ ¬ext`; ext 바이패스·약한 참조 무보유; import 부작용 없음. `@pytest.mark.gpu`(`test_tap_gpu.py`): 실제 30층에 훅 3개 부착·해제. **미검증:** 실제 Z-Image 층의 토큰 배치(이미지 토큰 위치·패딩)와 forward 시그니처는 TCH-02 완료 후 GPU에서 확인한다(가짜 블록으로는 알 수 없다).
+
+## 하류 이음매
+TCH-02/DAT-02는 σ 스냅 forward를 `with bus.capture(prov, grid=(H//16, W//16), token_offset=<이미지 토큰 시작>, ring=ring)` 안에서 한 번 호출한다(탭 층당 1회). MDL-03은 `TapSet.features(basis)`(층별 `[B,128,gh,gw]`)와 동결 기저 `fingerprint`를 체크포인트에 기록한다. DAT-02/04 샤드는 `TapSet.layers`(int8)와 `basis_fp`를 저장하고, 기저가 다르면 읽지 않는다. RD-07은 ext 입력에서도 같은 `capture`로 임시 탭을 받아 MRH에 직접 넘긴다(링·디스크 금지). 별도 "Tap Bus 없는 클린룸 바이너리" 빌드(권리 렌즈 v3)가 필요하면 `ext` 레인용 훅 없는 판독 경로가 별도로 필요하다(GOV/RD-07 소관, 이 단위는 런타임 바이패스만 준다). TCH-04는 `TapSet.digest()`와 `PCABasis.fingerprint`를 키 재료로 쓸 수 있다.

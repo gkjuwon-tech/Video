@@ -1,0 +1,9 @@
+{
+ "tests/tch_02/tch02_fakes.py": "706cdea81f4f65509200619fbaf7f1d6185926f1f4bdc3be4ede7064d38e206c",
+ "tests/tch_02/test_tch02_gpu_real.py": "16182d901dfae92fc7e2f2d4667fee007e1443783368a8d8c3c6ac83c3412d0a",
+ "tests/tch_02/test_tch02_lockstep.py": "10a6cf84c790852b1653b4707e11b1f892315e7b74e9479d5c4437e326a25991",
+ "tests/tch_02/test_tch02_math.py": "ef5d7472336f05b13391df6504e903cb5fba527dccafc2c682347f2cc3b0721f",
+ "tests/tch_02/test_tch02_protocol.py": "af1c9d0a09ddeb6beeb2346c84cbf5106addf935d8509b53f08200974833b166",
+ "tests/tch_02/test_tch02_sdedit.py": "aed584d8d70de145a55000d8483183b7660badaf49313622c9a54aaf18110805",
+ "tests/tch_02/test_tch02_table.py": "1dde8039439bc85fb8beaff008e828967c4554ac5595686d1b0546fd52532d52"
+}

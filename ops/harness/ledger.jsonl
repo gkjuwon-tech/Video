@@ -17,3 +17,5 @@
 {"id": "RUN-05", "ts": 1791649045, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "RUN-06", "ts": 1791650331, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: buc/train/__init__.py is absent (works as a namespace package; optionally add an empty one). No other changes needed outside the owned paths. GPU test tests/run_06/test_r06_gpu.py was not run (no CUDA here) and needs the GPU runner."}
 {"id": "TCH-01", "ts": 1791650331, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "TCH-02", "ts": 1791651052, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "TCH-03", "ts": 1791651052, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: 없음"}
