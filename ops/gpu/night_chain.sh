@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 밤사이 GPU 체인: 기동 보장(안 뜨면 교체) → E0 결과 회수 → GPU 정지(유휴 과금 방지) → 결과 커밋.
-# 정지된 인스턴스는 디스크(받아 둔 Z-Image 가중치 포함)만 과금된다. 다시 쓸 때 vastai start instance ID.
+# 밤사이 GPU 체인: 기동 보장(안 뜨면 교체) → E0 결과 회수 → 결과 커밋. 이후 GPU는 상주 루프가 받는 runner.sh 밤샘 잡으로 넘어간다.
+# (STOP_AFTER_E0=1 이면 E0 뒤 GPU를 정지한다.)
 # 사용: ops/gpu/night_chain.sh INSTANCE_ID LOG_DIR
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"; cd "$REPO" || exit 1
@@ -21,13 +21,16 @@ if chunks:
     open(sys.argv[2] + "/e0_soju.jpg", "wb").write(base64.b64decode("".join(chunks)))
 print("E0 결과:", {k: res.get(k) for k in list(res)[:8]})
 EOF
-# 유휴 과금 방지: 할 일(러너)이 생길 때까지 정지.
-vastai stop instance "$ID" --raw >/dev/null 2>&1 && echo "GPU 정지: $ID"
-python3 - "$ID" <<'EOF'
+# GPU는 끄지 않는다: E0 뒤 상주 루프가 ops/gpu/runner.sh(밤샘 잡)를 받아 실행하고, 잡이 끝나면 스스로 정지한다.
+# 러너가 없을 때만 정지하려면 STOP_AFTER_E0=1.
+if [ "${STOP_AFTER_E0:-0}" = 1 ]; then
+  vastai stop instance "$ID" --raw >/dev/null 2>&1 && echo "GPU 정지: $ID"
+fi
+python3 - "$ID" "${STOP_AFTER_E0:-0}" <<'PYEOF'
 import json, sys, time
 p = "ops/gpu/instance.json"
-d = json.load(open(p)); d.update(id=int(sys.argv[1]), state="stopped_after_e0", updated=int(time.time()))
+d = json.load(open(p)); d.update(id=int(sys.argv[1]), state="stopped_after_e0" if sys.argv[2] == "1" else "e0_done_runner_next", updated=int(time.time()))
 json.dump(d, open(p, "w"), ensure_ascii=False, indent=1)
-EOF
-ops/persist.sh "gpu: E0 result (rc=$RC), instance stopped" 2>&1 | tail -1
+PYEOF
+ops/persist.sh "gpu: E0 result (rc=$RC)" 2>&1 | tail -1
 exit $RC

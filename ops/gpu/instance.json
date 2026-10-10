@@ -1,8 +1,8 @@
 {
- "id": 55227600,
- "machine": 35043,
- "dph": 0.23566666666666666,
- "state": "waiting",
- "swap": 0,
- "updated": 1791645103
+ "id": 55234730,
+ "machine": 143424,
+ "dph": 0.5083333333333333,
+ "state": "running",
+ "swap": 1,
+ "updated": 1791645665
 }
