@@ -2002,9 +2002,20 @@
    "slice": true,
    "rank": 55,
    "why": "이중 보케 방지의 전제 | D15 데모: 전경 양귀비 보케 제거·랙 포커스. 슬라이스 승격 2026-10-10.",
-   "status": "todo",
-   "attempts": 0,
-   "log": [],
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791675193,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791676148,
+     "event": "done",
+     "models": "contract:opus,build:sonnet",
+     "note": ""
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -2481,9 +2492,20 @@
    "slice": true,
    "rank": 71,
    "why": "실패 격리와 폴백값이 설계의 전부",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791675193,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791676148,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": "요청: 1) FND-02 TAINT_BASES vs FND-04 USER-DERIVED vocabulary mismatch (already in the contract): packet.prov cannot carry derived taint. 2) PRD-01 spine imports buc.core.det, which imports torch at module top (contradicting spines \"torch 금지\"); consider making dets torch import lazy. RD-21 works around it with a lazy spine import inside make_read_impl."
+    }
+   ]
   },
   {
    "id": "WLD-01",

@@ -61,3 +61,5 @@
 {"id": "RDR-07", "ts": 1791674204, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "RD-08", "ts": 1791675180, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "WLD-17", "ts": 1791675180, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "RD-05", "ts": 1791676148, "event": "done", "models": "contract:opus,build:sonnet", "note": ""}
+{"id": "RD-21", "ts": 1791676148, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: 1) FND-02 TAINT_BASES vs FND-04 USER-DERIVED vocabulary mismatch (already in the contract): packet.prov cannot carry derived taint. 2) PRD-01 spine imports buc.core.det, which imports torch at module top (contradicting spines \"torch 금지\"); consider making dets torch import lazy. RD-21 works around it with a lazy spine import inside make_read_impl."}
