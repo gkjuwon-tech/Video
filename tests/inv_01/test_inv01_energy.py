@@ -180,6 +180,8 @@ def test_g6_repeat_spacing_residual():
     assert E(rep(p, openings=(door,) + wins([1.0, 2.0, 3.0]))).terms["G6"] == pytest.approx(0.0, abs=1e-9)
     # 간격 0.8, 1.2 -> 평균 1.0 -> 잔차 0.2 + 0.2
     assert E(rep(p, openings=(door,) + wins([1.0, 1.8, 3.0]))).terms["G6"] == pytest.approx(0.4, abs=1e-9)
+    # 네 개: 간격 1.0, 1.0, 1.6 -> 평균 1.2 -> 잔차 0.2 + 0.2 + 0.4 = 0.8 (중앙값/첫 간격 기준이 아니라 평균 기준)
+    assert E(rep(p, openings=(door,) + wins([0.5, 1.5, 2.5, 4.1]))).terms["G6"] == pytest.approx(0.8, abs=1e-9)
     # 입력 순서와 무관
     assert E(rep(p, openings=(door,) + wins([3.0, 1.0, 1.8]))).terms["G6"] == pytest.approx(0.4, abs=1e-9)
     # 창 2개는 패턴이 아니다
