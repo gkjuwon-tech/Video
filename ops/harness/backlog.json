@@ -3789,9 +3789,20 @@
    "slice": true,
    "rank": 125,
    "why": "한 번의 교사 호출로 라벨과 학습 특징을 동시에",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791660633,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791661527,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "DAT-03",
@@ -4182,9 +4193,20 @@
    "slice": true,
    "rank": 139,
    "why": "Haiku가 초안, Opus가 수치 검수(도메인 지식)",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791660633,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791661527,
+     "event": "done",
+     "models": "contract:sonnet,build:haiku",
+     "note": "요청: RD-08(buc/read/metric_scale.py) 쪽에 tools/size_prior_check.py를 파일 경로로 적재하는 얇은 래퍼가 필요하다(DAT-16 계약서 하류 이음매 참고). Opus 수치 검수 요청: data/size_prior.yaml의 비앵커 중앙값·σ, 특히 중복 해소로 +1–5% 보정된 항목들(동일 중앙값이 여러 개였던 항목)을 원래 추정치로 되돌릴지 판단. whale_humpback을 crocodile로 교체한 것도 확인."
+    }
+   ]
   },
   {
    "id": "EVL-01",

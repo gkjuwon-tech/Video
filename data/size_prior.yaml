@@ -1,0 +1,3443 @@
+# DAT-16 크기 사전 v1: 로그정규 (μ, σ) 표. 생성: 스크래치 생성기에서 작성(검사: tools/size_prior_check.py).
+# range_m = 중앙값 * exp(±2σ) (4자리 유효숫자). tier 1 = 핵심(앵커 + 수직 슬라이스 우선).
+schema: 1
+unit: m
+classes:
+  door_interior:
+    dim: height
+    median_m: 2.03
+    sigma_log: 0.04
+    range_m: [1.874, 2.199]
+    group: architecture
+    tier: 1
+    aliases: [door, interior_door]
+  door_exterior:
+    dim: height
+    median_m: 2.05
+    sigma_log: 0.03
+    range_m: [1.931, 2.177]
+    group: architecture
+    tier: 1
+  stair_riser:
+    dim: height
+    median_m: 0.17
+    sigma_log: 0.06
+    range_m: [0.1508, 0.1917]
+    group: architecture
+    tier: 1
+  stair_tread:
+    dim: depth
+    median_m: 0.28
+    sigma_log: 0.06
+    range_m: [0.2483, 0.3157]
+    group: architecture
+    tier: 1
+  room_ceiling:
+    dim: height
+    median_m: 2.5
+    sigma_log: 0.05
+    range_m: [2.262, 2.763]
+    group: architecture
+    tier: 1
+  building_story:
+    dim: height
+    median_m: 3.0
+    sigma_log: 0.10
+    range_m: [2.456, 3.664]
+    group: architecture
+    tier: 1
+  window_residential:
+    dim: height
+    median_m: 1.2
+    sigma_log: 0.20
+    range_m: [0.8044, 1.79]
+    group: architecture
+    tier: 1
+  handrail:
+    dim: height
+    median_m: 0.92
+    sigma_log: 0.04
+    range_m: [0.8493, 0.9966]
+    group: architecture
+    tier: 1
+  light_switch:
+    dim: height
+    median_m: 0.12
+    sigma_log: 0.05
+    range_m: [0.1086, 0.1326]
+    group: architecture
+    tier: 1
+  house:
+    dim: height
+    median_m: 6.0
+    sigma_log: 0.25
+    range_m: [3.639, 9.892]
+    group: architecture
+    tier: 1
+  garage_door:
+    dim: height
+    median_m: 2.14
+    sigma_log: 0.05
+    range_m: [1.936, 2.365]
+    group: architecture
+    tier: 1
+  window_commercial:
+    dim: height
+    median_m: 2.24
+    sigma_log: 0.25
+    range_m: [1.359, 3.693]
+    group: architecture
+    tier: 2
+  door_double_leaf:
+    dim: height
+    median_m: 2.12
+    sigma_log: 0.04
+    range_m: [1.957, 2.297]
+    group: architecture
+    tier: 2
+  column_structural:
+    dim: height
+    median_m: 3.06
+    sigma_log: 0.15
+    range_m: [2.267, 4.131]
+    group: architecture
+    tier: 1
+  chimney:
+    dim: height
+    median_m: 4.08
+    sigma_log: 0.30
+    range_m: [2.239, 7.434]
+    group: architecture
+    tier: 1
+  fence_wood:
+    dim: height
+    median_m: 1.22
+    sigma_log: 0.15
+    range_m: [0.9038, 1.647]
+    group: architecture
+    tier: 1
+  brick:
+    dim: length
+    median_m: 0.215
+    sigma_log: 0.02
+    range_m: [0.2066, 0.2238]
+    group: architecture
+    tier: 1
+  roof_tile:
+    dim: length
+    median_m: 0.42
+    sigma_log: 0.05
+    range_m: [0.38, 0.4642]
+    group: architecture
+    tier: 1
+  concrete_block:
+    dim: length
+    median_m: 0.39
+    sigma_log: 0.03
+    range_m: [0.3673, 0.4141]
+    group: architecture
+    tier: 2
+  ceiling_tile:
+    dim: width
+    median_m: 0.606
+    sigma_log: 0.02
+    range_m: [0.5822, 0.6307]
+    group: architecture
+    tier: 2
+  balcony_railing:
+    dim: height
+    median_m: 1.05
+    sigma_log: 0.04
+    range_m: [0.9693, 1.137]
+    group: architecture
+    tier: 1
+  staircase_flight:
+    dim: height
+    median_m: 2.9
+    sigma_log: 0.15
+    range_m: [2.148, 3.915]
+    group: architecture
+    tier: 1
+  pillar:
+    dim: height
+    median_m: 3.5
+    sigma_log: 0.30
+    range_m: [1.921, 6.377]
+    group: architecture
+    tier: 2
+  skylight:
+    dim: width
+    median_m: 0.848
+    sigma_log: 0.20
+    range_m: [0.5684, 1.265]
+    group: architecture
+    tier: 2
+  doorknob:
+    dim: diameter
+    median_m: 0.06
+    sigma_log: 0.10
+    range_m: [0.04912, 0.07328]
+    group: architecture
+    tier: 1
+  shed_garden:
+    dim: height
+    median_m: 2.42
+    sigma_log: 0.20
+    range_m: [1.622, 3.61]
+    group: architecture
+    tier: 2
+  castle_tower:
+    dim: height
+    median_m: 25
+    sigma_log: 0.50
+    range_m: [9.197, 67.96]
+    group: architecture
+    tier: 2
+  skyscraper:
+    dim: height
+    median_m: 121
+    sigma_log: 0.50
+    range_m: [44.51, 328.9]
+    group: architecture
+    tier: 2
+  pagoda:
+    dim: height
+    median_m: 41.2
+    sigma_log: 0.40
+    range_m: [18.51, 91.69]
+    group: architecture
+    tier: 2
+  dome_building:
+    dim: diameter
+    median_m: 40
+    sigma_log: 0.50
+    range_m: [14.72, 108.7]
+    group: architecture
+    tier: 2
+  bridge_deck:
+    dim: length
+    median_m: 50
+    sigma_log: 0.60
+    range_m: [15.06, 166]
+    group: architecture
+    tier: 2
+  apartment_block:
+    dim: height
+    median_m: 15.2
+    sigma_log: 0.30
+    range_m: [8.342, 27.7]
+    group: architecture
+    tier: 1
+  fireplace:
+    dim: width
+    median_m: 1.24
+    sigma_log: 0.15
+    range_m: [0.9186, 1.674]
+    group: architecture
+    tier: 2
+  chair_seat:
+    dim: height
+    median_m: 0.45
+    sigma_log: 0.06
+    range_m: [0.3991, 0.5074]
+    group: furniture
+    tier: 1
+    aliases: [seat_height]
+  chair:
+    dim: height
+    median_m: 0.88
+    sigma_log: 0.12
+    range_m: [0.6922, 1.119]
+    group: furniture
+    tier: 1
+  dining_table:
+    dim: height
+    median_m: 0.75
+    sigma_log: 0.04
+    range_m: [0.6923, 0.8125]
+    group: furniture
+    tier: 1
+  desk:
+    dim: height
+    median_m: 0.75
+    sigma_log: 0.04
+    range_m: [0.6923, 0.8125]
+    group: furniture
+    tier: 1
+  coffee_table:
+    dim: height
+    median_m: 0.45
+    sigma_log: 0.10
+    range_m: [0.3684, 0.5496]
+    group: furniture
+    tier: 1
+  sofa:
+    dim: length
+    median_m: 2.0
+    sigma_log: 0.15
+    range_m: [1.482, 2.7]
+    group: furniture
+    tier: 1
+  bed_double:
+    dim: length
+    median_m: 2.05
+    sigma_log: 0.04
+    range_m: [1.892, 2.221]
+    group: furniture
+    tier: 1
+  bookshelf:
+    dim: height
+    median_m: 1.8
+    sigma_log: 0.20
+    range_m: [1.207, 2.685]
+    group: furniture
+    tier: 1
+  kitchen_counter:
+    dim: height
+    median_m: 0.9
+    sigma_log: 0.03
+    range_m: [0.8476, 0.9557]
+    group: furniture
+    tier: 1
+  bathtub:
+    dim: length
+    median_m: 1.7
+    sigma_log: 0.08
+    range_m: [1.449, 1.995]
+    group: furniture
+    tier: 1
+  armchair:
+    dim: height
+    median_m: 0.909
+    sigma_log: 0.10
+    range_m: [0.7442, 1.11]
+    group: furniture
+    tier: 1
+  bar_stool:
+    dim: height
+    median_m: 0.758
+    sigma_log: 0.10
+    range_m: [0.6206, 0.9258]
+    group: furniture
+    tier: 2
+  stool:
+    dim: height
+    median_m: 0.495
+    sigma_log: 0.12
+    range_m: [0.3894, 0.6293]
+    group: furniture
+    tier: 2
+  wardrobe:
+    dim: height
+    median_m: 2.22
+    sigma_log: 0.08
+    range_m: [1.892, 2.605]
+    group: furniture
+    tier: 1
+  dresser:
+    dim: height
+    median_m: 0.954
+    sigma_log: 0.08
+    range_m: [0.8129, 1.12]
+    group: furniture
+    tier: 1
+  nightstand:
+    dim: height
+    median_m: 0.624
+    sigma_log: 0.10
+    range_m: [0.5109, 0.7622]
+    group: furniture
+    tier: 1
+  bed_single:
+    dim: length
+    median_m: 1.95
+    sigma_log: 0.04
+    range_m: [1.8, 2.112]
+    group: furniture
+    tier: 1
+  bunk_bed:
+    dim: height
+    median_m: 1.82
+    sigma_log: 0.08
+    range_m: [1.551, 2.136]
+    group: furniture
+    tier: 2
+  ottoman:
+    dim: height
+    median_m: 0.473
+    sigma_log: 0.12
+    range_m: [0.3721, 0.6013]
+    group: furniture
+    tier: 2
+  dining_chair:
+    dim: height
+    median_m: 0.945
+    sigma_log: 0.08
+    range_m: [0.8053, 1.109]
+    group: furniture
+    tier: 1
+  office_chair:
+    dim: height
+    median_m: 1.13
+    sigma_log: 0.12
+    range_m: [0.8889, 1.437]
+    group: furniture
+    tier: 1
+  sideboard:
+    dim: width
+    median_m: 1.66
+    sigma_log: 0.12
+    range_m: [1.306, 2.11]
+    group: furniture
+    tier: 2
+  cabinet_kitchen_base:
+    dim: height
+    median_m: 0.936
+    sigma_log: 0.04
+    range_m: [0.864, 1.014]
+    group: furniture
+    tier: 1
+  kitchen_island:
+    dim: length
+    median_m: 1.89
+    sigma_log: 0.10
+    range_m: [1.547, 2.308]
+    group: furniture
+    tier: 2
+  shelf_wall:
+    dim: width
+    median_m: 0.963
+    sigma_log: 0.20
+    range_m: [0.6455, 1.437]
+    group: furniture
+    tier: 2
+  tv_stand:
+    dim: width
+    median_m: 1.41
+    sigma_log: 0.12
+    range_m: [1.109, 1.792]
+    group: furniture
+    tier: 1
+  bean_bag:
+    dim: diameter
+    median_m: 0.918
+    sigma_log: 0.15
+    range_m: [0.6801, 1.239]
+    group: furniture
+    tier: 2
+  coat_rack:
+    dim: height
+    median_m: 1.85
+    sigma_log: 0.08
+    range_m: [1.576, 2.171]
+    group: furniture
+    tier: 2
+  mirror_wall:
+    dim: height
+    median_m: 1.08
+    sigma_log: 0.15
+    range_m: [0.8001, 1.458]
+    group: furniture
+    tier: 2
+  bathroom_vanity:
+    dim: width
+    median_m: 1.0
+    sigma_log: 0.08
+    range_m: [0.8521, 1.174]
+    group: furniture
+    tier: 2
+  toilet:
+    dim: length
+    median_m: 0.749
+    sigma_log: 0.05
+    range_m: [0.6777, 0.8278]
+    group: furniture
+    tier: 1
+  shower_stall:
+    dim: width
+    median_m: 0.972
+    sigma_log: 0.05
+    range_m: [0.8795, 1.074]
+    group: furniture
+    tier: 2
+  rug:
+    dim: length
+    median_m: 2.08
+    sigma_log: 0.20
+    range_m: [1.394, 3.103]
+    group: furniture
+    tier: 1
+  refrigerator:
+    dim: height
+    median_m: 1.75
+    sigma_log: 0.10
+    range_m: [1.433, 2.137]
+    group: appliance
+    tier: 1
+  washing_machine:
+    dim: height
+    median_m: 0.85
+    sigma_log: 0.03
+    range_m: [0.8005, 0.9026]
+    group: appliance
+    tier: 1
+  dishwasher:
+    dim: height
+    median_m: 0.875
+    sigma_log: 0.03
+    range_m: [0.824, 0.9291]
+    group: appliance
+    tier: 1
+  oven:
+    dim: height
+    median_m: 0.636
+    sigma_log: 0.04
+    range_m: [0.5871, 0.689]
+    group: appliance
+    tier: 1
+  microwave_oven:
+    dim: width
+    median_m: 0.515
+    sigma_log: 0.05
+    range_m: [0.466, 0.5692]
+    group: appliance
+    tier: 1
+  stove:
+    dim: height
+    median_m: 0.981
+    sigma_log: 0.03
+    range_m: [0.9239, 1.042]
+    group: appliance
+    tier: 1
+  freezer:
+    dim: height
+    median_m: 0.884
+    sigma_log: 0.10
+    range_m: [0.7238, 1.08]
+    group: appliance
+    tier: 2
+  clothes_dryer:
+    dim: height
+    median_m: 0.867
+    sigma_log: 0.03
+    range_m: [0.8165, 0.9206]
+    group: appliance
+    tier: 1
+  robot_vacuum:
+    dim: diameter
+    median_m: 0.337
+    sigma_log: 0.03
+    range_m: [0.3174, 0.3578]
+    group: appliance
+    tier: 2
+  toaster:
+    dim: width
+    median_m: 0.363
+    sigma_log: 0.10
+    range_m: [0.2972, 0.4434]
+    group: appliance
+    tier: 1
+  coffee_maker:
+    dim: height
+    median_m: 0.353
+    sigma_log: 0.15
+    range_m: [0.2615, 0.4765]
+    group: appliance
+    tier: 1
+  blender:
+    dim: height
+    median_m: 0.4
+    sigma_log: 0.12
+    range_m: [0.3147, 0.5085]
+    group: appliance
+    tier: 2
+  air_conditioner_unit:
+    dim: height
+    median_m: 0.707
+    sigma_log: 0.20
+    range_m: [0.4739, 1.055]
+    group: appliance
+    tier: 2
+  water_heater:
+    dim: height
+    median_m: 1.33
+    sigma_log: 0.12
+    range_m: [1.046, 1.691]
+    group: appliance
+    tier: 2
+  fan_floor:
+    dim: diameter
+    median_m: 0.464
+    sigma_log: 0.20
+    range_m: [0.311, 0.6922]
+    group: appliance
+    tier: 2
+  kettle:
+    dim: height
+    median_m: 0.235
+    sigma_log: 0.15
+    range_m: [0.1741, 0.3172]
+    group: appliance
+    tier: 1
+  hair_dryer:
+    dim: length
+    median_m: 0.233
+    sigma_log: 0.15
+    range_m: [0.1726, 0.3145]
+    group: appliance
+    tier: 2
+  person_adult:
+    dim: height
+    median_m: 1.70
+    sigma_log: 0.06
+    range_m: [1.508, 1.917]
+    group: person
+    tier: 1
+    aliases: [person, human, adult]
+  person_child:
+    dim: height
+    median_m: 1.15
+    sigma_log: 0.15
+    range_m: [0.8519, 1.552]
+    group: person
+    tier: 1
+  hand_adult:
+    dim: length
+    median_m: 0.19
+    sigma_log: 0.05
+    range_m: [0.1719, 0.21]
+    group: person
+    tier: 1
+  head_adult:
+    dim: height
+    median_m: 0.23
+    sigma_log: 0.05
+    range_m: [0.2081, 0.2542]
+    group: person
+    tier: 1
+  person_infant:
+    dim: height
+    median_m: 0.52
+    sigma_log: 0.06
+    range_m: [0.4612, 0.5863]
+    group: person
+    tier: 1
+  person_teen:
+    dim: height
+    median_m: 1.65
+    sigma_log: 0.07
+    range_m: [1.434, 1.898]
+    group: person
+    tier: 1
+  foot_adult:
+    dim: length
+    median_m: 0.265
+    sigma_log: 0.04
+    range_m: [0.2446, 0.2871]
+    group: person
+    tier: 1
+  face_adult:
+    dim: height
+    median_m: 0.231
+    sigma_log: 0.05
+    range_m: [0.209, 0.2553]
+    group: person
+    tier: 1
+  dog:
+    dim: height
+    median_m: 0.5
+    sigma_log: 0.30
+    range_m: [0.2744, 0.9111]
+    group: animal
+    tier: 1
+  cat:
+    dim: height
+    median_m: 0.25
+    sigma_log: 0.15
+    range_m: [0.1852, 0.3375]
+    group: animal
+    tier: 1
+  horse:
+    dim: height
+    median_m: 1.55
+    sigma_log: 0.08
+    range_m: [1.321, 1.819]
+    group: animal
+    tier: 1
+  cow:
+    dim: height
+    median_m: 1.35
+    sigma_log: 0.08
+    range_m: [1.15, 1.584]
+    group: animal
+    tier: 1
+  elephant_african:
+    dim: height
+    median_m: 3.1
+    sigma_log: 0.08
+    range_m: [2.642, 3.638]
+    group: animal
+    tier: 1
+  sheep:
+    dim: height
+    median_m: 0.832
+    sigma_log: 0.10
+    range_m: [0.6812, 1.016]
+    group: animal
+    tier: 1
+  pig:
+    dim: height
+    median_m: 0.642
+    sigma_log: 0.12
+    range_m: [0.505, 0.8161]
+    group: animal
+    tier: 1
+  goat:
+    dim: height
+    median_m: 0.657
+    sigma_log: 0.15
+    range_m: [0.4867, 0.8869]
+    group: animal
+    tier: 2
+  chicken:
+    dim: height
+    median_m: 0.455
+    sigma_log: 0.20
+    range_m: [0.305, 0.6788]
+    group: animal
+    tier: 1
+  duck:
+    dim: height
+    median_m: 0.364
+    sigma_log: 0.15
+    range_m: [0.2697, 0.4913]
+    group: animal
+    tier: 2
+  goose:
+    dim: height
+    median_m: 0.51
+    sigma_log: 0.12
+    range_m: [0.4012, 0.6483]
+    group: animal
+    tier: 2
+  rabbit:
+    dim: height
+    median_m: 0.287
+    sigma_log: 0.20
+    range_m: [0.1924, 0.4282]
+    group: animal
+    tier: 1
+  rat:
+    dim: length
+    median_m: 0.234
+    sigma_log: 0.20
+    range_m: [0.1569, 0.3491]
+    group: animal
+    tier: 2
+  squirrel:
+    dim: height
+    median_m: 0.244
+    sigma_log: 0.25
+    range_m: [0.148, 0.4023]
+    group: animal
+    tier: 2
+  deer:
+    dim: height
+    median_m: 1.3
+    sigma_log: 0.12
+    range_m: [1.023, 1.653]
+    group: animal
+    tier: 1
+  moose:
+    dim: height
+    median_m: 2.06
+    sigma_log: 0.10
+    range_m: [1.687, 2.516]
+    group: animal
+    tier: 2
+  bear_brown:
+    dim: height
+    median_m: 1.01
+    sigma_log: 0.20
+    range_m: [0.677, 1.507]
+    group: animal
+    tier: 2
+  wolf:
+    dim: height
+    median_m: 0.772
+    sigma_log: 0.15
+    range_m: [0.5719, 1.042]
+    group: animal
+    tier: 1
+  fox:
+    dim: height
+    median_m: 0.408
+    sigma_log: 0.15
+    range_m: [0.3023, 0.5507]
+    group: animal
+    tier: 1
+  lion:
+    dim: height
+    median_m: 1.26
+    sigma_log: 0.15
+    range_m: [0.9334, 1.701]
+    group: animal
+    tier: 1
+  tiger:
+    dim: height
+    median_m: 1.16
+    sigma_log: 0.15
+    range_m: [0.8593, 1.566]
+    group: animal
+    tier: 1
+  giraffe:
+    dim: height
+    median_m: 5.1
+    sigma_log: 0.10
+    range_m: [4.176, 6.229]
+    group: animal
+    tier: 2
+  zebra:
+    dim: height
+    median_m: 1.43
+    sigma_log: 0.08
+    range_m: [1.219, 1.678]
+    group: animal
+    tier: 1
+  camel:
+    dim: height
+    median_m: 2.1
+    sigma_log: 0.10
+    range_m: [1.719, 2.565]
+    group: animal
+    tier: 2
+  kangaroo:
+    dim: height
+    median_m: 1.54
+    sigma_log: 0.30
+    range_m: [0.8452, 2.806]
+    group: animal
+    tier: 2
+  penguin:
+    dim: height
+    median_m: 0.477
+    sigma_log: 0.20
+    range_m: [0.3197, 0.7116]
+    group: animal
+    tier: 2
+  owl:
+    dim: height
+    median_m: 0.278
+    sigma_log: 0.20
+    range_m: [0.1863, 0.4147]
+    group: animal
+    tier: 2
+  eagle:
+    dim: height
+    median_m: 0.808
+    sigma_log: 0.20
+    range_m: [0.5416, 1.205]
+    group: animal
+    tier: 2
+  parrot:
+    dim: height
+    median_m: 0.339
+    sigma_log: 0.20
+    range_m: [0.2272, 0.5057]
+    group: animal
+    tier: 2
+  frog:
+    dim: length
+    median_m: 0.0707
+    sigma_log: 0.30
+    range_m: [0.0388, 0.1288]
+    group: animal
+    tier: 2
+  turtle:
+    dim: length
+    median_m: 0.302
+    sigma_log: 0.30
+    range_m: [0.1657, 0.5503]
+    group: animal
+    tier: 2
+  snake:
+    dim: length
+    median_m: 1.59
+    sigma_log: 0.40
+    range_m: [0.7144, 3.539]
+    group: animal
+    tier: 2
+  fish_salmon:
+    dim: length
+    median_m: 0.721
+    sigma_log: 0.30
+    range_m: [0.3957, 1.314]
+    group: animal
+    tier: 2
+  shark:
+    dim: length
+    median_m: 3.54
+    sigma_log: 0.40
+    range_m: [1.591, 7.878]
+    group: animal
+    tier: 2
+  crocodile:
+    dim: length
+    median_m: 4.12
+    sigma_log: 0.25
+    range_m: [2.499, 6.793]
+    group: animal
+    tier: 2
+  dolphin:
+    dim: length
+    median_m: 2.55
+    sigma_log: 0.25
+    range_m: [1.547, 4.204]
+    group: animal
+    tier: 2
+  octopus:
+    dim: length
+    median_m: 0.63
+    sigma_log: 0.40
+    range_m: [0.2831, 1.402]
+    group: animal
+    tier: 2
+  butterfly:
+    dim: width
+    median_m: 0.0808
+    sigma_log: 0.30
+    range_m: [0.04434, 0.1472]
+    group: animal
+    tier: 2
+  bee:
+    dim: length
+    median_m: 0.015
+    sigma_log: 0.20
+    range_m: [0.01005, 0.02238]
+    group: animal
+    tier: 2
+  ant:
+    dim: length
+    median_m: 0.006
+    sigma_log: 0.25
+    range_m: [0.003639, 0.009892]
+    group: animal
+    tier: 2
+  spider:
+    dim: length
+    median_m: 0.021
+    sigma_log: 0.35
+    range_m: [0.01043, 0.04229]
+    group: animal
+    tier: 2
+  car:
+    dim: height
+    median_m: 1.5
+    sigma_log: 0.06
+    range_m: [1.33, 1.691]
+    group: vehicle
+    tier: 1
+    aliases: [automobile]
+  bus:
+    dim: height
+    median_m: 3.2
+    sigma_log: 0.06
+    range_m: [2.838, 3.608]
+    group: vehicle
+    tier: 1
+  bicycle:
+    dim: length
+    median_m: 1.7
+    sigma_log: 0.05
+    range_m: [1.538, 1.879]
+    group: vehicle
+    tier: 1
+    aliases: [bike]
+  motorcycle:
+    dim: length
+    median_m: 2.15
+    sigma_log: 0.08
+    range_m: [1.832, 2.523]
+    group: vehicle
+    tier: 1
+  truck_pickup:
+    dim: length
+    median_m: 5.3
+    sigma_log: 0.06
+    range_m: [4.701, 5.976]
+    group: vehicle
+    tier: 1
+  van_minivan:
+    dim: length
+    median_m: 5.2
+    sigma_log: 0.05
+    range_m: [4.705, 5.747]
+    group: vehicle
+    tier: 1
+  taxi:
+    dim: height
+    median_m: 1.45
+    sigma_log: 0.04
+    range_m: [1.339, 1.571]
+    group: vehicle
+    tier: 1
+  train_car:
+    dim: length
+    median_m: 20.4
+    sigma_log: 0.05
+    range_m: [18.46, 22.55]
+    group: vehicle
+    tier: 2
+  scooter:
+    dim: length
+    median_m: 1.91
+    sigma_log: 0.08
+    range_m: [1.628, 2.241]
+    group: vehicle
+    tier: 1
+  tractor:
+    dim: length
+    median_m: 3.57
+    sigma_log: 0.10
+    range_m: [2.923, 4.36]
+    group: vehicle
+    tier: 1
+  ambulance:
+    dim: length
+    median_m: 6.06
+    sigma_log: 0.06
+    range_m: [5.375, 6.833]
+    group: vehicle
+    tier: 1
+  fire_truck:
+    dim: length
+    median_m: 9.09
+    sigma_log: 0.08
+    range_m: [7.746, 10.67]
+    group: vehicle
+    tier: 1
+  school_bus:
+    dim: length
+    median_m: 12
+    sigma_log: 0.05
+    range_m: [10.86, 13.26]
+    group: vehicle
+    tier: 1
+  trailer_truck:
+    dim: length
+    median_m: 16.5
+    sigma_log: 0.06
+    range_m: [14.63, 18.6]
+    group: vehicle
+    tier: 2
+  bulldozer:
+    dim: length
+    median_m: 6.5
+    sigma_log: 0.10
+    range_m: [5.322, 7.939]
+    group: vehicle
+    tier: 2
+  motorboat:
+    dim: length
+    median_m: 5.15
+    sigma_log: 0.25
+    range_m: [3.124, 8.491]
+    group: vehicle
+    tier: 2
+  sailboat:
+    dim: length
+    median_m: 9.27
+    sigma_log: 0.25
+    range_m: [5.623, 15.28]
+    group: vehicle
+    tier: 1
+  canoe:
+    dim: length
+    median_m: 4.04
+    sigma_log: 0.10
+    range_m: [3.308, 4.934]
+    group: vehicle
+    tier: 2
+  skateboard:
+    dim: length
+    median_m: 0.84
+    sigma_log: 0.05
+    range_m: [0.7601, 0.9283]
+    group: vehicle
+    tier: 1
+  tricycle:
+    dim: length
+    median_m: 0.99
+    sigma_log: 0.10
+    range_m: [0.8105, 1.209]
+    group: vehicle
+    tier: 1
+  stop_sign:
+    dim: width
+    median_m: 0.75
+    sigma_log: 0.08
+    range_m: [0.6391, 0.8801]
+    group: street
+    tier: 1
+  fire_hydrant:
+    dim: height
+    median_m: 0.75
+    sigma_log: 0.12
+    range_m: [0.59, 0.9534]
+    group: street
+    tier: 1
+  street_lamp:
+    dim: height
+    median_m: 7.0
+    sigma_log: 0.25
+    range_m: [4.246, 11.54]
+    group: street
+    tier: 1
+  bench:
+    dim: length
+    median_m: 1.6
+    sigma_log: 0.15
+    range_m: [1.185, 2.16]
+    group: street
+    tier: 1
+  traffic_cone:
+    dim: height
+    median_m: 0.7
+    sigma_log: 0.20
+    range_m: [0.4692, 1.044]
+    group: street
+    tier: 1
+  manhole_cover:
+    dim: diameter
+    median_m: 0.65
+    sigma_log: 0.06
+    range_m: [0.5765, 0.7329]
+    group: street
+    tier: 1
+  traffic_light:
+    dim: height
+    median_m: 4.5
+    sigma_log: 0.10
+    range_m: [3.684, 5.496]
+    group: street
+    tier: 1
+  mailbox_street:
+    dim: height
+    median_m: 1.12
+    sigma_log: 0.10
+    range_m: [0.917, 1.368]
+    group: street
+    tier: 1
+  parking_meter:
+    dim: height
+    median_m: 1.31
+    sigma_log: 0.08
+    range_m: [1.116, 1.537]
+    group: street
+    tier: 1
+  bus_stop_shelter:
+    dim: height
+    median_m: 2.52
+    sigma_log: 0.10
+    range_m: [2.063, 3.078]
+    group: street
+    tier: 2
+  road_sign_speed:
+    dim: diameter
+    median_m: 0.654
+    sigma_log: 0.05
+    range_m: [0.5918, 0.7228]
+    group: street
+    tier: 1
+  trash_can_street:
+    dim: height
+    median_m: 1.17
+    sigma_log: 0.12
+    range_m: [0.9204, 1.487]
+    group: street
+    tier: 2
+  newspaper_box:
+    dim: height
+    median_m: 1.27
+    sigma_log: 0.10
+    range_m: [1.04, 1.551]
+    group: street
+    tier: 2
+  bollard:
+    dim: height
+    median_m: 0.927
+    sigma_log: 0.10
+    range_m: [0.759, 1.132]
+    group: street
+    tier: 1
+  guardrail:
+    dim: height
+    median_m: 0.765
+    sigma_log: 0.05
+    range_m: [0.6922, 0.8455]
+    group: street
+    tier: 2
+  telephone_pole:
+    dim: height
+    median_m: 10.1
+    sigma_log: 0.25
+    range_m: [6.126, 16.65]
+    group: street
+    tier: 1
+  utility_pole:
+    dim: height
+    median_m: 12.1
+    sigma_log: 0.20
+    range_m: [8.111, 18.05]
+    group: street
+    tier: 1
+  billboard:
+    dim: width
+    median_m: 9
+    sigma_log: 0.25
+    range_m: [5.459, 14.84]
+    group: street
+    tier: 2
+  bike_rack:
+    dim: width
+    median_m: 0.714
+    sigma_log: 0.12
+    range_m: [0.5617, 0.9077]
+    group: street
+    tier: 2
+  street_sign_post:
+    dim: height
+    median_m: 2.6
+    sigma_log: 0.10
+    range_m: [2.129, 3.176]
+    group: street
+    tier: 2
+  pedestrian_bridge:
+    dim: length
+    median_m: 20.2
+    sigma_log: 0.20
+    range_m: [13.54, 30.13]
+    group: street
+    tier: 2
+  coffee_mug:
+    dim: height
+    median_m: 0.095
+    sigma_log: 0.08
+    range_m: [0.08095, 0.1115]
+    group: tableware
+    tier: 1
+    aliases: [mug]
+  dinner_plate:
+    dim: diameter
+    median_m: 0.26
+    sigma_log: 0.06
+    range_m: [0.2306, 0.2931]
+    group: tableware
+    tier: 1
+  wine_glass:
+    dim: height
+    median_m: 0.20
+    sigma_log: 0.15
+    range_m: [0.1482, 0.27]
+    group: tableware
+    tier: 1
+  fork:
+    dim: length
+    median_m: 0.19
+    sigma_log: 0.06
+    range_m: [0.1685, 0.2142]
+    group: tableware
+    tier: 1
+  knife:
+    dim: length
+    median_m: 0.21
+    sigma_log: 0.05
+    range_m: [0.19, 0.2321]
+    group: tableware
+    tier: 1
+  spoon:
+    dim: length
+    median_m: 0.172
+    sigma_log: 0.05
+    range_m: [0.1556, 0.1901]
+    group: tableware
+    tier: 1
+  bowl_cereal:
+    dim: diameter
+    median_m: 0.16
+    sigma_log: 0.08
+    range_m: [0.1363, 0.1878]
+    group: tableware
+    tier: 1
+  teacup:
+    dim: height
+    median_m: 0.0728
+    sigma_log: 0.08
+    range_m: [0.06204, 0.08543]
+    group: tableware
+    tier: 2
+  saucer:
+    dim: diameter
+    median_m: 0.144
+    sigma_log: 0.05
+    range_m: [0.1303, 0.1591]
+    group: tableware
+    tier: 1
+  soup_bowl:
+    dim: diameter
+    median_m: 0.196
+    sigma_log: 0.08
+    range_m: [0.167, 0.23]
+    group: tableware
+    tier: 1
+  dessert_plate:
+    dim: diameter
+    median_m: 0.204
+    sigma_log: 0.05
+    range_m: [0.1846, 0.2255]
+    group: tableware
+    tier: 1
+  chopsticks:
+    dim: length
+    median_m: 0.232
+    sigma_log: 0.04
+    range_m: [0.2142, 0.2513]
+    group: tableware
+    tier: 1
+  ramekin:
+    dim: diameter
+    median_m: 0.0918
+    sigma_log: 0.06
+    range_m: [0.08142, 0.1035]
+    group: tableware
+    tier: 2
+  tumbler:
+    dim: height
+    median_m: 0.136
+    sigma_log: 0.10
+    range_m: [0.1113, 0.1661]
+    group: tableware
+    tier: 2
+  champagne_flute:
+    dim: height
+    median_m: 0.224
+    sigma_log: 0.08
+    range_m: [0.1909, 0.2629]
+    group: tableware
+    tier: 1
+  espresso_cup:
+    dim: height
+    median_m: 0.0606
+    sigma_log: 0.10
+    range_m: [0.04962, 0.07402]
+    group: tableware
+    tier: 2
+  serving_platter:
+    dim: length
+    median_m: 0.424
+    sigma_log: 0.08
+    range_m: [0.3613, 0.4976]
+    group: tableware
+    tier: 2
+  cutting_board:
+    dim: length
+    median_m: 0.357
+    sigma_log: 0.10
+    range_m: [0.2923, 0.436]
+    group: tableware
+    tier: 2
+  teapot:
+    dim: height
+    median_m: 0.203
+    sigma_log: 0.12
+    range_m: [0.1597, 0.2581]
+    group: tableware
+    tier: 1
+  gravy_boat:
+    dim: length
+    median_m: 0.206
+    sigma_log: 0.10
+    range_m: [0.1687, 0.2516]
+    group: tableware
+    tier: 2
+  salad_bowl:
+    dim: diameter
+    median_m: 0.291
+    sigma_log: 0.10
+    range_m: [0.2383, 0.3554]
+    group: tableware
+    tier: 2
+  pasta_bowl:
+    dim: diameter
+    median_m: 0.282
+    sigma_log: 0.08
+    range_m: [0.2403, 0.3309]
+    group: tableware
+    tier: 2
+  cake_stand:
+    dim: diameter
+    median_m: 0.306
+    sigma_log: 0.10
+    range_m: [0.2505, 0.3737]
+    group: tableware
+    tier: 2
+  wine_bottle:
+    dim: height
+    median_m: 0.31
+    sigma_log: 0.04
+    range_m: [0.2862, 0.3358]
+    group: container
+    tier: 1
+    aliases: [bottle]
+  beer_bottle:
+    dim: height
+    median_m: 0.23
+    sigma_log: 0.06
+    range_m: [0.204, 0.2593]
+    group: container
+    tier: 1
+  soda_can:
+    dim: height
+    median_m: 0.122
+    sigma_log: 0.03
+    range_m: [0.1149, 0.1295]
+    group: container
+    tier: 1
+  water_bottle:
+    dim: height
+    median_m: 0.22
+    sigma_log: 0.20
+    range_m: [0.1475, 0.3282]
+    group: container
+    tier: 1
+  milk_carton:
+    dim: height
+    median_m: 0.212
+    sigma_log: 0.06
+    range_m: [0.188, 0.239]
+    group: container
+    tier: 1
+  jar_glass:
+    dim: height
+    median_m: 0.127
+    sigma_log: 0.15
+    range_m: [0.09408, 0.1714]
+    group: container
+    tier: 2
+  bucket:
+    dim: height
+    median_m: 0.303
+    sigma_log: 0.10
+    range_m: [0.2481, 0.3701]
+    group: container
+    tier: 1
+  mason_jar:
+    dim: height
+    median_m: 0.143
+    sigma_log: 0.10
+    range_m: [0.1171, 0.1747]
+    group: container
+    tier: 2
+  thermos:
+    dim: height
+    median_m: 0.294
+    sigma_log: 0.08
+    range_m: [0.2505, 0.345]
+    group: container
+    tier: 1
+  paint_can:
+    dim: height
+    median_m: 0.216
+    sigma_log: 0.10
+    range_m: [0.1768, 0.2638]
+    group: container
+    tier: 1
+  shampoo_bottle:
+    dim: height
+    median_m: 0.193
+    sigma_log: 0.12
+    range_m: [0.1518, 0.2454]
+    group: container
+    tier: 2
+  bottle_2l:
+    dim: height
+    median_m: 0.32
+    sigma_log: 0.05
+    range_m: [0.2895, 0.3537]
+    group: container
+    tier: 2
+  cardboard_box:
+    dim: length
+    median_m: 0.404
+    sigma_log: 0.20
+    range_m: [0.2708, 0.6027]
+    group: container
+    tier: 2
+  storage_bin:
+    dim: length
+    median_m: 0.54
+    sigma_log: 0.15
+    range_m: [0.4, 0.7289]
+    group: container
+    tier: 2
+  suitcase:
+    dim: height
+    median_m: 0.67
+    sigma_log: 0.12
+    range_m: [0.527, 0.8517]
+    group: container
+    tier: 1
+  handbag:
+    dim: width
+    median_m: 0.324
+    sigma_log: 0.20
+    range_m: [0.2172, 0.4834]
+    group: container
+    tier: 1
+  tupperware_box:
+    dim: length
+    median_m: 0.295
+    sigma_log: 0.12
+    range_m: [0.2321, 0.375]
+    group: container
+    tier: 2
+  pot_cooking:
+    dim: diameter
+    median_m: 0.247
+    sigma_log: 0.12
+    range_m: [0.1943, 0.314]
+    group: container
+    tier: 2
+  pan_frying:
+    dim: diameter
+    median_m: 0.288
+    sigma_log: 0.10
+    range_m: [0.2358, 0.3518]
+    group: container
+    tier: 2
+  kettle_metal:
+    dim: height
+    median_m: 0.245
+    sigma_log: 0.10
+    range_m: [0.2006, 0.2992]
+    group: container
+    tier: 2
+  basket_wicker:
+    dim: diameter
+    median_m: 0.35
+    sigma_log: 0.15
+    range_m: [0.2593, 0.4725]
+    group: container
+    tier: 2
+  trash_bin:
+    dim: height
+    median_m: 0.66
+    sigma_log: 0.12
+    range_m: [0.5192, 0.839]
+    group: container
+    tier: 1
+  laptop:
+    dim: width
+    median_m: 0.34
+    sigma_log: 0.08
+    range_m: [0.2897, 0.399]
+    group: electronics
+    tier: 1
+  smartphone:
+    dim: height
+    median_m: 0.15
+    sigma_log: 0.05
+    range_m: [0.1357, 0.1658]
+    group: electronics
+    tier: 1
+    aliases: [phone]
+  television:
+    dim: width
+    median_m: 1.1
+    sigma_log: 0.25
+    range_m: [0.6672, 1.814]
+    group: electronics
+    tier: 1
+  computer_monitor:
+    dim: width
+    median_m: 0.55
+    sigma_log: 0.20
+    range_m: [0.3687, 0.8205]
+    group: electronics
+    tier: 1
+  keyboard:
+    dim: width
+    median_m: 0.44
+    sigma_log: 0.08
+    range_m: [0.3749, 0.5163]
+    group: electronics
+    tier: 1
+  computer_mouse:
+    dim: length
+    median_m: 0.11
+    sigma_log: 0.08
+    range_m: [0.09374, 0.1291]
+    group: electronics
+    tier: 1
+  tablet:
+    dim: width
+    median_m: 0.252
+    sigma_log: 0.08
+    range_m: [0.2147, 0.2957]
+    group: electronics
+    tier: 1
+  desktop_tower:
+    dim: height
+    median_m: 0.459
+    sigma_log: 0.10
+    range_m: [0.3758, 0.5606]
+    group: electronics
+    tier: 1
+  printer:
+    dim: width
+    median_m: 0.486
+    sigma_log: 0.12
+    range_m: [0.3823, 0.6178]
+    group: electronics
+    tier: 1
+  game_console:
+    dim: width
+    median_m: 0.315
+    sigma_log: 0.10
+    range_m: [0.2579, 0.3847]
+    group: electronics
+    tier: 1
+  speaker_bookshelf:
+    dim: height
+    median_m: 0.354
+    sigma_log: 0.15
+    range_m: [0.2622, 0.4779]
+    group: electronics
+    tier: 2
+  router:
+    dim: width
+    median_m: 0.236
+    sigma_log: 0.12
+    range_m: [0.1856, 0.3]
+    group: electronics
+    tier: 1
+  headphones:
+    dim: width
+    median_m: 0.184
+    sigma_log: 0.15
+    range_m: [0.1363, 0.2484]
+    group: electronics
+    tier: 1
+  camera_dslr:
+    dim: width
+    median_m: 0.13
+    sigma_log: 0.08
+    range_m: [0.1108, 0.1526]
+    group: electronics
+    tier: 1
+  smartwatch:
+    dim: diameter
+    median_m: 0.0404
+    sigma_log: 0.06
+    range_m: [0.03583, 0.04555]
+    group: electronics
+    tier: 2
+  remote_control:
+    dim: length
+    median_m: 0.191
+    sigma_log: 0.10
+    range_m: [0.1564, 0.2333]
+    group: electronics
+    tier: 2
+  radio_portable:
+    dim: height
+    median_m: 0.228
+    sigma_log: 0.12
+    range_m: [0.1794, 0.2898]
+    group: electronics
+    tier: 2
+  microphone:
+    dim: height
+    median_m: 0.192
+    sigma_log: 0.12
+    range_m: [0.151, 0.2441]
+    group: electronics
+    tier: 2
+  projector:
+    dim: width
+    median_m: 0.345
+    sigma_log: 0.12
+    range_m: [0.2714, 0.4386]
+    group: electronics
+    tier: 1
+  webcam:
+    dim: width
+    median_m: 0.0864
+    sigma_log: 0.10
+    range_m: [0.07074, 0.1055]
+    group: electronics
+    tier: 2
+  smart_speaker:
+    dim: diameter
+    median_m: 0.107
+    sigma_log: 0.08
+    range_m: [0.09118, 0.1256]
+    group: electronics
+    tier: 2
+  e_reader:
+    dim: height
+    median_m: 0.182
+    sigma_log: 0.06
+    range_m: [0.1614, 0.2052]
+    group: electronics
+    tier: 2
+  usb_flash_drive:
+    dim: length
+    median_m: 0.0535
+    sigma_log: 0.10
+    range_m: [0.0438, 0.06535]
+    group: electronics
+    tier: 2
+  game_controller:
+    dim: length
+    median_m: 0.162
+    sigma_log: 0.10
+    range_m: [0.1326, 0.1979]
+    group: electronics
+    tier: 2
+  thermostat:
+    dim: width
+    median_m: 0.109
+    sigma_log: 0.08
+    range_m: [0.09288, 0.1279]
+    group: electronics
+    tier: 2
+  calculator:
+    dim: height
+    median_m: 0.141
+    sigma_log: 0.05
+    range_m: [0.1276, 0.1558]
+    group: electronics
+    tier: 2
+  ballpoint_pen:
+    dim: length
+    median_m: 0.14
+    sigma_log: 0.05
+    range_m: [0.1267, 0.1547]
+    group: tool
+    tier: 1
+  sheet_paper:
+    dim: height
+    median_m: 0.297
+    sigma_log: 0.03
+    range_m: [0.2797, 0.3154]
+    group: tool
+    tier: 1
+  book:
+    dim: height
+    median_m: 0.23
+    sigma_log: 0.15
+    range_m: [0.1704, 0.3105]
+    group: tool
+    tier: 1
+  credit_card:
+    dim: width
+    median_m: 0.0856
+    sigma_log: 0.02
+    range_m: [0.08224, 0.08909]
+    group: tool
+    tier: 1
+  pencil:
+    dim: length
+    median_m: 0.187
+    sigma_log: 0.05
+    range_m: [0.1692, 0.2067]
+    group: tool
+    tier: 1
+  scissors:
+    dim: length
+    median_m: 0.194
+    sigma_log: 0.06
+    range_m: [0.1721, 0.2187]
+    group: tool
+    tier: 1
+  hammer:
+    dim: length
+    median_m: 0.321
+    sigma_log: 0.08
+    range_m: [0.2735, 0.3767]
+    group: tool
+    tier: 1
+  screwdriver:
+    dim: length
+    median_m: 0.238
+    sigma_log: 0.10
+    range_m: [0.1949, 0.2907]
+    group: tool
+    tier: 1
+  wrench:
+    dim: length
+    median_m: 0.323
+    sigma_log: 0.12
+    range_m: [0.2541, 0.4106]
+    group: tool
+    tier: 2
+  pliers:
+    dim: length
+    median_m: 0.189
+    sigma_log: 0.10
+    range_m: [0.1547, 0.2308]
+    group: tool
+    tier: 2
+  tape_measure:
+    dim: width
+    median_m: 0.053
+    sigma_log: 0.10
+    range_m: [0.04339, 0.06473]
+    group: tool
+    tier: 2
+  notebook:
+    dim: height
+    median_m: 0.214
+    sigma_log: 0.06
+    range_m: [0.1898, 0.2413]
+    group: tool
+    tier: 1
+  envelope:
+    dim: width
+    median_m: 0.229
+    sigma_log: 0.05
+    range_m: [0.2072, 0.2531]
+    group: tool
+    tier: 2
+  stapler:
+    dim: length
+    median_m: 0.198
+    sigma_log: 0.08
+    range_m: [0.1687, 0.2324]
+    group: tool
+    tier: 2
+  eraser:
+    dim: length
+    median_m: 0.051
+    sigma_log: 0.10
+    range_m: [0.04176, 0.06229]
+    group: tool
+    tier: 2
+  ruler:
+    dim: length
+    median_m: 0.348
+    sigma_log: 0.02
+    range_m: [0.3344, 0.3622]
+    group: tool
+    tier: 2
+  usb_cable:
+    dim: length
+    median_m: 1.19
+    sigma_log: 0.25
+    range_m: [0.7218, 1.962]
+    group: tool
+    tier: 2
+  key_house:
+    dim: length
+    median_m: 0.0618
+    sigma_log: 0.15
+    range_m: [0.04578, 0.08342]
+    group: tool
+    tier: 2
+  padlock:
+    dim: width
+    median_m: 0.052
+    sigma_log: 0.15
+    range_m: [0.03852, 0.07019]
+    group: tool
+    tier: 2
+  flashlight:
+    dim: length
+    median_m: 0.161
+    sigma_log: 0.15
+    range_m: [0.1193, 0.2173]
+    group: tool
+    tier: 1
+  battery_aa:
+    dim: length
+    median_m: 0.05
+    sigma_log: 0.02
+    range_m: [0.04804, 0.05204]
+    group: tool
+    tier: 1
+  battery_9v:
+    dim: height
+    median_m: 0.048
+    sigma_log: 0.02
+    range_m: [0.04612, 0.04996]
+    group: tool
+    tier: 2
+  glue_stick:
+    dim: length
+    median_m: 0.102
+    sigma_log: 0.05
+    range_m: [0.09229, 0.1127]
+    group: tool
+    tier: 2
+  paintbrush:
+    dim: length
+    median_m: 0.218
+    sigma_log: 0.12
+    range_m: [0.1715, 0.2771]
+    group: tool
+    tier: 2
+  toothbrush:
+    dim: length
+    median_m: 0.201
+    sigma_log: 0.08
+    range_m: [0.1713, 0.2359]
+    group: tool
+    tier: 2
+  comb:
+    dim: length
+    median_m: 0.158
+    sigma_log: 0.10
+    range_m: [0.1294, 0.193]
+    group: tool
+    tier: 2
+  clock_wall:
+    dim: diameter
+    median_m: 0.309
+    sigma_log: 0.20
+    range_m: [0.2071, 0.461]
+    group: tool
+    tier: 2
+  plunger:
+    dim: length
+    median_m: 0.648
+    sigma_log: 0.15
+    range_m: [0.4801, 0.8747]
+    group: tool
+    tier: 2
+  shovel:
+    dim: length
+    median_m: 1.28
+    sigma_log: 0.10
+    range_m: [1.048, 1.563]
+    group: tool
+    tier: 2
+  rake:
+    dim: length
+    median_m: 1.58
+    sigma_log: 0.10
+    range_m: [1.294, 1.93]
+    group: tool
+    tier: 2
+  axe:
+    dim: length
+    median_m: 0.8
+    sigma_log: 0.15
+    range_m: [0.5927, 1.08]
+    group: tool
+    tier: 2
+  saw:
+    dim: length
+    median_m: 0.535
+    sigma_log: 0.15
+    range_m: [0.3963, 0.7222]
+    group: tool
+    tier: 2
+  drill_power:
+    dim: length
+    median_m: 0.258
+    sigma_log: 0.15
+    range_m: [0.1911, 0.3483]
+    group: tool
+    tier: 2
+  measuring_cup:
+    dim: height
+    median_m: 0.131
+    sigma_log: 0.10
+    range_m: [0.1073, 0.16]
+    group: tool
+    tier: 2
+  spatula:
+    dim: length
+    median_m: 0.351
+    sigma_log: 0.12
+    range_m: [0.2761, 0.4462]
+    group: tool
+    tier: 2
+  whisk:
+    dim: length
+    median_m: 0.308
+    sigma_log: 0.08
+    range_m: [0.2625, 0.3614]
+    group: tool
+    tier: 2
+  ladle:
+    dim: length
+    median_m: 0.33
+    sigma_log: 0.10
+    range_m: [0.2702, 0.4031]
+    group: tool
+    tier: 2
+  rolling_pin:
+    dim: length
+    median_m: 0.491
+    sigma_log: 0.12
+    range_m: [0.3862, 0.6242]
+    group: tool
+    tier: 2
+  grill_tongs:
+    dim: length
+    median_m: 0.371
+    sigma_log: 0.10
+    range_m: [0.3037, 0.4531]
+    group: tool
+    tier: 2
+  can_opener:
+    dim: length
+    median_m: 0.151
+    sigma_log: 0.10
+    range_m: [0.1236, 0.1844]
+    group: tool
+    tier: 2
+  backpack:
+    dim: height
+    median_m: 0.46
+    sigma_log: 0.15
+    range_m: [0.3408, 0.6209]
+    group: clothing
+    tier: 1
+  shoe_adult:
+    dim: length
+    median_m: 0.28
+    sigma_log: 0.05
+    range_m: [0.2534, 0.3094]
+    group: clothing
+    tier: 1
+  t_shirt:
+    dim: length
+    median_m: 0.742
+    sigma_log: 0.10
+    range_m: [0.6075, 0.9063]
+    group: clothing
+    tier: 1
+  hat:
+    dim: diameter
+    median_m: 0.286
+    sigma_log: 0.08
+    range_m: [0.2437, 0.3356]
+    group: clothing
+    tier: 1
+  sock:
+    dim: length
+    median_m: 0.292
+    sigma_log: 0.08
+    range_m: [0.2488, 0.3427]
+    group: clothing
+    tier: 2
+  glove:
+    dim: length
+    median_m: 0.27
+    sigma_log: 0.08
+    range_m: [0.2301, 0.3168]
+    group: clothing
+    tier: 2
+  belt:
+    dim: length
+    median_m: 1.02
+    sigma_log: 0.10
+    range_m: [0.8351, 1.246]
+    group: clothing
+    tier: 1
+  scarf:
+    dim: length
+    median_m: 1.72
+    sigma_log: 0.15
+    range_m: [1.274, 2.322]
+    group: clothing
+    tier: 2
+  jacket:
+    dim: length
+    median_m: 0.728
+    sigma_log: 0.10
+    range_m: [0.596, 0.8892]
+    group: clothing
+    tier: 1
+  skirt:
+    dim: length
+    median_m: 0.663
+    sigma_log: 0.15
+    range_m: [0.4912, 0.895]
+    group: clothing
+    tier: 2
+  dress:
+    dim: length
+    median_m: 1.11
+    sigma_log: 0.15
+    range_m: [0.8223, 1.498]
+    group: clothing
+    tier: 1
+  jeans:
+    dim: length
+    median_m: 1.06
+    sigma_log: 0.08
+    range_m: [0.9033, 1.244]
+    group: clothing
+    tier: 1
+  necktie:
+    dim: length
+    median_m: 1.4
+    sigma_log: 0.10
+    range_m: [1.146, 1.71]
+    group: clothing
+    tier: 2
+  sunglasses:
+    dim: width
+    median_m: 0.146
+    sigma_log: 0.10
+    range_m: [0.1195, 0.1783]
+    group: clothing
+    tier: 2
+  watch_wrist:
+    dim: diameter
+    median_m: 0.0408
+    sigma_log: 0.08
+    range_m: [0.03477, 0.04788]
+    group: clothing
+    tier: 2
+  umbrella:
+    dim: diameter
+    median_m: 1.18
+    sigma_log: 0.20
+    range_m: [0.791, 1.76]
+    group: clothing
+    tier: 2
+  rain_boot:
+    dim: height
+    median_m: 0.416
+    sigma_log: 0.12
+    range_m: [0.3272, 0.5288]
+    group: clothing
+    tier: 2
+  high_heel:
+    dim: height
+    median_m: 0.103
+    sigma_log: 0.10
+    range_m: [0.08433, 0.1258]
+    group: clothing
+    tier: 2
+  baseball_cap:
+    dim: diameter
+    median_m: 0.222
+    sigma_log: 0.05
+    range_m: [0.2009, 0.2453]
+    group: clothing
+    tier: 2
+  helmet:
+    dim: diameter
+    median_m: 0.24
+    sigma_log: 0.08
+    range_m: [0.2045, 0.2816]
+    group: clothing
+    tier: 2
+  wallet:
+    dim: length
+    median_m: 0.112
+    sigma_log: 0.08
+    range_m: [0.09544, 0.1314]
+    group: clothing
+    tier: 2
+  handkerchief:
+    dim: width
+    median_m: 0.327
+    sigma_log: 0.10
+    range_m: [0.2677, 0.3994]
+    group: clothing
+    tier: 2
+  coat_winter:
+    dim: length
+    median_m: 1.03
+    sigma_log: 0.10
+    range_m: [0.8433, 1.258]
+    group: clothing
+    tier: 2
+  basketball:
+    dim: diameter
+    median_m: 0.242
+    sigma_log: 0.03
+    range_m: [0.2279, 0.257]
+    group: sport
+    tier: 1
+  soccer_ball:
+    dim: diameter
+    median_m: 0.22
+    sigma_log: 0.02
+    range_m: [0.2114, 0.229]
+    group: sport
+    tier: 1
+  tennis_ball:
+    dim: diameter
+    median_m: 0.067
+    sigma_log: 0.03
+    range_m: [0.0631, 0.07114]
+    group: sport
+    tier: 1
+  golf_ball:
+    dim: diameter
+    median_m: 0.0427
+    sigma_log: 0.02
+    range_m: [0.04103, 0.04444]
+    group: sport
+    tier: 1
+  tennis_racket:
+    dim: length
+    median_m: 0.685
+    sigma_log: 0.03
+    range_m: [0.6451, 0.7274]
+    group: sport
+    tier: 1
+  baseball:
+    dim: diameter
+    median_m: 0.0737
+    sigma_log: 0.02
+    range_m: [0.07081, 0.07671]
+    group: sport
+    tier: 2
+  volleyball:
+    dim: diameter
+    median_m: 0.221
+    sigma_log: 0.02
+    range_m: [0.2123, 0.23]
+    group: sport
+    tier: 1
+  american_football:
+    dim: length
+    median_m: 0.283
+    sigma_log: 0.03
+    range_m: [0.2665, 0.3005]
+    group: sport
+    tier: 2
+  ping_pong_ball:
+    dim: diameter
+    median_m: 0.04
+    sigma_log: 0.02
+    range_m: [0.03843, 0.04163]
+    group: sport
+    tier: 2
+  bowling_ball:
+    dim: diameter
+    median_m: 0.217
+    sigma_log: 0.02
+    range_m: [0.2085, 0.2259]
+    group: sport
+    tier: 2
+  hockey_puck:
+    dim: diameter
+    median_m: 0.076
+    sigma_log: 0.03
+    range_m: [0.07157, 0.0807]
+    group: sport
+    tier: 2
+  dumbbell:
+    dim: length
+    median_m: 0.367
+    sigma_log: 0.15
+    range_m: [0.2719, 0.4954]
+    group: sport
+    tier: 2
+  yoga_mat:
+    dim: length
+    median_m: 1.96
+    sigma_log: 0.04
+    range_m: [1.809, 2.123]
+    group: sport
+    tier: 1
+  baseball_bat:
+    dim: length
+    median_m: 0.858
+    sigma_log: 0.04
+    range_m: [0.792, 0.9295]
+    group: sport
+    tier: 2
+  ski:
+    dim: length
+    median_m: 1.93
+    sigma_log: 0.10
+    range_m: [1.58, 2.357]
+    group: sport
+    tier: 1
+  surfboard:
+    dim: length
+    median_m: 2.45
+    sigma_log: 0.15
+    range_m: [1.815, 3.307]
+    group: sport
+    tier: 2
+  egg_chicken:
+    dim: length
+    median_m: 0.057
+    sigma_log: 0.05
+    range_m: [0.05158, 0.06299]
+    group: food
+    tier: 1
+  apple:
+    dim: diameter
+    median_m: 0.075
+    sigma_log: 0.10
+    range_m: [0.0614, 0.09161]
+    group: food
+    tier: 1
+  banana:
+    dim: length
+    median_m: 0.19
+    sigma_log: 0.10
+    range_m: [0.1556, 0.2321]
+    group: food
+    tier: 1
+  orange:
+    dim: diameter
+    median_m: 0.084
+    sigma_log: 0.06
+    range_m: [0.0745, 0.09471]
+    group: food
+    tier: 1
+  lemon:
+    dim: length
+    median_m: 0.0824
+    sigma_log: 0.08
+    range_m: [0.07022, 0.0967]
+    group: food
+    tier: 2
+  potato:
+    dim: length
+    median_m: 0.106
+    sigma_log: 0.25
+    range_m: [0.06429, 0.1748]
+    group: food
+    tier: 2
+  carrot:
+    dim: length
+    median_m: 0.18
+    sigma_log: 0.25
+    range_m: [0.1092, 0.2968]
+    group: food
+    tier: 2
+  tomato:
+    dim: diameter
+    median_m: 0.0735
+    sigma_log: 0.20
+    range_m: [0.04927, 0.1096]
+    group: food
+    tier: 2
+  onion:
+    dim: diameter
+    median_m: 0.0832
+    sigma_log: 0.20
+    range_m: [0.05577, 0.1241]
+    group: food
+    tier: 2
+  cucumber:
+    dim: length
+    median_m: 0.227
+    sigma_log: 0.15
+    range_m: [0.1682, 0.3064]
+    group: food
+    tier: 2
+  bell_pepper:
+    dim: diameter
+    median_m: 0.08
+    sigma_log: 0.15
+    range_m: [0.05927, 0.108]
+    group: food
+    tier: 2
+  avocado:
+    dim: length
+    median_m: 0.121
+    sigma_log: 0.12
+    range_m: [0.09518, 0.1538]
+    group: food
+    tier: 2
+  strawberry:
+    dim: diameter
+    median_m: 0.0253
+    sigma_log: 0.20
+    range_m: [0.01696, 0.03774]
+    group: food
+    tier: 2
+  blueberry:
+    dim: diameter
+    median_m: 0.012
+    sigma_log: 0.15
+    range_m: [0.00889, 0.0162]
+    group: food
+    tier: 2
+  grape:
+    dim: diameter
+    median_m: 0.018
+    sigma_log: 0.15
+    range_m: [0.01333, 0.0243]
+    group: food
+    tier: 2
+  cherry:
+    dim: diameter
+    median_m: 0.0202
+    sigma_log: 0.12
+    range_m: [0.01589, 0.02568]
+    group: food
+    tier: 2
+  peach:
+    dim: diameter
+    median_m: 0.0721
+    sigma_log: 0.10
+    range_m: [0.05903, 0.08806]
+    group: food
+    tier: 2
+  pear:
+    dim: length
+    median_m: 0.105
+    sigma_log: 0.12
+    range_m: [0.0826, 0.1335]
+    group: food
+    tier: 2
+  kiwi:
+    dim: length
+    median_m: 0.0624
+    sigma_log: 0.10
+    range_m: [0.05109, 0.07622]
+    group: food
+    tier: 2
+  pineapple:
+    dim: height
+    median_m: 0.285
+    sigma_log: 0.12
+    range_m: [0.2242, 0.3623]
+    group: food
+    tier: 2
+  watermelon:
+    dim: diameter
+    median_m: 0.307
+    sigma_log: 0.20
+    range_m: [0.2058, 0.458]
+    group: food
+    tier: 2
+  pizza:
+    dim: diameter
+    median_m: 0.342
+    sigma_log: 0.10
+    range_m: [0.28, 0.4177]
+    group: food
+    tier: 2
+  bread_loaf:
+    dim: length
+    median_m: 0.253
+    sigma_log: 0.12
+    range_m: [0.199, 0.3216]
+    group: food
+    tier: 2
+  baguette:
+    dim: length
+    median_m: 0.6
+    sigma_log: 0.10
+    range_m: [0.4912, 0.7328]
+    group: food
+    tier: 2
+  croissant:
+    dim: length
+    median_m: 0.159
+    sigma_log: 0.10
+    range_m: [0.1302, 0.1942]
+    group: food
+    tier: 2
+  donut:
+    dim: diameter
+    median_m: 0.09
+    sigma_log: 0.08
+    range_m: [0.07669, 0.1056]
+    group: food
+    tier: 2
+  cookie:
+    dim: diameter
+    median_m: 0.07
+    sigma_log: 0.08
+    range_m: [0.05965, 0.08215]
+    group: food
+    tier: 2
+  chocolate_bar:
+    dim: length
+    median_m: 0.154
+    sigma_log: 0.06
+    range_m: [0.1366, 0.1736]
+    group: food
+    tier: 2
+  sandwich:
+    dim: length
+    median_m: 0.133
+    sigma_log: 0.10
+    range_m: [0.1089, 0.1624]
+    group: food
+    tier: 2
+  hamburger:
+    dim: diameter
+    median_m: 0.111
+    sigma_log: 0.08
+    range_m: [0.09459, 0.1303]
+    group: food
+    tier: 2
+  hot_dog:
+    dim: length
+    median_m: 0.164
+    sigma_log: 0.08
+    range_m: [0.1398, 0.1925]
+    group: food
+    tier: 2
+  sushi_roll:
+    dim: diameter
+    median_m: 0.0309
+    sigma_log: 0.12
+    range_m: [0.02431, 0.03928]
+    group: food
+    tier: 2
+  corn_cob:
+    dim: length
+    median_m: 0.202
+    sigma_log: 0.12
+    range_m: [0.1589, 0.2568]
+    group: food
+    tier: 2
+  broccoli:
+    dim: diameter
+    median_m: 0.124
+    sigma_log: 0.15
+    range_m: [0.09186, 0.1674]
+    group: food
+    tier: 2
+  garlic_bulb:
+    dim: diameter
+    median_m: 0.0515
+    sigma_log: 0.12
+    range_m: [0.04051, 0.06547]
+    group: food
+    tier: 2
+  ice_cream_scoop:
+    dim: diameter
+    median_m: 0.0612
+    sigma_log: 0.12
+    range_m: [0.04814, 0.0778]
+    group: food
+    tier: 2
+  cheese_wheel:
+    dim: diameter
+    median_m: 0.255
+    sigma_log: 0.10
+    range_m: [0.2088, 0.3115]
+    group: food
+    tier: 2
+  butter_stick:
+    dim: length
+    median_m: 0.125
+    sigma_log: 0.06
+    range_m: [0.1109, 0.1409]
+    group: food
+    tier: 2
+  bagel:
+    dim: diameter
+    median_m: 0.10
+    sigma_log: 0.08
+    range_m: [0.08521, 0.1174]
+    group: food
+    tier: 2
+  pancake:
+    dim: diameter
+    median_m: 0.165
+    sigma_log: 0.12
+    range_m: [0.1298, 0.2098]
+    group: food
+    tier: 2
+  muffin:
+    dim: height
+    median_m: 0.0714
+    sigma_log: 0.12
+    range_m: [0.05617, 0.09077]
+    group: food
+    tier: 2
+  steak:
+    dim: length
+    median_m: 0.246
+    sigma_log: 0.15
+    range_m: [0.1822, 0.3321]
+    group: food
+    tier: 2
+  sausage:
+    dim: length
+    median_m: 0.134
+    sigma_log: 0.10
+    range_m: [0.1097, 0.1637]
+    group: food
+    tier: 2
+  salmon_fillet:
+    dim: length
+    median_m: 0.29
+    sigma_log: 0.10
+    range_m: [0.2374, 0.3542]
+    group: food
+    tier: 2
+  melon_cantaloupe:
+    dim: diameter
+    median_m: 0.185
+    sigma_log: 0.10
+    range_m: [0.1515, 0.226]
+    group: food
+    tier: 2
+  mango:
+    dim: length
+    median_m: 0.104
+    sigma_log: 0.12
+    range_m: [0.08181, 0.1322]
+    group: food
+    tier: 2
+  pomegranate:
+    dim: diameter
+    median_m: 0.0909
+    sigma_log: 0.08
+    range_m: [0.07746, 0.1067]
+    group: food
+    tier: 2
+  coconut:
+    dim: diameter
+    median_m: 0.156
+    sigma_log: 0.10
+    range_m: [0.1277, 0.1905]
+    group: food
+    tier: 2
+  tree:
+    dim: height
+    median_m: 15
+    sigma_log: 0.40
+    range_m: [6.74, 33.38]
+    group: plant
+    tier: 1
+  oak:
+    dim: height
+    median_m: 20
+    sigma_log: 0.30
+    range_m: [10.98, 36.44]
+    group: plant
+    tier: 1
+  pine_tree:
+    dim: height
+    median_m: 22
+    sigma_log: 0.30
+    range_m: [12.07, 40.09]
+    group: plant
+    tier: 1
+  palm_tree:
+    dim: height
+    median_m: 9.18
+    sigma_log: 0.30
+    range_m: [5.038, 16.73]
+    group: plant
+    tier: 1
+  birch:
+    dim: height
+    median_m: 14
+    sigma_log: 0.30
+    range_m: [7.683, 25.51]
+    group: plant
+    tier: 2
+  maple:
+    dim: height
+    median_m: 16
+    sigma_log: 0.30
+    range_m: [8.781, 29.15]
+    group: plant
+    tier: 2
+  bush:
+    dim: height
+    median_m: 1.21
+    sigma_log: 0.35
+    range_m: [0.6009, 2.437]
+    group: plant
+    tier: 2
+  hedge:
+    dim: height
+    median_m: 1.53
+    sigma_log: 0.30
+    range_m: [0.8397, 2.788]
+    group: plant
+    tier: 2
+  rose_bush:
+    dim: height
+    median_m: 0.816
+    sigma_log: 0.30
+    range_m: [0.4478, 1.487]
+    group: plant
+    tier: 2
+  cactus:
+    dim: height
+    median_m: 1.84
+    sigma_log: 0.35
+    range_m: [0.9137, 3.705]
+    group: plant
+    tier: 2
+  bamboo:
+    dim: height
+    median_m: 8
+    sigma_log: 0.30
+    range_m: [4.39, 14.58]
+    group: plant
+    tier: 2
+  fern:
+    dim: height
+    median_m: 0.612
+    sigma_log: 0.30
+    range_m: [0.3359, 1.115]
+    group: plant
+    tier: 2
+  grass_lawn:
+    dim: height
+    median_m: 0.0816
+    sigma_log: 0.25
+    range_m: [0.04949, 0.1345]
+    group: plant
+    tier: 2
+  sunflower:
+    dim: height
+    median_m: 1.94
+    sigma_log: 0.25
+    range_m: [1.177, 3.199]
+    group: plant
+    tier: 2
+  corn_plant:
+    dim: height
+    median_m: 2.4
+    sigma_log: 0.20
+    range_m: [1.609, 3.58]
+    group: plant
+    tier: 2
+  tulip:
+    dim: height
+    median_m: 0.378
+    sigma_log: 0.25
+    range_m: [0.2293, 0.6232]
+    group: plant
+    tier: 2
+  lily:
+    dim: height
+    median_m: 0.618
+    sigma_log: 0.25
+    range_m: [0.3748, 1.019]
+    group: plant
+    tier: 2
+  moss:
+    dim: height
+    median_m: 0.03
+    sigma_log: 0.30
+    range_m: [0.01646, 0.05466]
+    group: plant
+    tier: 2
+  lettuce:
+    dim: diameter
+    median_m: 0.273
+    sigma_log: 0.25
+    range_m: [0.1656, 0.4501]
+    group: plant
+    tier: 2
+  shrub_boxwood:
+    dim: height
+    median_m: 0.735
+    sigma_log: 0.25
+    range_m: [0.4458, 1.212]
+    group: plant
+    tier: 2
+  willow:
+    dim: height
+    median_m: 12.2
+    sigma_log: 0.30
+    range_m: [6.696, 22.23]
+    group: plant
+    tier: 2
+  cedar:
+    dim: height
+    median_m: 25.2
+    sigma_log: 0.30
+    range_m: [13.83, 45.92]
+    group: plant
+    tier: 2
+  redwood:
+    dim: height
+    median_m: 50.5
+    sigma_log: 0.25
+    range_m: [30.63, 83.26]
+    group: plant
+    tier: 2
+  baobab:
+    dim: height
+    median_m: 18
+    sigma_log: 0.30
+    range_m: [9.879, 32.8]
+    group: plant
+    tier: 2
+  aspen:
+    dim: height
+    median_m: 15.3
+    sigma_log: 0.30
+    range_m: [8.397, 27.88]
+    group: plant
+    tier: 2
+  apple_tree:
+    dim: height
+    median_m: 4
+    sigma_log: 0.25
+    range_m: [2.426, 6.595]
+    group: plant
+    tier: 2
+  cherry_tree:
+    dim: height
+    median_m: 5
+    sigma_log: 0.25
+    range_m: [3.033, 8.244]
+    group: plant
+    tier: 2
+  olive_tree:
+    dim: height
+    median_m: 6.12
+    sigma_log: 0.25
+    range_m: [3.712, 10.09]
+    group: plant
+    tier: 2
+  banana_plant:
+    dim: height
+    median_m: 3.03
+    sigma_log: 0.30
+    range_m: [1.663, 5.521]
+    group: plant
+    tier: 2
+  palm_frond:
+    dim: length
+    median_m: 2.58
+    sigma_log: 0.25
+    range_m: [1.565, 4.254]
+    group: plant
+    tier: 2
+  ivy_vine:
+    dim: length
+    median_m: 4.16
+    sigma_log: 0.40
+    range_m: [1.869, 9.258]
+    group: plant
+    tier: 2
+  mushroom:
+    dim: height
+    median_m: 0.132
+    sigma_log: 0.35
+    range_m: [0.06555, 0.2658]
+    group: plant
+    tier: 2
+  clover:
+    dim: diameter
+    median_m: 0.0204
+    sigma_log: 0.30
+    range_m: [0.0112, 0.03717]
+    group: plant
+    tier: 2
+  dandelion:
+    dim: diameter
+    median_m: 0.0505
+    sigma_log: 0.20
+    range_m: [0.03385, 0.07534]
+    group: plant
+    tier: 2
+  sequoia:
+    dim: height
+    median_m: 55
+    sigma_log: 0.25
+    range_m: [33.36, 90.68]
+    group: plant
+    tier: 2
+  rock_pebble:
+    dim: diameter
+    median_m: 0.0306
+    sigma_log: 0.40
+    range_m: [0.01375, 0.0681]
+    group: nature
+    tier: 2
+  boulder:
+    dim: diameter
+    median_m: 1.52
+    sigma_log: 0.50
+    range_m: [0.5592, 4.132]
+    group: nature
+    tier: 2
+  hill:
+    dim: height
+    median_m: 60
+    sigma_log: 0.50
+    range_m: [22.07, 163.1]
+    group: nature
+    tier: 2
+  cliff:
+    dim: height
+    median_m: 80
+    sigma_log: 0.40
+    range_m: [35.95, 178]
+    group: nature
+    tier: 2
+  sand_dune:
+    dim: height
+    median_m: 15.8
+    sigma_log: 0.40
+    range_m: [7.099, 35.16]
+    group: nature
+    tier: 2
+  waterfall:
+    dim: height
+    median_m: 30
+    sigma_log: 0.40
+    range_m: [13.48, 66.77]
+    group: nature
+    tier: 2
+  iceberg:
+    dim: height
+    median_m: 40.8
+    sigma_log: 0.50
+    range_m: [15.01, 110.9]
+    group: nature
+    tier: 2
+  snowdrift:
+    dim: height
+    median_m: 1.09
+    sigma_log: 0.50
+    range_m: [0.401, 2.963]
+    group: nature
+    tier: 2
+  stalactite:
+    dim: length
+    median_m: 2.18
+    sigma_log: 0.40
+    range_m: [0.9795, 4.852]
+    group: nature
+    tier: 2
+  lake:
+    dim: diameter
+    median_m: 152
+    sigma_log: 0.50
+    range_m: [55.92, 413.2]
+    group: nature
+    tier: 2
+  river:
+    dim: width
+    median_m: 41.6
+    sigma_log: 0.50
+    range_m: [15.3, 113.1]
+    group: nature
+    tier: 2
+  pond:
+    dim: diameter
+    median_m: 15.6
+    sigma_log: 0.40
+    range_m: [7.01, 34.72]
+    group: nature
+    tier: 2
+  puddle:
+    dim: diameter
+    median_m: 0.53
+    sigma_log: 0.40
+    range_m: [0.2381, 1.18]
+    group: nature
+    tier: 2
+  mountain_small:
+    dim: height
+    median_m: 180
+    sigma_log: 0.45
+    range_m: [73.18, 442.7]
+    group: nature
+    tier: 2
+  crater:
+    dim: diameter
+    median_m: 100
+    sigma_log: 0.50
+    range_m: [36.79, 271.8]
+    group: nature
+    tier: 2
+  geyser:
+    dim: height
+    median_m: 15.5
+    sigma_log: 0.40
+    range_m: [6.965, 34.5]
+    group: nature
+    tier: 2
+  tide_pool:
+    dim: diameter
+    median_m: 2.2
+    sigma_log: 0.40
+    range_m: [0.9885, 4.896]
+    group: nature
+    tier: 2
+  stone_river:
+    dim: diameter
+    median_m: 0.108
+    sigma_log: 0.40
+    range_m: [0.04853, 0.2404]
+    group: nature
+    tier: 2
+  ice_block:
+    dim: length
+    median_m: 1.25
+    sigma_log: 0.30
+    range_m: [0.686, 2.278]
+    group: nature
+    tier: 2
+  lava_rock:
+    dim: diameter
+    median_m: 0.336
+    sigma_log: 0.40
+    range_m: [0.151, 0.7478]
+    group: nature
+    tier: 2
+  pebble:
+    dim: diameter
+    median_m: 0.0208
+    sigma_log: 0.40
+    range_m: [0.009346, 0.04629]
+    group: nature
+    tier: 2
+  coral_reef:
+    dim: length
+    median_m: 5.05
+    sigma_log: 0.40
+    range_m: [2.269, 11.24]
+    group: nature
+    tier: 2
+  cave_entrance:
+    dim: width
+    median_m: 8.08
+    sigma_log: 0.50
+    range_m: [2.972, 21.96]
+    group: nature
+    tier: 2
+  hailstone:
+    dim: diameter
+    median_m: 0.0206
+    sigma_log: 0.30
+    range_m: [0.01131, 0.03754]
+    group: nature
+    tier: 2
+  snowflake:
+    dim: diameter
+    median_m: 0.00606
+    sigma_log: 0.15
+    range_m: [0.004489, 0.00818]
+    group: nature
+    tier: 2
+  leaf_maple:
+    dim: length
+    median_m: 0.128
+    sigma_log: 0.30
+    range_m: [0.07025, 0.2332]
+    group: nature
+    tier: 2
+  pine_cone:
+    dim: length
+    median_m: 0.0848
+    sigma_log: 0.25
+    range_m: [0.05143, 0.1398]
+    group: nature
+    tier: 2
+  seashell:
+    dim: length
+    median_m: 0.0525
+    sigma_log: 0.30
+    range_m: [0.02881, 0.09566]
+    group: nature
+    tier: 2
+  feather:
+    dim: length
+    median_m: 0.263
+    sigma_log: 0.25
+    range_m: [0.1595, 0.4336]
+    group: nature
+    tier: 2
+  acorn:
+    dim: length
+    median_m: 0.02
+    sigma_log: 0.15
+    range_m: [0.01482, 0.027]
+    group: nature
+    tier: 2
+  glacier:
+    dim: length
+    median_m: 150
+    sigma_log: 0.50
+    range_m: [55.18, 407.7]
+    group: nature
+    tier: 2
+  dune_field:
+    dim: width
+    median_m: 101
+    sigma_log: 0.50
+    range_m: [37.16, 274.5]
+    group: nature
+    tier: 2
+  meadow:
+    dim: width
+    median_m: 60.6
+    sigma_log: 0.40
+    range_m: [27.23, 134.9]
+    group: nature
+    tier: 2
+  forest_clearing:
+    dim: diameter
+    median_m: 40.4
+    sigma_log: 0.40
+    range_m: [18.15, 89.91]
+    group: nature
+    tier: 2
+  island:
+    dim: diameter
+    median_m: 120
+    sigma_log: 0.50
+    range_m: [44.15, 326.2]
+    group: nature
+    tier: 2
+  sinkhole:
+    dim: diameter
+    median_m: 25.5
+    sigma_log: 0.40
+    range_m: [11.46, 56.75]
+    group: nature
+    tier: 2
+  volcano_small:
+    dim: height
+    median_m: 153
+    sigma_log: 0.40
+    range_m: [68.75, 340.5]
+    group: nature
+    tier: 2
+  lamp_desk:
+    dim: height
+    median_m: 0.468
+    sigma_log: 0.10
+    range_m: [0.3832, 0.5716]
+    group: misc
+    tier: 2
+  candle:
+    dim: height
+    median_m: 0.153
+    sigma_log: 0.20
+    range_m: [0.1026, 0.2282]
+    group: misc
+    tier: 2
+  vase:
+    dim: height
+    median_m: 0.305
+    sigma_log: 0.20
+    range_m: [0.2044, 0.455]
+    group: misc
+    tier: 2
+  picture_frame:
+    dim: width
+    median_m: 0.525
+    sigma_log: 0.15
+    range_m: [0.3889, 0.7087]
+    group: misc
+    tier: 2
+  pillow:
+    dim: length
+    median_m: 0.482
+    sigma_log: 0.10
+    range_m: [0.3946, 0.5887]
+    group: misc
+    tier: 2
+  blanket:
+    dim: length
+    median_m: 2.02
+    sigma_log: 0.10
+    range_m: [1.654, 2.467]
+    group: misc
+    tier: 2
+  towel:
+    dim: length
+    median_m: 1.32
+    sigma_log: 0.10
+    range_m: [1.081, 1.612]
+    group: misc
+    tier: 2
+  toy_ball:
+    dim: diameter
+    median_m: 0.167
+    sigma_log: 0.20
+    range_m: [0.1119, 0.2491]
+    group: misc
+    tier: 2
+  teddy_bear:
+    dim: height
+    median_m: 0.374
+    sigma_log: 0.20
+    range_m: [0.2507, 0.5579]
+    group: misc
+    tier: 2
+  doll:
+    dim: height
+    median_m: 0.312
+    sigma_log: 0.20
+    range_m: [0.2091, 0.4654]
+    group: misc
+    tier: 2
+  kite:
+    dim: width
+    median_m: 1.07
+    sigma_log: 0.25
+    range_m: [0.649, 1.764]
+    group: misc
+    tier: 2
+  balloon:
+    dim: diameter
+    median_m: 0.3
+    sigma_log: 0.25
+    range_m: [0.182, 0.4946]
+    group: misc
+    tier: 2
+  gift_box:
+    dim: length
+    median_m: 0.268
+    sigma_log: 0.15
+    range_m: [0.1985, 0.3618]
+    group: misc
+    tier: 2
+  newspaper:
+    dim: length
+    median_m: 0.56
+    sigma_log: 0.05
+    range_m: [0.5067, 0.6189]
+    group: misc
+    tier: 2
+  magazine:
+    dim: height
+    median_m: 0.275
+    sigma_log: 0.04
+    range_m: [0.2539, 0.2979]
+    group: misc
+    tier: 2
+  coin:
+    dim: diameter
+    median_m: 0.024
+    sigma_log: 0.02
+    range_m: [0.02306, 0.02498]
+    group: misc
+    tier: 2
+  bottle_cap:
+    dim: diameter
+    median_m: 0.025
+    sigma_log: 0.05
+    range_m: [0.02262, 0.02763]
+    group: misc
+    tier: 2
+  paper_clip:
+    dim: length
+    median_m: 0.0303
+    sigma_log: 0.08
+    range_m: [0.02582, 0.03556]
+    group: misc
+    tier: 2
+  guitar:
+    dim: length
+    median_m: 1.04
+    sigma_log: 0.04
+    range_m: [0.96, 1.127]
+    group: misc
+    tier: 2
+  violin:
+    dim: length
+    median_m: 0.666
+    sigma_log: 0.04
+    range_m: [0.6148, 0.7215]
+    group: misc
+    tier: 2
+  piano_upright:
+    dim: width
+    median_m: 1.56
+    sigma_log: 0.05
+    range_m: [1.412, 1.724]
+    group: misc
+    tier: 2
+  trumpet:
+    dim: length
+    median_m: 0.545
+    sigma_log: 0.06
+    range_m: [0.4834, 0.6145]
+    group: misc
+    tier: 2
+  saxophone:
+    dim: height
+    median_m: 0.824
+    sigma_log: 0.08
+    range_m: [0.7022, 0.967]
+    group: misc
+    tier: 2
+  drum_snare:
+    dim: diameter
+    median_m: 0.36
+    sigma_log: 0.05
+    range_m: [0.3257, 0.3979]
+    group: misc
+    tier: 2
+  ukulele:
+    dim: length
+    median_m: 0.541
+    sigma_log: 0.05
+    range_m: [0.4895, 0.5979]
+    group: misc
+    tier: 2
+  harp:
+    dim: height
+    median_m: 1.62
+    sigma_log: 0.08
+    range_m: [1.38, 1.901]
+    group: misc
+    tier: 2
+  telescope:
+    dim: length
+    median_m: 1.14
+    sigma_log: 0.20
+    range_m: [0.7642, 1.701]
+    group: misc
+    tier: 2
+  globe_world:
+    dim: diameter
+    median_m: 0.318
+    sigma_log: 0.10
+    range_m: [0.2604, 0.3884]
+    group: misc
+    tier: 2
+  mannequin:
+    dim: height
+    median_m: 1.77
+    sigma_log: 0.08
+    range_m: [1.508, 2.077]
+    group: misc
+    tier: 2
+  pinata:
+    dim: diameter
+    median_m: 0.412
+    sigma_log: 0.20
+    range_m: [0.2762, 0.6146]
+    group: misc
+    tier: 2
+  lantern:
+    dim: height
+    median_m: 0.333
+    sigma_log: 0.15
+    range_m: [0.2467, 0.4495]
+    group: misc
+    tier: 2
+  lamp_floor:
+    dim: height
+    median_m: 1.63
+    sigma_log: 0.10
+    range_m: [1.335, 1.991]
+    group: misc
+    tier: 2
+  rope:
+    dim: length
+    median_m: 10
+    sigma_log: 0.30
+    range_m: [5.488, 18.22]
+    group: misc
+    tier: 2
+  chain_metal:
+    dim: length
+    median_m: 2.04
+    sigma_log: 0.25
+    range_m: [1.237, 3.363]
+    group: misc
+    tier: 2
+  ladder:
+    dim: height
+    median_m: 3.09
+    sigma_log: 0.15
+    range_m: [2.289, 4.171]
+    group: misc
+    tier: 2
+  tent:
+    dim: width
+    median_m: 2.62
+    sigma_log: 0.20
+    range_m: [1.756, 3.909]
+    group: misc
+    tier: 2
+  sleeping_bag:
+    dim: length
+    median_m: 2.16
+    sigma_log: 0.08
+    range_m: [1.841, 2.535]
+    group: misc
+    tier: 2
+  fishing_rod:
+    dim: length
+    median_m: 1.87
+    sigma_log: 0.12
+    range_m: [1.471, 2.377]
+    group: misc
+    tier: 2
+  chessboard:
+    dim: width
+    median_m: 0.505
+    sigma_log: 0.05
+    range_m: [0.4569, 0.5581]
+    group: misc
+    tier: 2
+  dice:
+    dim: diameter
+    median_m: 0.016
+    sigma_log: 0.05
+    range_m: [0.01448, 0.01768]
+    group: misc
+    tier: 2
+  playing_card:
+    dim: width
+    median_m: 0.063
+    sigma_log: 0.02
+    range_m: [0.06053, 0.06557]
+    group: misc
+    tier: 2
+  hourglass:
+    dim: height
+    median_m: 0.208
+    sigma_log: 0.15
+    range_m: [0.1541, 0.2808]
+    group: misc
+    tier: 2
+  paper_plane:
+    dim: length
+    median_m: 0.226
+    sigma_log: 0.20
+    range_m: [0.1515, 0.3372]
+    group: misc
+    tier: 2
+  ticket:
+    dim: length
+    median_m: 0.173
+    sigma_log: 0.03
+    range_m: [0.1629, 0.1837]
+    group: misc
+    tier: 2
+  cup_paper:
+    dim: height
+    median_m: 0.126
+    sigma_log: 0.08
+    range_m: [0.1074, 0.1479]
+    group: misc
+    tier: 2
+  bowling_pin:
+    dim: height
+    median_m: 0.38
+    sigma_log: 0.03
+    range_m: [0.3579, 0.4035]
+    group: misc
+    tier: 2
+  coaster:
+    dim: diameter
+    median_m: 0.101
+    sigma_log: 0.05
+    range_m: [0.09139, 0.1116]
+    group: misc
+    tier: 2

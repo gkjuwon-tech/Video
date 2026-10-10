@@ -1,0 +1,11 @@
+{
+ "tests/dat_02/dat02_fakes.py": "67fa3b45335e41bff8b79f6328d91ce47404d26558400bf437b55d0fecbb160c",
+ "tests/dat_02/test_dat02_band.py": "7b6daeb2a166b5af3323fa9083f0360d83e41bce80a5cfbec9361b13291807af",
+ "tests/dat_02/test_dat02_curve.py": "fc1bc6524b2455cb28f3146ac20e15e673ba07d6d5fc06daa032f86c723daa03",
+ "tests/dat_02/test_dat02_gpu.py": "2a86f6863c7ae176c9631048687bab7b8d04fa023565e8b6914107e87cf3432f",
+ "tests/dat_02/test_dat02_import.py": "0fdb63ca41d2db689e5371d72138d304b2e77c6cc7d10a87e77fc5ddbaf2992b",
+ "tests/dat_02/test_dat02_octaves.py": "ecaa3c4f630ad10e5191e770966c9f7f9526a345e91cb685ff14004723e5e0a0",
+ "tests/dat_02/test_dat02_pass.py": "4ee19a7b28fd5575efde84ad25f718b0dacc10ac287eb563fb06baed94f86920",
+ "tests/dat_02/test_dat02_sinks.py": "fc952a9e07a32953527ff872c43b66aafb41721fd25de687d8608007fe101993",
+ "tests/dat_02/test_dat02_validation.py": "9b033edff316349eeb5aa5e438f7543283f2fea9266a2db2f5bde5d12b1ccf73"
+}
