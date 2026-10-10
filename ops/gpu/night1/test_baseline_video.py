@@ -80,6 +80,15 @@ def test_s3_arc_orbit_and_person_fixed():
         assert u == pytest.approx(u0, abs=1e-6) and v == pytest.approx(v0, abs=1e-6)
 
 
+def test_s3_is_pure_yaw_no_roll():
+    person = bv.person_point(bv.OUT_W, bv.OUT_H)
+    assert person[1] > 0.1  # people sit below the image centre: a shortest rotation would roll
+    for t in (0, 0.25, 0.5, 1):
+        R = bv.shot_pose("S3", t, person).R
+        assert R[1, 0] == pytest.approx(0.0, abs=1e-12)  # camera x axis stays horizontal
+        assert R[1, 2] == pytest.approx(0.0, abs=1e-12) and R[1, 1] == pytest.approx(1.0)
+
+
 def test_s4_person_stays_and_tilts_down():
     person = bv.person_point(bv.OUT_W, bv.OUT_H)
     for t in (0, 0.5, 1):
@@ -255,6 +264,27 @@ def test_rack_focus_blurs_out_of_focus_layers():
     assert np.array_equal(rf(1.0), near_focus)  # cached and identical
 
 
+def test_rack_focus_outlier_does_not_merge_layers():
+    h, w = 60, 120
+    depth = np.full((h, w), 40.0, np.float32)  # sky
+    depth[20:50, 0:40] = 1.6  # yak eye
+    depth[30:50, 50:80] = 1.0  # people
+    depth[50:, :] = 0.35  # foreground poppies
+    depth[0, 0] = 0.1  # one pixel at the near clamp
+    img = np.random.default_rng(3).integers(0, 255, (h, w, 3), dtype=np.uint8)
+    rf = bv.RackFocus(img, depth, layers=8)
+    assert len(rf.masks) >= 4
+
+    def layer_of(y, x):
+        return next(i for i, m in enumerate(rf.masks) if m[y, x] > 0)
+
+    li_people, li_eye, li_sky = layer_of(40, 60), layer_of(30, 10), layer_of(5, 100)
+    assert len({li_people, li_eye, li_sky}) == 3
+    assert rf.radii(1.0)[li_people] < 1.0
+    assert rf.radii(1.6)[li_eye] < 1.0
+    assert rf.radii(1.0)[li_eye] > 1.0 and rf.radii(1.6)[li_people] > 1.0  # and the pull really moves it
+
+
 def test_overlay_label_changes_top_left_only():
     f = np.zeros((90, 300, 3), np.uint8)
     o = bv.overlay_label(f)
@@ -304,7 +334,7 @@ def run_main(tmp_path, monkeypatch, extra=(), env=None, **kw):
     for k, v in (env or {}).items():
         monkeypatch.setenv(k, v)
     argv = ["--root", str(tmp_path / "root"), "--image", str(img), "--width", str(W), "--height", str(H),
-            "--fps", "6", "--max-frames", "4", "--device", "cpu", *extra]
+            "--fps", "6", "--max-frames", "4", "--device", "cpu", "--out", str(tmp_path / "root" / "video"), *extra]
     return bv.main(argv, depth_fn=kw.pop("depth_fn", fake_depth_fn), **kw)
 
 
@@ -463,3 +493,69 @@ def test_main_env_root_default(tmp_path, monkeypatch):
 def test_unknown_shot_arg(tmp_path, monkeypatch, capsys):
     rc = bv.main(["--root", str(tmp_path), "--shots", "S9", "--no-upload"])
     assert rc == 2
+
+
+def test_main_resume_rejects_stub_and_changed_settings(tmp_path, monkeypatch, capsys):
+    vid = tmp_path / "root" / "video"
+    assert run_main(tmp_path, monkeypatch, ["--no-upload", "--shots", "S1"]) == 0
+    capsys.readouterr()
+    side = vid / "baseline_yak_S1.json"
+    meta = json.loads(side.read_text())
+    assert meta == {"w": W, "h": H, "fps": 6, "hfov": bv.HFOV_DEG, "box": list(bv.PERSON_BOX),
+                    "frames": 4, "version": bv.OUTPUT_VERSION}
+    assert not list(vid.glob("*.part*"))
+
+    # same settings -> skipped
+    assert run_main(tmp_path, monkeypatch, ["--no-upload", "--shots", "S1"]) == 0
+    assert markers(capsys.readouterr().out, "N1_VID_DONE")[0]["skipped"] == ["S1"]
+
+    # a stub made with fewer frames (different --max-frames) is re-rendered, not trusted
+    img = tmp_path / "in.png"
+    argv = ["--root", str(tmp_path / "root"), "--image", str(img), "--width", str(W), "--height", str(H),
+            "--fps", "6", "--max-frames", "2", "--device", "cpu", "--out", str(vid), "--no-upload", "--shots", "S1"]
+    assert bv.main(argv, depth_fn=fake_depth_fn) == 0
+    d = markers(capsys.readouterr().out, "N1_VID_DONE")[0]
+    assert d["done"] == ["S1"] and json.loads(side.read_text())["frames"] == 2
+
+    # changed fps / hfov -> re-rendered
+    assert run_main(tmp_path, monkeypatch, ["--no-upload", "--shots", "S1", "--hfov", "60"]) == 0
+    d = markers(capsys.readouterr().out, "N1_VID_DONE")[0]
+    assert d["done"] == ["S1"] and json.loads(side.read_text())["hfov"] == 60.0
+
+    # missing / corrupt sidecar -> re-rendered
+    side.write_text("{not json")
+    assert run_main(tmp_path, monkeypatch, ["--no-upload", "--shots", "S1", "--hfov", "60"]) == 0
+    assert markers(capsys.readouterr().out, "N1_VID_DONE")[0]["done"] == ["S1"]
+    side.unlink()
+    assert run_main(tmp_path, monkeypatch, ["--no-upload", "--shots", "S1", "--hfov", "60"]) == 0
+    assert markers(capsys.readouterr().out, "N1_VID_DONE")[0]["done"] == ["S1"]
+
+
+def test_main_stale_shot_not_concatenated_or_uploaded(tmp_path, monkeypatch, capsys):
+    vid = tmp_path / "root" / "video"
+    assert run_main(tmp_path, monkeypatch, ["--no-upload"]) == 0
+    capsys.readouterr()
+    # all six exist; now rerun with other settings but only S1 selected: S2..S6 are stale
+    api = FakeApi()
+    assert run_main(tmp_path, monkeypatch, ["--shots", "S1", "--hfov", "60"], env={"HF_TOKEN": "hf_X"},
+                    upload_api=api) == 0
+    d = markers(capsys.readouterr().out, "N1_VID_DONE")[0]
+    assert d["done"] == ["S1"] and d["have"] == ["S1"] and d["all"] is False
+    assert sorted(c["path_in_repo"] for c in api.calls) == [
+        "video/night1/baseline_yak_S1.mp4", "video/night1/baseline_yak_sheet.jpg"]
+
+
+def test_max_frames_defaults_out_to_smoke_folder(tmp_path, monkeypatch, capsys):
+    img = fake_image(tmp_path / "in.png")
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.delenv("N1_DEADLINE", raising=False)
+    root = tmp_path / "root"
+    base = ["--root", str(root), "--image", str(img), "--width", str(W), "--height", str(H), "--fps", "2",
+            "--device", "cpu", "--no-upload", "--shots", "S1"]
+    assert bv.main(base + ["--max-frames", "2"], depth_fn=fake_depth_fn) == 0
+    assert (root / "video" / "smoke" / "baseline_yak_S1.mp4").exists()
+    assert not (root / "video" / "baseline_yak_S1.mp4").exists()
+    # the real run is not fooled by the smoke stub
+    assert bv.main(base, depth_fn=fake_depth_fn) == 0
+    capsys.readouterr()
+    assert json.loads((root / "video" / "baseline_yak_S1.json").read_text())["frames"] == 2 * 8

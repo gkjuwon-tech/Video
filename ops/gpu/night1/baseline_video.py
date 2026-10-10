@@ -54,6 +54,7 @@ FAR_LIMIT = 40.0  # sky / far mountains are clamped to this distance
 NEAR_LIMIT = 0.1  # sanity clamp, avoids negative / absurd depth
 FAR_PERCENTILE = 2.0
 DISC_RATIO = 1.15
+OUTPUT_VERSION = 2  # bump when the look of a shot changes; part of the resume sidecar
 
 # shot name -> seconds (docs/DEMO-D15.md)
 SHOTS: dict[str, float] = {"S1": 8, "S2": 8, "S3": 10, "S4": 8, "S5": 6, "S6": 6}
@@ -261,7 +262,9 @@ def shot_pose(shot: str, t: float, person: Optional[np.ndarray] = None) -> Pose:
         c, s = math.cos(th), math.sin(th)
         Ry = np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
         pos = person + Ry @ (-person)
-        return Pose(pos, keep_person_fixed(pos, person))
+        # Pure yaw: camera-space position of the people is Ry^T (person - pos) = person, so they
+        # stay on their original pixel with no roll (a shortest rotation would add ~1.7 deg roll).
+        return Pose(pos, Ry)
     if shot == "S4":  # crane up (y is down: +0.03 low -> -0.10 high), tilt to keep people
         pos = np.array([0.0, lerp(0.03, -0.10, e), 0.0])
         return Pose(pos, keep_person_fixed(pos, person))
@@ -428,22 +431,34 @@ class RackFocus:
         invz = (1.0 / np.maximum(depth.astype(np.float64), 1e-6)).astype(np.float32)
         self.invz = invz
         lo, hi = float(invz.min()), float(invz.max())
-        if hi - lo < 1e-9:
-            hi = lo + 1e-9
-        b = np.clip(((invz - lo) / (hi - lo) * layers).astype(np.int32), 0, layers - 1)
-        self.masks, self.mean_invz = [], []
-        for j in range(layers):  # j = 0 is the farthest layer (smallest 1/z)
+        # Layer edges come from the data (quantiles of 1/z), so one outlier pixel at the near clamp
+        # cannot swallow sky, people and yak eye into a single equal-width bin.  The focus targets
+        # are forced apart: 1/1.3 separates people (z=1.0) from the yak eye (z=1.6), 1/0.6
+        # separates the people from the foreground poppies (z=0.35).
+        forced = [e for e in (1.0 / 1.3, 1.0 / 0.6) if lo < e < hi]
+        n_q = max(2, layers + 1 - len(forced))
+        q = np.quantile(invz, np.linspace(0.0, 1.0, n_q))
+        edges = np.unique(np.concatenate([q, np.asarray(forced, dtype=np.float64)]).astype(np.float32))
+        inner = edges[1:-1] if edges.size > 2 else edges[:0]
+        b = np.searchsorted(inner, invz, side="right")
+        self.masks, self.mean_invz, self.samples = [], [], []
+        for j in range(int(b.max()) + 1):  # j = 0 is the farthest layer (smallest 1/z)
             m = (b == j)
             if not m.any():
                 continue
+            vals = invz[m]
             self.masks.append(m.astype(np.float32))
-            self.mean_invz.append(float(invz[m].mean()))
+            self.mean_invz.append(float(vals.mean()))
+            if vals.size > 4096:  # evenly spaced subsample keeps the per-frame median cheap
+                vals = vals[np.linspace(0, vals.size - 1, 4096).astype(np.int64)]
+            self.samples.append(vals.astype(np.float64))
         self._key = None
         self._val = None
 
     def radii(self, focus_z: float) -> list[float]:
+        """Per-layer blur radius: the median of the per-pixel r(z) = k*|1/z - 1/z_f| (capped)."""
         inv_f = 1.0 / focus_z
-        return [min(self.max_r, self.k * abs(c - inv_f)) for c in self.mean_invz]
+        return [min(self.max_r, self.k * float(np.median(np.abs(v - inv_f)))) for v in self.samples]
 
     def __call__(self, focus_z: float) -> np.ndarray:
         import cv2
@@ -801,7 +816,7 @@ def parse_person_box(s: str) -> tuple[int, int, int, int]:
 def parse_args(argv=None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Night1 job C: naive depth-warp baseline video (yak).")
     ap.add_argument("--root", default=os.environ.get("N1_ROOT", DEFAULT_ROOT), help="work folder (env N1_ROOT)")
-    ap.add_argument("--out", default=None, help="output folder (default ROOT/video)")
+    ap.add_argument("--out", default=None, help="output folder (default ROOT/video; ROOT/video/smoke with --max-frames)")
     ap.add_argument("--image", default=None, help="local input image (used instead of the vault download)")
     ap.add_argument("--shots", default=",".join(SHOTS), help="comma list of shots, default all")
     ap.add_argument("--width", type=int, default=OUT_W)
@@ -810,11 +825,40 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--hfov", type=float, default=HFOV_DEG)
     ap.add_argument("--person-box", type=parse_person_box, default=PERSON_BOX,
                     help="x0,y0,x1,y1 of the people in 2000x861 image coordinates")
-    ap.add_argument("--max-frames", type=int, default=None, help="cap frames per shot (smoke tests)")
+    ap.add_argument("--max-frames", type=int, default=None, help="cap frames per shot (smoke tests; default --out becomes ROOT/video/smoke)")
     ap.add_argument("--device", default=None, help="torch device for the renderer (default cuda if available)")
     ap.add_argument("--no-upload", action="store_true", help="do not upload to the HF vault")
     ap.add_argument("--force", action="store_true", help="re-render even if outputs exist")
     return ap.parse_args(argv)
+
+
+def shot_meta(shot: str, args, counts: dict[str, int]) -> dict:
+    """Everything that must match for an existing shot file to be reusable."""
+    return {"w": int(args.width), "h": int(args.height), "fps": int(args.fps), "hfov": float(args.hfov),
+            "box": [int(v) for v in args.person_box], "frames": int(counts[shot]), "version": OUTPUT_VERSION}
+
+
+def sidecar_path(mp4_path: Path) -> Path:
+    return Path(mp4_path).with_suffix(".json")
+
+
+def write_sidecar(mp4_path: Path, meta: dict) -> None:
+    """Atomic write (temp file then rename); call it after the mp4 itself was renamed into place."""
+    path = sidecar_path(mp4_path)
+    tmp = path.with_name(path.stem + ".part.json")
+    tmp.write_text(json.dumps(meta, sort_keys=True))
+    os.replace(tmp, path)
+
+
+def shot_is_done(mp4_path: Path, meta: dict) -> bool:
+    """True only if the mp4 exists AND its sidecar matches the current settings and frame count."""
+    if not Path(mp4_path).exists():
+        return False
+    try:
+        got = json.loads(sidecar_path(mp4_path).read_text())
+    except (OSError, ValueError):
+        return False
+    return isinstance(got, dict) and got == meta
 
 
 def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optional[Callable] = None,
@@ -824,7 +868,9 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
     token = (os.environ.get("HF_TOKEN") or "").strip() or None
     deadline = Deadline.from_env(clock)
     root = Path(args.root)
-    out_dir = Path(args.out) if args.out else root / "video"
+    smoke = args.max_frames is not None
+    # a --max-frames smoke run must never write into the real folder
+    out_dir = Path(args.out) if args.out else (root / "video" / "smoke" if smoke else root / "video")
     out_dir.mkdir(parents=True, exist_ok=True)
     shots = [s.strip().upper() for s in args.shots.split(",") if s.strip()]
     bad = [s for s in shots if s not in SHOTS]
@@ -836,16 +882,21 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
     sheet_path = out_dir / "baseline_yak_sheet.jpg"
     counts = {s: frame_count(s, args.fps, args.max_frames) for s in SHOTS}
 
-    log({"start": True, "root": str(root), "shots": shots, "hf_token": "yes" if token else "no",
+    metas = {s: shot_meta(s, args, counts) for s in SHOTS}
+    log({"start": True, "root": str(root), "out": str(out_dir), "smoke": smoke, "shots": shots, "hf_token": "yes" if token else "no",
          "deadline_in_s": None if deadline.left() is None else round(deadline.left())})
     if not token:
         log({"note": "hf_token=no", "hf_token": "no"})
 
     done, failed, skipped = [], [], []
-    todo = [s for s in shots if args.force or not shot_path[s].exists()]
+    # resume: a shot counts as done only if its sidecar matches the current settings + frame count
+    todo = [s for s in shots if args.force or not shot_is_done(shot_path[s], metas[s])]
     skipped = [s for s in shots if s not in todo]
     for s in skipped:
         log({"shot": s, "frames": counts[s], "skip": "exists"})
+    stale = [s for s in todo if shot_path[s].exists()]
+    for s in stale:
+        log({"shot": s, "note": "existing file does not match settings, re-rendering"})
     hit_deadline = deadline.reached()
     rendered_any = False
     fatal = None
@@ -865,7 +916,12 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
                     break
                 t0 = time.time()
                 try:
+                    try:  # old sidecar must not outlive a half-replaced mp4
+                        sidecar_path(shot_path[s]).unlink()
+                    except OSError:
+                        pass
                     secs = render_shot(s, make_frame_fn(s, scene), counts[s], shot_path[s], args.fps, deadline)
+                    write_sidecar(shot_path[s], metas[s])
                     done.append(s)
                     rendered_any = True
                     log({"shot": s, "frames": counts[s], "s": round(secs, 1)})
@@ -882,7 +938,7 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
     elif todo:
         log({"note": "deadline reached before start"})
 
-    have = [s for s in SHOTS if shot_path[s].exists()]
+    have = [s for s in SHOTS if shot_is_done(shot_path[s], metas[s])]  # stale / stub files do not count
     selected_have = [s for s in shots if s in have]
 
     # all-in-one (only when all six shots exist)
@@ -897,7 +953,7 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
 
     # contact sheet from whatever exists
     made_sheet = False
-    if have and (rendered_any or args.force or not sheet_path.exists()):
+    if have and (rendered_any or args.force or stale or not sheet_path.exists()):
         try:
             make_sheet({s: shot_path[s] for s in have}, counts, sheet_path)
             made_sheet = True
@@ -905,9 +961,11 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
         except Exception as e:
             log({"error": "sheet failed", "err": scrub(f"{type(e).__name__}: {e}", token)[:300]})
 
+    all_ok = len(have) == len(SHOTS) and all_path.exists()  # a stale all.mp4 is never reported/uploaded
     uploaded = 0
     if not args.no_upload:
-        files = [shot_path[s] for s in have] + [p for p in (all_path, sheet_path) if p.exists()]
+        files = [shot_path[s] for s in have] + [p for p in ((all_path if all_ok else None), sheet_path)
+                                                if p is not None and p.exists()]
         try:
             uploaded = upload_outputs(files, token, upload_api)
         except Exception as e:  # never kill the night
@@ -915,7 +973,7 @@ def main(argv=None, *, depth_fn: Optional[Callable] = None, download_fn: Optiona
 
     marker("N1_VID_DONE", {
         "done": done, "skipped": skipped, "failed": failed, "have": have,
-        "all": all_path.exists(), "sheet": sheet_path.exists(), "uploaded": uploaded,
+        "all": all_ok, "sheet": sheet_path.exists(), "uploaded": uploaded,
         "deadline": hit_deadline, "fatal": bool(fatal), "s": round(time.time() - t_start, 1),
     })
     if fatal:

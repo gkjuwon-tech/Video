@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import tarfile
+import threading
+import time
 import types
 from collections import Counter
 
@@ -193,12 +195,20 @@ def test_resume_no_duplicates_no_regeneration(tmp_path):
 
 def test_shard_tar_contents_and_upload(tmp_path):
     uploads = []
-    job, _ = make_job(tmp_path, max_images=10, uploader=lambda l, r: uploads.append((l, r)))
+    seen = {}
+
+    def up(local, remote):
+        uploads.append((local, remote))
+        with tarfile.open(local) as t:  # the tar is deleted locally once uploaded
+            seen[remote] = sorted(t.getnames())
+
+    job, _ = make_job(tmp_path, max_images=10, uploader=up)
     res = job.run()
     assert res["last_shard"] == "gen_0001.tar"
     assert [r for _, r in uploads] == ["corpus/night1/gen_0000.tar", "corpus/night1/gen_0001.tar"]
-    with tarfile.open(tmp_path / "shards" / "gen_0000.tar") as t:
-        names = sorted(t.getnames())
+    names = seen["corpus/night1/gen_0000.tar"]
+    assert not list((tmp_path / "shards").glob("*.tar"))  # uploaded tars reclaimed
+    assert (tmp_path / "shards" / "gen_0000.tar.uploaded").exists()
     exp = sorted([f"img/{i:08d}.webp" for i in range(5)] + [f"lat/{i:08d}.npy" for i in range(5)]
                  + [f"meta/{i:08d}.json" for i in range(5)])
     assert names == exp
@@ -208,6 +218,7 @@ def test_shard_tar_contents_and_upload(tmp_path):
     job2, _ = make_job(tmp_path, max_images=10, uploader=lambda l, r: uploads.append((l, r)))
     job2.run()
     assert len(uploads) == 2
+    assert not list((tmp_path / "shards").glob("*.tar"))  # not repacked either
 
 
 def test_threaded_upload_path(tmp_path):
@@ -284,8 +295,8 @@ def test_deadline_stops_and_packs_partial(tmp_path):
     res = job.run()
     assert res["reason"] == "deadline"
     assert 3 <= res["n"] <= 5 and len(gen.calls) == res["n"]
-    assert (tmp_path / "shards" / "gen_0000_partial.tar").exists()
     assert (tmp_path / "shards" / "gen_0000_partial.tar.uploaded").exists()
+    assert not (tmp_path / "shards" / "gen_0000_partial.tar").exists()  # reclaimed after upload
     # resume later continues without redoing
     job2, gen2 = make_job(tmp_path, max_images=res["n"], shard_size=100)
     job2.run()
@@ -365,7 +376,7 @@ def test_main_without_token_logs_hf_token_no(tmp_path, monkeypatch, capsys):
 def test_main_never_prints_token(tmp_path, monkeypatch, capsys):
     secret = "hf_SUPERSECRETVALUE1234567890"
     monkeypatch.setenv("HF_TOKEN", secret)
-    monkeypatch.setenv("N1_DEADLINE", str(10**10))
+    monkeypatch.setenv("N1_DEADLINE", str(time.time() + 3600))
 
     def bad_up(local, remote):
         raise RuntimeError(f"401 for token {secret}")
@@ -390,3 +401,169 @@ def test_deadline_parse():
 
 def test_scrub():
     assert "hf_abcdefghijk" not in cg.scrub("err hf_abcdefghijk end")
+
+
+# ---------------------------------------------------------------------------
+# review fixes: aborts, OOM, upload retries, drain, disk, deadline
+# ---------------------------------------------------------------------------
+
+def test_encode_always_fails_aborts_with_errors(tmp_path, capsys):
+    calls = []
+
+    def bad_enc(imgs):
+        calls.append(len(imgs))
+        raise RuntimeError("vae broken")
+
+    job, gen = make_job(tmp_path, encode_fn=bad_enc, max_images=1000)
+    res = job.run()
+    out = capsys.readouterr().out
+    assert res["reason"] == "errors" and res["n"] == 0
+    assert len(gen.calls) <= 4  # fail-fast on the first encoded batch, not 100 failures
+    assert "first_batch_failed" in out and "vae broken" in out
+    assert cg.main(["--root", str(tmp_path / "m"), "--max-images", "50"],
+                   deps={"gen_fn": fake_gen_factory(), "encode_fn": bad_enc,
+                         "free_fn": lambda p: 10**12, "upload_threads": False}) == 2
+
+
+def test_encode_fails_after_some_success_hits_consecutive_abort(tmp_path):
+    state = {"n": 0}
+
+    def enc(imgs):
+        state["n"] += 1
+        if state["n"] > 2:
+            raise RuntimeError("late failure")
+        return fake_encode(imgs)
+
+    job, gen = make_job(tmp_path, encode_fn=enc, max_images=1000, max_consecutive_fail=10)
+    res = job.run()
+    assert res["reason"] == "errors" and res["n"] == 4 and len(gen.calls) < 40
+
+
+def test_bad_latent_and_write_failure_also_abort(tmp_path):
+    job, _ = make_job(tmp_path, encode_fn=lambda imgs: fake_encode(imgs)[:, :, :1, :1],
+                      max_images=1000, max_consecutive_fail=6, batch=1)
+    assert job.run()["reason"] == "errors"
+
+
+def test_batch_oom_drops_batch_to_one(tmp_path):
+    sizes = []
+
+    def enc(imgs):
+        sizes.append(len(imgs))
+        if len(imgs) > 1:
+            raise RuntimeError("CUDA out of memory")
+        return fake_encode(imgs)
+
+    job, _ = make_job(tmp_path, encode_fn=enc, batch=4, shard_size=100, max_images=16)
+    res = job.run()
+    assert res["n"] == 16 and job.batch == 1
+    assert sizes[0] > 1 and max(sizes[1:]) == 1  # batch tried once, then never again
+
+
+def test_failed_shard_upload_is_retried_in_same_run(tmp_path):
+    state = {"calls": 0, "ok": []}
+
+    def up(local, remote):
+        state["calls"] += 1
+        if remote.endswith("gen_0000.tar") and state["calls"] <= 3:  # all 3 attempts of shard 0
+            raise RuntimeError("429")
+        state["ok"].append(remote)
+
+    job, _ = make_job(tmp_path, max_images=15, uploader=up)
+    res = job.run()
+    assert res["n"] == 15
+    assert sorted(state["ok"]) == [f"corpus/night1/gen_000{k}.tar" for k in range(3)]
+    for k in range(3):
+        assert (tmp_path / "shards" / f"gen_000{k}.tar.uploaded").exists()
+
+
+def test_timed_sweep_retries_missing_uploads(tmp_path):
+    clock = [0.0]
+    state = {"ok": [], "calls": 0}
+
+    def up(local, remote):
+        state["calls"] += 1
+        if state["calls"] <= 3:
+            raise RuntimeError("blip")
+        state["ok"].append(remote)
+
+    job, _ = make_job(tmp_path, gen_fn=fake_gen_factory(clock, tick=1000.0), now=lambda: clock[0],
+                      shard_size=100, max_images=8, uploader=up, sweep_every=1800.0)
+    # pre-existing unconfirmed shard from an earlier run
+    (tmp_path / "shards").mkdir(parents=True)
+    cg.pack_shard(str(tmp_path), "gen_0007.tar", [])
+    job.run()
+    assert "corpus/night1/gen_0007.tar" in state["ok"]
+
+
+def test_partial_removed_once_full_shard_uploaded(tmp_path):
+    up = []
+    job, _ = make_job(tmp_path, max_images=3, shard_size=5, uploader=lambda l, r: up.append(r))
+    job.stop_reason = "complete"
+    job.run()
+    assert "corpus/night1/gen_0000_partial.tar" in up
+    job2, _ = make_job(tmp_path, max_images=5, shard_size=5, uploader=lambda l, r: up.append(r))
+    job2.run()
+    assert "corpus/night1/gen_0000.tar" in up
+    sh = os.listdir(tmp_path / "shards")
+    assert not any("partial" in n for n in sh) and not any(n.endswith(".tar") for n in sh)
+
+
+def test_disk_guard_reclaims_uploaded_tars_first(tmp_path):
+    (tmp_path / "shards").mkdir(parents=True)
+    for n in ("gen_0000.tar", "gen_0001.tar", "gen_0001_partial.tar", "gen_0002_partial.tar"):
+        (tmp_path / "shards" / n).write_bytes(b"x" * 10)
+    (tmp_path / "shards" / "gen_0000.tar.uploaded").write_text("1 5")
+    (tmp_path / "shards" / "gen_0001.tar.uploaded").write_text("1 5")
+    job, _ = make_job(tmp_path, max_images=3)
+    assert job._reclaim_disk() == 3
+    assert os.listdir(tmp_path / "shards").count("gen_0002_partial.tar") == 1  # only copy kept
+    assert not (tmp_path / "shards" / "gen_0000.tar").exists()
+
+
+def test_disk_guard_continues_when_reclaim_frees_space(tmp_path):
+    (tmp_path / "shards").mkdir(parents=True)
+    (tmp_path / "shards" / "gen_0000.tar").write_bytes(b"x")
+    (tmp_path / "shards" / "gen_0000.tar.uploaded").write_text("1 5")
+    free = lambda _: 10**12 if not (tmp_path / "shards" / "gen_0000.tar").exists() else 1
+    job, _ = make_job(tmp_path, max_images=4, free_fn=free)
+    assert job.run()["reason"] == "complete"
+
+
+def test_drain_timeout_does_not_hang_and_main_hard_exits(tmp_path, monkeypatch, capsys):
+    release = threading.Event()
+
+    def hung(local, remote):
+        release.wait(30)
+
+    try:
+        job, _ = make_job(tmp_path, max_images=15, uploader=hung, upload_threads=True,
+                          final_upload_timeout=0.3)
+        t0 = time.time()
+        job.run()
+        assert time.time() - t0 < 10 and job.uploads_pending >= 1
+        exits = []
+        monkeypatch.setattr(cg, "_hard_exit", lambda rc: exits.append(rc))
+        cg.main(["--root", str(tmp_path / "m"), "--max-images", "10", "--shard-size", "5"],
+                deps={"gen_fn": fake_gen_factory(), "encode_fn": fake_encode, "uploader": hung,
+                      "free_fn": lambda p: 10**12, "final_upload_timeout": 0.3,
+                      "sleep": lambda s: None})
+        assert exits == [0] and "upload_timeout" in capsys.readouterr().out
+    finally:
+        release.set()
+
+
+def test_deadline_validation(tmp_path, monkeypatch, capsys):
+    deps = lambda: {"gen_fn": fake_gen_factory(), "encode_fn": fake_encode,
+                    "free_fn": lambda p: 10**12, "upload_threads": False}
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    base = ["--root", str(tmp_path), "--max-images", "2"]
+    assert cg.main(base + ["--deadline", "garbage"], deps=deps()) == 0
+    assert "deadline_unparsed" in capsys.readouterr().out
+    assert cg.main(base + ["--deadline", str(int(time.time() * 1000))], deps=deps()) == 1
+    assert "deadline_too_far" in capsys.readouterr().out
+    assert cg.main(base + ["--deadline", str(time.time() - 100)], deps=deps()) == 1
+    assert "deadline_in_past" in capsys.readouterr().out
+    assert cg.main(base + ["--deadline", str(time.time() + 3600)], deps=deps()) == 0
+    assert '"seconds_left"' in capsys.readouterr().out
+    assert cg.parse_deadline("nan") is None and cg.parse_deadline("inf") is None

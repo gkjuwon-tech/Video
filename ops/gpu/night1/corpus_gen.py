@@ -6,6 +6,10 @@ Run on the GPU box (torch 2.9.1 + CUDA):
     HF_TOKEN=... N1_ROOT=/workspace/night1 N1_DEADLINE=<unix seconds> \
         python corpus_gen.py
 
+Optional env: N1_GPU_FRACTION (default 0.8, 0 disables) caps this process's
+share of GPU memory so the TAE job on the same card is never starved.
+Exit codes: 0 ok, 1 bad start (pipeline load / bad deadline), 2 aborted by errors.
+
 Layout under N1_ROOT (index i is zero padded to 8 digits):
     img/{i}.webp          quality 92
     lat/{i}.npy           float16, (C, H/8, W/8), (z - shift) * scale
@@ -418,6 +422,21 @@ def uploaded_marker(root: str, name: str) -> str:
     return os.path.join(root, "shards", name + ".uploaded")
 
 
+def marker_count(path: str) -> Optional[int]:
+    """Item count recorded in an ``.uploaded`` marker (``"<ts> <count>"``), if any."""
+    try:
+        with open(path) as f:
+            parts = f.read().split()
+        if len(parts) >= 2 and int(parts[1]) >= 0:
+            return int(parts[1])
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+_SHARD_RE = re.compile(r"gen_(\d{4,})(_partial)?\.tar")
+
+
 def make_uploader(token: Optional[str], repo_id: str = REPO_ID) -> Optional[Callable[[str, str], None]]:
     """Return ``upload(local_path, path_in_repo)`` or None when there is no token."""
     if not token:
@@ -429,6 +448,11 @@ def make_uploader(token: Optional[str], repo_id: str = REPO_ID) -> Optional[Call
             path_or_fileobj=local, path_in_repo=remote,
             repo_id=repo_id, repo_type=REPO_TYPE)
 
+    def delete_remote(remote: str) -> None:
+        from huggingface_hub import HfApi
+        HfApi(token=token).delete_file(path_in_repo=remote, repo_id=repo_id, repo_type=REPO_TYPE)
+
+    upload.delete_remote = delete_remote  # type: ignore[attr-defined]
     return upload
 
 
@@ -461,6 +485,12 @@ def vram_gb() -> float:
     return 0.0
 
 
+def _is_oom(e: BaseException) -> bool:
+    msg = str(e).lower()
+    return ("out of memory" in msg or re.search(r"\boom\b", msg) is not None
+            or type(e).__name__ == "OutOfMemoryError")
+
+
 def _free_cuda_cache() -> None:
     try:
         import torch
@@ -483,7 +513,7 @@ class CorpusJob:
                  free_fn: Optional[Callable[[str], int]] = None,
                  upload_threads: bool = True, upload_backoff: float = 20.0,
                  final_upload_timeout: float = 900.0, vae_channels: Optional[int] = None,
-                 max_consecutive_fail: int = 100):
+                 max_consecutive_fail: int = 100, sweep_every: float = 1800.0):
         self.root = root
         self.gen_fn = gen_fn
         self.encode_fn = encode_fn
@@ -504,6 +534,8 @@ class CorpusJob:
         self.final_upload_timeout = final_upload_timeout
         self.vae_channels = vae_channels
         self.max_consec = max_consecutive_fail
+        self.sweep_every = sweep_every
+        self._init_batch = self.batch
 
         self.stop_event = threading.Event()
         self.done: set = set()
@@ -514,6 +546,10 @@ class CorpusJob:
         self.last_progress = self.t0
         self.last_shard: Optional[str] = None
         self.stop_reason = "complete"
+        self.uploads_pending = 0
+        self.last_sweep = self.t0
+        self._first_checked = False
+        self._last_err = ""
         self._pool: Optional[ThreadPoolExecutor] = None
         self._futures: List = []
         self._inflight: set = set()
@@ -531,13 +567,19 @@ class CorpusJob:
             return "signal"
         if self._past_deadline():
             return "deadline"
-        try:
-            free = self.free_fn(self.root)
-        except Exception:
-            free = None
+        free = self._free()
         if free is not None and free < self.min_free:
-            return "disk"
+            self._reclaim_disk()  # uploaded / superseded tars are expendable
+            free = self._free()
+            if free is not None and free < self.min_free:
+                return "disk"
         return None
+
+    def _free(self) -> Optional[int]:
+        try:
+            return self.free_fn(self.root)
+        except Exception:
+            return None
 
     # -- progress ----------------------------------------------------------
     def progress(self, force: bool = False) -> None:
@@ -561,10 +603,14 @@ class CorpusJob:
             return None
         name = partial_shard_name(k) if partial else shard_name(k)
         path = os.path.join(self.root, "shards", name)
+        m = uploaded_marker(self.root, name)
         try:
-            if not (os.path.exists(path) and _tar_count(path) == len(members)):
+            if os.path.exists(path):
+                fresh = _tar_count(path) == len(members)
+            else:  # tar may have been reclaimed after a successful upload
+                fresh = os.path.exists(m) and marker_count(m) in (None, len(members))
+            if not fresh:
                 pack_shard(self.root, name, members)
-                m = uploaded_marker(self.root, name)
                 if os.path.exists(m):
                     os.remove(m)
         except Exception as e:  # noqa: BLE001
@@ -579,15 +625,88 @@ class CorpusJob:
             ok = upload_with_retry(self.uploader, path, remote, backoff=self.upload_backoff,
                                    sleep=self.sleep)
             if ok:
+                cnt = _tar_count(path)
                 with open(uploaded_marker(self.root, name), "w") as f:
-                    f.write(str(int(self.now())))
+                    f.write(f"{int(self.now())} {cnt}")
                 self.last_shard = name
                 log({"shard_uploaded": name, "n": len(self.done)})
+                self._after_uploaded(name)
         except Exception as e:  # noqa: BLE001
             warn("upload_task_error", shard=name, err=f"{type(e).__name__}: {e}"[:300])
         finally:
             with self._lock:
                 self._inflight.discard(name)
+
+    def _shards_dir(self) -> str:
+        return os.path.join(self.root, "shards")
+
+    def _rm(self, name: str) -> bool:
+        try:
+            os.remove(os.path.join(self._shards_dir(), name))
+            return True
+        except OSError:
+            return False
+
+    def _after_uploaded(self, name: str) -> None:
+        """The vault has the tar: drop the local copy (img/lat/meta stay) and,
+        for a full shard, the superseded partial tar."""
+        try:
+            self._rm(name)
+            mt = _SHARD_RE.fullmatch(name)
+            if mt and not mt.group(2):
+                pname = partial_shard_name(int(mt.group(1)))
+                pm = uploaded_marker(self.root, pname)
+                had_remote = os.path.exists(pm)
+                self._rm(pname)
+                self._rm(pname + ".uploaded")
+                dele = getattr(self.uploader, "delete_remote", None)
+                if had_remote and dele is not None:
+                    try:
+                        dele(f"{REMOTE_DIR}/{pname}")
+                    except Exception as e:  # noqa: BLE001 - cosmetic cleanup only
+                        warn("remote_partial_delete_failed", shard=pname,
+                             err=scrub(f"{type(e).__name__}: {e}")[:200])
+        except Exception as e:  # noqa: BLE001
+            warn("cleanup_error", shard=name, err=f"{type(e).__name__}: {e}"[:200])
+
+    def _reclaim_disk(self) -> int:
+        """Delete local tars that are safely in the vault or superseded. Returns count."""
+        n = 0
+        try:
+            names = os.listdir(self._shards_dir())
+        except OSError:
+            return 0
+        for nm in names:
+            mt = _SHARD_RE.fullmatch(nm)
+            if not mt:
+                continue
+            gone = os.path.exists(uploaded_marker(self.root, nm))
+            if mt.group(2):
+                full = shard_name(int(mt.group(1)))
+                gone = gone or os.path.exists(uploaded_marker(self.root, full))
+            if gone and self._rm(nm):
+                n += 1
+        return n
+
+    def _sweep_uploads(self, skip_k: Optional[int] = None) -> None:
+        """Resubmit every shard tar the vault has not confirmed (earlier failures)."""
+        if self.uploader is None:
+            return
+        self.last_sweep = self.now()
+        try:
+            names = sorted(os.listdir(self._shards_dir()))
+        except OSError:
+            return
+        for nm in names:
+            mt = _SHARD_RE.fullmatch(nm)
+            if not mt or int(mt.group(1)) == skip_k:
+                continue
+            if mt.group(2):
+                full = shard_name(int(mt.group(1)))
+                if (os.path.exists(os.path.join(self._shards_dir(), full))
+                        or os.path.exists(uploaded_marker(self.root, full))):
+                    continue  # superseded partial
+            self._submit_upload(nm)
 
     def _submit_upload(self, name: str) -> None:
         if self.uploader is None:
@@ -624,7 +743,9 @@ class CorpusJob:
             except Exception as e:  # noqa: BLE001
                 warn("upload_wait", err=f"{type(e).__name__}: {e}"[:200])
                 break
-        self._pool.shutdown(wait=False)
+        self.uploads_pending = sum(1 for f in self._futures if not f.done())
+        # cancel queued uploads; a running one cannot be killed (main() hard-exits)
+        self._pool.shutdown(wait=False, cancel_futures=True)
         self._pool = None
         self._futures = []
 
@@ -648,8 +769,26 @@ class CorpusJob:
                     break
                 continue
             generated.append((spec, img, time.time() - t))
+        n_fail0 = self.n_fail
         self._encode_and_store(generated)
+        if stop is None:
+            stop = self._first_batch_check(len(generated), self.n_fail - n_fail0)
+        if stop is None:
+            stop = self._maybe_abort()
         return stop
+
+    def _first_batch_check(self, n_gen: int, n_enc_fail: int) -> Optional[str]:
+        """Fail fast when the very first encoded batch of the run stores nothing."""
+        if self._first_checked or n_gen == 0:
+            return None
+        if self.n_new > 0:
+            self._first_checked = True
+            return None
+        if n_gen >= min(self._init_batch, 2) and n_enc_fail >= n_gen:
+            self._first_checked = True
+            log({"stop": "first_batch_failed", "failed": n_enc_fail, "err": self._last_err})
+            return "errors"
+        return None
 
     def _maybe_abort(self) -> Optional[str]:
         if self.consec_fail >= self.max_consec:
@@ -661,8 +800,9 @@ class CorpusJob:
     def _item_failed(self, i: int, what: str, e: BaseException) -> None:
         self.n_fail += 1
         self.consec_fail += 1
+        self._last_err = scrub(f"{what}: {type(e).__name__}: {e}")[:300]
         warn(what, i=i, err=f"{type(e).__name__}: {e}"[:300])
-        if "out of memory" in str(e).lower() or type(e).__name__ == "OutOfMemoryError":
+        if _is_oom(e):
             _free_cuda_cache()
 
     def _encode_and_store(self, generated: List[Tuple[dict, object, float]]) -> None:
@@ -671,8 +811,10 @@ class CorpusJob:
             im = g[1]
             groups.setdefault((im.height, im.width), []).append(g)
         for _, items in groups.items():
-            for s in range(0, len(items), self.batch):
+            s = 0
+            while s < len(items):
                 sub = items[s: s + self.batch]
+                s += len(sub)
                 lats: List[Optional[np.ndarray]]
                 try:
                     arr = self.encode_fn([g[1] for g in sub])
@@ -680,6 +822,9 @@ class CorpusJob:
                 except Exception as e:  # noqa: BLE001
                     warn("encode_batch_failed", err=f"{type(e).__name__}: {e}"[:300])
                     _free_cuda_cache()
+                    if len(sub) > 1 and _is_oom(e):
+                        self.batch = 1  # stop retrying the batch on every chunk
+                        warn("encode_batch_reduced", to=1)
                     lats = []
                     for g in sub:  # retry one by one so a single bad item is isolated
                         try:
@@ -710,7 +855,8 @@ class CorpusJob:
         clean_tmp(self.root)
         self.done = done_set(self.root)
         log({"start": True, "root": self.root, "already_done": len(self.done),
-             "hf_token": "yes" if self.uploader else "no", "deadline": self.deadline})
+             "hf_token": "yes" if self.uploader else "no", "deadline": self.deadline,
+             "seconds_left": None if self.deadline is None else round(self.deadline - self.now(), 1)})
         i = self.start
         try:
             while i < self.end:
@@ -734,8 +880,11 @@ class CorpusJob:
                         break
                 i = chunk_end
                 if i % self.S == 0:
+                    self._sweep_uploads(skip_k=k)
                     self._finish_shard(k)
                 self.progress()
+                if self.uploader is not None and self.now() - self.last_sweep >= self.sweep_every:
+                    self._sweep_uploads(skip_k=i // self.S)
             else:
                 self.stop_reason = "complete"
         except Exception as e:  # noqa: BLE001 - never die with files unsaved
@@ -752,6 +901,7 @@ class CorpusJob:
                 need = k is not None and i % self.S != 0
             else:
                 k, need = i // self.S, True
+            self._sweep_uploads(skip_k=k if need else None)
             if need:
                 full = len(self._members(k)) >= self.S
                 self._finish_shard(k, partial=not full)
@@ -760,7 +910,8 @@ class CorpusJob:
             warn("finalize_error", err=f"{type(e).__name__}: {e}"[:300])
         self.progress(force=True)
         log({"done": True, "reason": self.stop_reason, "n": len(self.done),
-             "new": self.n_new, "failed": self.n_fail, "last_shard": self.last_shard})
+             "new": self.n_new, "failed": self.n_fail, "last_shard": self.last_shard,
+             "uploads_pending": self.uploads_pending})
 
     def summary(self) -> dict:
         return {"reason": self.stop_reason, "n": len(self.done), "new": self.n_new,
@@ -772,6 +923,8 @@ class CorpusJob:
 # ---------------------------------------------------------------------------
 
 def load_pipeline(device: str = "cuda"):
+    # must be set before CUDA is initialised
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     import torch
     from diffusers import ZImagePipeline
     from huggingface_hub import snapshot_download
@@ -779,7 +932,29 @@ def load_pipeline(device: str = "cuda"):
     path = snapshot_download(MODEL_ID, ignore_patterns=["assets/*"])
     pipe = ZImagePipeline.from_pretrained(path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=False)
     pipe.to(device)
+    try:  # encode a batch one image at a time inside one call: low activation peak
+        pipe.vae.enable_slicing()
+    except Exception as e:  # noqa: BLE001
+        warn("vae_slicing_unavailable", err=f"{type(e).__name__}: {e}"[:200])
+    _cap_gpu_memory(device)
     return pipe
+
+
+def _cap_gpu_memory(device: str = "cuda") -> None:
+    """Keep this process from starving the TAE job on the same GPU."""
+    try:
+        import torch
+        frac = float(os.environ.get("N1_GPU_FRACTION", "0.8"))
+        if frac <= 0 or not torch.cuda.is_available():
+            return
+        total = torch.cuda.get_device_properties(0).total_memory
+        loaded = torch.cuda.memory_allocated()
+        # never below what the loaded pipeline needs plus working headroom
+        eff = min(1.0, max(frac, (loaded + 6 * 2**30) / total))
+        torch.cuda.set_per_process_memory_fraction(eff)
+        log({"gpu_cap_fraction": round(eff, 3), "total_GB": round(total / 2**30, 1)})
+    except Exception as e:  # noqa: BLE001
+        warn("gpu_cap_failed", err=f"{type(e).__name__}: {e}"[:200])
 
 
 def make_gen_fn(pipe, device: str = "cuda"):
@@ -797,7 +972,10 @@ def make_gen_fn(pipe, device: str = "cuda"):
 
 def make_encode_fn(vae, batch: int = ENCODE_BATCH):
     def enc(imgs):
-        return encode_images(vae, imgs, max_batch=batch)
+        try:
+            return encode_images(vae, imgs, max_batch=batch)
+        finally:
+            _free_cuda_cache()  # do not keep the encoder peak reserved all night
 
     return enc
 
@@ -810,9 +988,13 @@ def parse_deadline(v) -> Optional[float]:
     if v in (None, ""):
         return None
     try:
-        return float(v)
+        d = float(v)
     except (TypeError, ValueError):
         return None
+    return d if d == d and abs(d) != float("inf") else None
+
+
+MAX_DEADLINE_AHEAD = 48 * 3600.0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -862,9 +1044,24 @@ def main(argv: Optional[Sequence[str]] = None, deps: Optional[dict] = None) -> i
             log({"stop": "pipeline_load_failed", "err": scrub(f"{type(e).__name__}: {e}")[:500]})
             return 1
 
+    deadline = parse_deadline(args.deadline)
+    if args.deadline not in (None, "") and deadline is None:
+        warn("deadline_unparsed", raw=str(args.deadline)[:40])
+    elif deadline is None:
+        warn("no_deadline", note="running until --max-images or a signal")
+    else:
+        left = deadline - deps.get("now", time.time)()
+        if left <= 0:
+            log({"stop": "deadline_in_past", "deadline": deadline, "seconds_left": round(left, 1)})
+            return 1
+        if left > MAX_DEADLINE_AHEAD:
+            log({"stop": "deadline_too_far", "deadline": deadline, "seconds_left": round(left),
+                 "note": "N1_DEADLINE must be unix SECONDS (milliseconds?)"})
+            return 1
+
     job = CorpusJob(
         args.root, gen_fn, encode_fn, uploader=uploader, start=args.start,
-        max_images=args.max_images, deadline=parse_deadline(args.deadline),
+        max_images=args.max_images, deadline=deadline,
         margin=args.margin, batch=min(args.batch, ENCODE_BATCH), shard_size=args.shard_size,
         min_free_bytes=int(args.min_free_gb * 2**30), progress_every=args.progress_every,
         vae_channels=vae_channels, **deps)
@@ -879,7 +1076,21 @@ def main(argv: Optional[Sequence[str]] = None, deps: Optional[dict] = None) -> i
             except (ValueError, OSError):
                 pass
     res = job.run()
-    return 2 if res["reason"] in ("errors", "error") else 0
+    rc = 2 if res["reason"] in ("errors", "error") else 0
+    if job.uploads_pending:
+        # non-daemon upload threads would be joined at interpreter exit and hang past the deadline
+        log({"stop": "upload_timeout", "pending": job.uploads_pending})
+        _hard_exit(rc)
+    return rc
+
+
+def _hard_exit(rc: int) -> None:
+    for st in (sys.stdout, sys.stderr):
+        try:
+            st.flush()
+        except Exception:  # noqa: BLE001
+            pass
+    os._exit(rc)
 
 
 if __name__ == "__main__":
