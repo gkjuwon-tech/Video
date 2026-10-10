@@ -1,0 +1,9 @@
+{
+ "tests/rdr_08/rdr08_helpers.py": "f3edb8755c0558d6a9198b23a6ecc4cce632d76128d6ac2b5beaa01391259a20",
+ "tests/rdr_08/test_rdr08_api.py": "f0c151cff1d55c61684476af58e0c513a714fd55b33642a82abe69c37b04e731",
+ "tests/rdr_08/test_rdr08_gauss.py": "f5f6e7df347586f36652bd2ff585e6acf4b73ba2f6e34511333045b1d0d9aa1a",
+ "tests/rdr_08/test_rdr08_grad.py": "3ad15a9804840d735a7c73a7e364cb61e59af162c34c044bc02d198231a079dc",
+ "tests/rdr_08/test_rdr08_matte.py": "8712f206b71fdf7e357715579aec105bac8c855cd5c05709604a2fab979e6855",
+ "tests/rdr_08/test_rdr08_sggx.py": "ac1a6479ddcd00097652bbb3a2b868735bc0e2af873bdc4901f19859b851582f",
+ "tests/rdr_08/test_rdr08_strand.py": "0fbe89767ba039f2cbabb2c14e4f0eb95f4a7fef077264dba7895a3f38a31259"
+}

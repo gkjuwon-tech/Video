@@ -1158,9 +1158,20 @@
    "slice": true,
    "rank": 34,
    "why": "매팅 α를 싣는 그릇. 15일 경로에서는 α 카드로 대체 | D15 데모(야크 털 커튼)의 승부처. 슬라이스 승격 2026-10-10.",
-   "status": "todo",
-   "attempts": 0,
-   "log": [],
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791652514,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791653783,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -1250,9 +1261,20 @@
    "slice": true,
    "rank": 37,
    "why": "랙 포커스가 데모의 얼굴. 칼선 방지가 관건",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791652514,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791653783,
+     "event": "done",
+     "models": "contract:opus,build:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "LNS-03",
