@@ -617,9 +617,20 @@
    "slice": false,
    "rank": 15,
    "why": "D14. T4 몇 시간 임대 측정 스크립트",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791668851,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791669591,
+     "event": "done",
+     "models": "contract:sonnet,build:haiku",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "TCH-01",
@@ -758,9 +769,20 @@
    "slice": false,
    "rank": 19,
    "why": "키 설계가 방화벽과 닿아 있음",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791668851,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791669591,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "TCH-05",

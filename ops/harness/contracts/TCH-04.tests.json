@@ -1,0 +1,9 @@
+{
+ "tests/tch_04/tch04_fakes.py": "3ebd68e7b709b82a2177e1d89d49da720dff16280199348899cc966381e66640",
+ "tests/tch_04/test_exh_firewall.py": "dbe6c3b9840cad7071cc822c828ef9872ac1f855c5246fd7e6b5a07a2f74ac6c",
+ "tests/tch_04/test_exh_import.py": "7065345f156a8cc6c47da98280ecc69052e6a5fdd1742657414be1f5991a196d",
+ "tests/tch_04/test_exh_key.py": "c958e529895f9d42c8f600600a22c285955df657985fe90f83ee49449e44a430",
+ "tests/tch_04/test_exh_quant.py": "5f88317bc25272623144b01d9be60a15c0b6441bfa240320cda4ee4d9a9e4fc3",
+ "tests/tch_04/test_exh_resume.py": "38035616b6800249f892b3a9f98a879d59383d128a0c46076a27016d8a8c6c3f",
+ "tests/tch_04/test_exh_store.py": "871db9e9604b587b0e02698c20964bb8d679ca49d4592e4b66a062868d64585b"
+}

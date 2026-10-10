@@ -1,0 +1,9 @@
+{
+ "tests/run_08/conftest.py": "7e89ba37f8744014a9314cec92e6b58a6539b040d04a3730fec47bf9c1ff4b43",
+ "tests/run_08/run08_helpers.py": "5e81b0e8ef7eae6b3d2225bfbfbdda1f302b361a0a8a2cf76ce92d0f3c3dd5bf",
+ "tests/run_08/test_run08_appendix.py": "adf25074d88e687908f065b9d3bb52d1129be846a14a6ea02d6dc9be4c1b5259",
+ "tests/run_08/test_run08_cases.py": "a9e93cfd86a78d9d5363ab5770f4a70dc4049e4155f23d254d5136d1df49eb77",
+ "tests/run_08/test_run08_cli.py": "b0e422727e1f2bf1ab4f91443fde862b111de4c45d074357e39b67d20a8e9d4a",
+ "tests/run_08/test_run08_runner.py": "d6ac48ff79dc790f1e4625c693035e2d4a887c21d57db8ee3740f91420127e27",
+ "tests/run_08/test_run08_stats.py": "272de8a8577a430a2444a4fa6e030c8d9a058b4514532aaa910358d7ee8182b9"
+}
