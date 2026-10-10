@@ -807,9 +807,14 @@
    "slice": false,
    "rank": 20,
    "why": "결과 해석이 σ 채택을 정함. 해석은 Fable",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791669618,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "TCH-06",
@@ -833,9 +838,14 @@
    "slice": false,
    "rank": 21,
    "why": "수식 명세 완결",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791669618,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "TCH-07",
