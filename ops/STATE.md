@@ -8,6 +8,8 @@
 - **상시 승인 A-001 (2026-10-10T14:51:47Z):** 창업자가 BUC 세션들끼리 세션 생성과 Workflow 실행을 매번 묻지 않고 하도록 승인했다. 원문·해시·서버 이벤트 ID는 `ops/harness/AUTHORIZATION.md`. GPU·결제·키는 여전히 오케스트레이터만.
 - **D15 데모 지정 (창업자, 2026-10-10T15:00Z):** 초원의 하얀 거대 야크 이미지 한 장으로 멈춘 세계 + 다양한 카메라 무브. 사양 `docs/DEMO-D15.md`, 원본은 HF 금고 `demo/d15_hero_yak.webp`(공개 레포에 넣지 않음). RDR-01·RDR-08·RD-18·RD-05를 수직 슬라이스로 승격, 관련 단위에 `demo: d15-yak` 태그.
 - **공장장 체크인:** 공장장은 send_later 권한이 막혀 있어 오케스트레이터가 매시간 :03에 공장장 세션을 깨우는 트리거 `trig_01GL7Ww48KbFj51yDHhG5EQW`를 걸었다. 창업자가 공장장 세션에서 직접 교대조 상시 가동을 지시했다(14:57Z).
+- **밤사이 GPU 체인:** `ops/gpu/night_chain.sh` = 기동 보장(ensure_up) → E0 결과 회수(`ops/gpu/e0_result.json`) → **GPU 정지**(유휴 과금 방지, 디스크만 과금) → 커밋. 러너 단위(RUN-*)가 준비되면 `vastai start instance ID`로 다시 켠다.
+- **한도 리셋 직후 깨우기:** `trig_01PcFv7tauA9qF4ycUjpFgc9`(1회, 19:12Z)가 공장장을 깨운다.
 - **GPU 기동 감시:** `ops/gpu/ensure_up.py`가 인스턴스가 기한(생성 후 50분) 안에 안 뜨면 파기하고 검증된 5090(≤$0.50/h, 중국 제외)을 새로 빌려 같은 부팅 스크립트로 띄운다. 현재 인스턴스는 `ops/gpu/instance.json`.
 - 하네스 설계 워크플로(buc-harness-design)는 창업자 지시로 폐기. 조사 산출물(work/wf5/r-*.md, units.json)은 백로그 원천으로 사용.
 
