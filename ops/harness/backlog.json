@@ -235,8 +235,8 @@
    "name": "설정·실험 매니페스트·장부 (SQLite: TFU·GPU-h·비용)",
    "paths": [
     "buc/core/config.py",
-    "manifest.py",
-    "ledger.py"
+    "buc/core/manifest.py",
+    "buc/core/ledger.py"
    ],
    "deps": [
     "FND-01"
@@ -254,8 +254,8 @@
    "slice": true,
    "rank": 6,
    "why": "CRUD 수준, 스키마만 정하면 됨",
-   "status": "blocked",
-   "attempts": 1,
+   "status": "done",
+   "attempts": 2,
    "log": [
     {
      "ts": 1791645860,
@@ -266,6 +266,12 @@
      "event": "blocked",
      "models": "contract:sonnet,build:haiku,repair:sonnet,repair:opus",
      "note": "게이트 3회 실패: {\"id\": \"FND-07\", \"checks\": {\"frozen\": \"ok\", \"paths\": \"없는 경로: [manifest.py, ledger.py]\", \"compile\": \"ok\", \"ruff\": \"ok\", \"pytest\": \"ok\"}, \"pass\": false} The FND-07 implementation is correct. The gate fails because of a data bug in backlog.json, not because of the code, so I changed no files.\n\nWhat I found:\n- buc/core/config.py, buc/core/manifest.py and buc/core/ledger.py all exist. py_compile and ruff (E9,F63,F7,F82) pass on all three. pytest on tests/fnd_07 passes: 157 tests, none fail"
+    },
+    {
+     "ts": 1791647379,
+     "event": "done",
+     "models": "contract:sonnet,build:haiku,repair:sonnet,repair:opus",
+     "note": "gate 재실행 통과: blocked 원인은 backlog 경로 약식 표기(manifest.py) 버그. 오케스트레이터가 buc/ 아래 약식 경로 11단위 정규화"
     }
    ]
   },
@@ -447,9 +453,9 @@
    "name": "학습 하네스 공용 (AMP·원자 체크포인트·Feistel PRP·max-abs 경보)",
    "paths": [
     "buc/train/loop.py",
-    "amp.py",
-    "ckpt.py",
-    "sampler.py"
+    "buc/train/amp.py",
+    "buc/train/ckpt.py",
+    "buc/train/sampler.py"
    ],
    "deps": [
     "FND-03",
@@ -826,7 +832,7 @@
    "name": "gsplat 2DGS 래퍼 (미분 래스터·dual-cut LOD·COLMAP 점 초기화 피팅)",
    "paths": [
     "buc/render/splat2d.py",
-    "fit.py"
+    "buc/render/fit.py"
    ],
    "deps": [
     "RUN-05",
@@ -882,7 +888,7 @@
    "name": "TSQ 텍스처 쿼드 커널 (8×8 페이지 바이리니어·n≥2 에지·미분·BC 압축)",
    "paths": [
     "buc/render/tsq_kernel.cu",
-    "tsq.py"
+    "buc/render/tsq.py"
    ],
    "deps": [
     "RDR-01"
@@ -2578,7 +2584,7 @@
    "name": "레이어 카드 세계 (2.5D)+NPR 렌더+스트로크 밉 (L2)",
    "paths": [
     "buc/world/layer_cards.py",
-    "npr.py"
+    "buc/world/npr.py"
    ],
    "deps": [
     "WLD-03",
@@ -2634,7 +2640,7 @@
    "name": "문법 코어+RoomGen v0 (장면 프로그램·numba 레이캐스트·G1–G13 에너지 골격)",
    "paths": [
     "buc/invent/grammar/core.py",
-    "room.py"
+    "buc/invent/grammar/room.py"
    ],
    "deps": [
     "FND-02"
@@ -2874,8 +2880,8 @@
    "name": "M1 TAE-T (2.5M f8 AE, 교사 VAE 쌍 증류, T-LPIPS 항)",
    "paths": [
     "buc/models/tae_t/model.py",
-    "train.py",
-    "eval.py"
+    "buc/models/tae_t/train.py",
+    "buc/models/tae_t/eval.py"
    ],
    "deps": [
     "TCH-01",
@@ -2931,8 +2937,8 @@
    "name": "M3 MRH 본체 (PCA 탭→DPT neck→깊이·법선·알베도·rough/metal·shading·defocus·sem·σ̂)",
    "paths": [
     "buc/models/mrh/neck.py",
-    "heads.py",
-    "train.py"
+    "buc/models/mrh/heads.py",
+    "buc/models/mrh/train.py"
    ],
    "deps": [
     "RUN-06",
@@ -3072,7 +3078,7 @@
    "name": "M5 TexelFM-35 본체 (s2d·conv-res·window attn·견본 cross-attn·2×2 평균0 사영)",
    "paths": [
     "buc/models/texelfm/model.py",
-    "train.py"
+    "buc/models/texelfm/train.py"
    ],
    "deps": [
     "RUN-06",
@@ -3129,7 +3135,7 @@
    "name": "M5 TexelFM native 추론 (WNF 고정 타일 격자·마모장 계산·T8 비트 동일)",
    "paths": [
     "buc/models/texelfm/native.py",
-    "wear.py"
+    "buc/models/texelfm/wear.py"
    ],
    "deps": [
     "MDL-08",
@@ -3185,7 +3191,7 @@
    "name": "M7 MassingFM 본체 (DiT 12L d384·FM+masked·3D patchify·3상태 조건)",
    "paths": [
     "buc/models/massing/model.py",
-    "train.py"
+    "buc/models/massing/train.py"
    ],
    "deps": [
     "RUN-06",
