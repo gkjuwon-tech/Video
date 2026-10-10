@@ -1480,12 +1480,18 @@
    "slice": true,
    "rank": 44,
    "why": "CPU 수식. 슬라이더·달리·오빗 3종부터",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791655141,
      "event": "claimed"
+    },
+    {
+     "ts": 1791656451,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ]
   },
@@ -1672,12 +1678,18 @@
    "slice": true,
    "rank": 51,
    "why": "정형 입출력과 통계 추정",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791655141,
      "event": "claimed"
+    },
+    {
+     "ts": 1791656451,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: buc/read/__init__.py 는 만들지 않았다(소유 경로 밖). buc/core 처럼 네임스페이스 패키지로 import 되어 현재 문제는 없다. 필요하면 FND 쪽에서 추가해 달라. pyproject 의존성 추가 요청은 없다(Pillow, numpy는 이미 사용 중)."
     }
    ]
   },

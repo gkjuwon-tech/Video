@@ -1,0 +1,7 @@
+{
+ "tests/cam_01/cam01_helpers.py": "1d201773e610db74575778527ffff7e3c94d4a2217e28d46a5b88a90b769a376",
+ "tests/cam_01/test_cam01_dynamics.py": "7c588bd2f038c098035e414010a678681c6ba0ec15a6e0b94095364a8d030cb5",
+ "tests/cam_01/test_cam01_kinematics.py": "fa0b50ca66ce3fdd40e20747dd82f7e80c8980799dd42cebe20f831e39a720dc",
+ "tests/cam_01/test_cam01_math.py": "b09133c77ea19c2e8a63bfb9354077c2a4bd42ea15f7496e636d5e45af4458bb",
+ "tests/cam_01/test_cam01_registry.py": "ba60e47bf017aa70b09c2ea5fbd303239dd9e4a42a697520cbf31f53652019e3"
+}
