@@ -4,6 +4,7 @@
 - **하네스 v1 가동:** 헌법 `ops/harness/README.md`, 백로그 `ops/harness/backlog.json`(167단위, 수직 슬라이스 45개 우선), 선택기 `pick.py`, 기계 게이트 `gate.py`(동결 테스트 해시·compile·ruff·pytest), 상태 갱신 `update.py`, 장부 `ledger.jsonl`. 교대조 워크플로 `ops/workflows/buc-shift.js`(args batches 4, k 2). 교대조가 끝나면 오케스트레이터가 바로 다음 교대조를 띄운다.
 - 모델 배정: 선택·게이트·커밋 Haiku, 계약서+테스트 Sonnet(난이도·위험 ≥4는 Opus medium), 구현은 백로그 impl_model, 수리 Sonnet→Opus, 위험 ≥4 검토 Opus low. Fable은 교대조에서 쓰지 않음.
 - 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
+- **공장장 세션:** `session_01XA9TirqQtqJiYRyewCK8uv`(Sonnet 5.5, 태그 buc-foreman)이 교대조를 상시 가동한다(지침 `ops/harness/FOREMAN.md`). 이유: 오케스트레이터 세션에서 창업자가 실행을 중단하면 백그라운드 워크플로가 같이 죽는다(2회 발생). 공장장은 GPU·키를 다루지 않는다. 진행 신호는 `ops/harness/foreman.json`.
 - 하네스 설계 워크플로(buc-harness-design)는 창업자 지시로 폐기. 조사 산출물(work/wf5/r-*.md, units.json)은 백로그 원천으로 사용.
 
 ## ▶️ 재개 (창업자 복귀, 결제 예정)
