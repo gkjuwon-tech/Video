@@ -9,13 +9,15 @@
 ## 기획서 다음: 15일 스프린트 (창업자 지시)
 - D0 = 기획서 v3 확정일. D15에 같은 사진 한 장으로 Seedance I2V보다 눈으로 좋은 영상.
 - 소형 모델 범위를 좁히지 않는다. Phase 1 카탈로그 전원을 만든다.
-- 컴퓨트: Kaggle 3계정(주 약 90 세션-시간). T4×2 쿼터 차감률(1배/2배) 미확인 → 15일 193–386 T4-h.
+- **컴퓨트 결정 (2026-10-10):** Vast.ai **RTX 5090**(32GB, BF16, RT 코어)을 필요할 때만 켠다. 1순위는 한국 호스트 1장($0.213/h). 없으면 2×5090($0.83/h) 또는 2×4090($0.72/h). Phase 1 완주 계산 비용은 약 2–4만원(디버깅·재실행·디스크·전송 포함 현실치 3–7만원). 창업자 충전 5만원.
+- 학습·개발은 5090. "2×T4로 촬영" 주장은 스프린트 끝에 T4를 몇 시간 빌려 실측한다(제안, 창업자 확인 대기). T4 전용 우회(FP16 수술, INT8/W4A4 강제)는 5090 경로에서 불필요.
+- Kaggle은 약관(개인·비상업, 계정 공유 금지) 때문에 주력에서 제외. T4 사냥 워크플로는 중단(1차 결과: ops/viz/t4_hunt.py, gpu_value.py).
 - 차트: `ops/viz/sprint_plan.py`.
 
 ## 블로커 / 창업자 결정 대기
-1. **Kaggle 자격 증명:** 클라우드 환경 설정의 Network secrets(또는 환경 변수)에 `KAGGLE_USERNAME_1..3`, `KAGGLE_KEY_1..3`. 채팅에 붙여넣지 않는다. 새 세션(또는 새 컨테이너)에서 읽힌다.
+1. **Vast.ai:** 가입 + 5만원 충전 + API 키를 Network secrets에 `VAST_API_KEY`로. 체크포인트 저장용 Hugging Face 쓰기 토큰을 `HF_TOKEN`으로(비공개 저장소). 채팅에 붙여넣지 않는다. 새 컨테이너에서 읽힌다.
 2. **Kaggle 약관 (2026-10-10 원문 확인, kaggle.com/terms):** "You will not share your account or password with anyone"(계정 공유 금지), "You will only use the Services for your own internal, personal, non-commercial use, and not on behalf of or for the benefit of any third party"(개인·비상업 전용). → 친구 계정 빌려 쓰기는 계정 공유, 스타트업 R&D는 비상업 조항과 충돌. Kaggle을 주력 컴퓨트로 쓰지 않는 쪽을 권고. 참고: Colab Pro/Pro+ 연동 시 Kaggle GPU 주 +15/+30시간(실험 프로모션).
-3. **컴퓨트 부족분:** Kaggle만으로는 Phase 1 스프린트 필요량(500–775 T4-h)의 약 25–75%. 상시 2×T4 임대(15일 720 T4-h) 여부.
+3. **(해결)** 컴퓨트: Vast 5090 필요할 때만 가동으로 결정.
 4. **사람 데이터:** CamFM-Hand용 IMU(폰 들고 걷기), MRH용 실사 방 촬영, TexelFM용 RAW 매크로.
 5. **Seedance 비교 영상:** 창업자의 Higgsfield 구독(Seedance 포함)으로 같은 사진 I2V 생성.
 
