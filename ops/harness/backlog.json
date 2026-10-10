@@ -508,9 +508,20 @@
    "slice": true,
    "rank": 13,
    "why": "14종 전체의 기반. 한 번 틀리면 14번 틀림",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791649062,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791650331,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: buc/train/__init__.py is absent (works as a namespace package; optionally add an empty one). No other changes needed outside the owned paths. GPU test tests/run_06/test_r06_gpu.py was not run (no CUDA here) and needs the GPU runner."
+    }
+   ]
   },
   {
    "id": "RUN-07",
@@ -589,9 +600,20 @@
    "slice": true,
    "rank": 16,
    "why": "공식 모델 래핑. 메모리·결정론 시행착오",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791649062,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791650331,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "TCH-02",

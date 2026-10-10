@@ -1,0 +1,43 @@
+# RUN-06 학습 하네스 공용 v0 — AMP · 원자 체크포인트 · Feistel PRP · max-abs 경보
+
+**목적.** 14종 from-scratch 모델(MDL-*)이 같이 쓰는 학습 바닥: fp32 마스터 + autocast fp16(GradScaler), 무상태 샘플러, 원자 체크포인트·허브 동기, 층별 max-abs 경보. **중간에 죽었다 이어간 학습은 끝까지 한 번에 돈 학습과 비트 동일**해야 한다(CPU fp32 기준).
+**소유.** `buc/train/sampler.py`, `amp.py`, `ckpt.py`, `loop.py`, 테스트 `tests/run_06/`(동결). 의존: FND-03(`derive_seed`·`hash_bytes`·`enable_determinism`), RUN-03(`HubSync`·`checkpoint_name`·`parse_checkpoint_name`·`validate_run_id`), RUN-05(코드 의존 없음). CUDA 없이 import 가능, import 부작용 없음. 로거 이름 `"buc.train"`. **소유 밖 요청:** `buc/train/__init__.py`(없어도 동작).
+
+## sampler.py
+- `FeistelPRP(n, seed, rounds=6)`: [0,n) 전단사. `n∈[1,2^62]`, `seed∈[0,2^64)`, `rounds≥3`, 위반 `ValueError`, 비정수·bool `TypeError`. 속성 `n, seed, rounds`. `__call__(i)`, `inverse(j)`(범위 밖 `ValueError`), `permute_array(a)`/`inverse_array(a)`(정수 ndarray → int64 같은 shape, 스칼라와 동일 값).
+  **알고리즘(바이트 계약, 바꾸면 재개가 깨진다):** `h=max(1,(bitlen(n-1)+1)//2)`, 반폭 h비트, 키 `k_r=derive_seed(seed,"buc.feistel.v1",r)`(r=0..rounds-1). 라운드 `L,R = R, L ^ (F(R^k_r) & (2^h-1))` (입력 `x`→`L=x>>h, R=x&mask`, 출력 `(L<<h)|R`), `F`=splitmix64 마무리(`z+=0x9E3779B97F4A7C15; z=(z^z>>30)*0xBF58476D1CE4E5B9; z=(z^z>>27)*0x94D049BB133111EB; z^=z>>31`, 모두 mod 2^64). 범위 밖이면 다시 암호화하는 cycle-walking. 고정 값: `FeistelPRP(10,12345)(0..9)=[7,1,4,2,5,6,8,9,3,0]`.
+- `StatelessSampler(num_samples, batch_size, seed)`: 위치 `p=step*B+j`, `e,o=divmod(p,n)`, `index_at(p)=FeistelPRP(n, derive_seed(seed,"buc.train.epoch.v1",e))(o)`. 에폭마다 전체 순열(반복 없음), 배치는 에폭 경계를 걸칠 수 있다. `indices(step) -> int64[B]`. 기록하는 상태가 없다 → 어느 스텝에서든, 호출 순서와 무관하게 같은 값.
+
+## amp.py
+- `AmpConfig(dtype="fp16"|"bf16"|"fp32", device_type="cuda"|"cpu"="cuda", init_scale=65536.0, growth_factor=2.0, backoff_factor=0.5, growth_interval=2000)` frozen, 위반 `ValueError`.
+- `set_precision_flags()`: `allow_fp16_reduced_precision_reduction=False`, matmul·cudnn `allow_tf32=False`. `Amp(cfg, *, apply_backend_flags=True)`가 호출한다.
+- `Amp`: `cfg`, `scaling`(dtype=="fp16"), `scale_value`(스케일링 없으면 1.0), `skipped_steps`, `consecutive_skips`. `autocast()`(fp32면 사실상 no-op), `fp32_region()`(autocast 끔: LN·softmax·손실·FFT용), `scale(loss)`(스케일링 없으면 그대로).
+  `step(optimizer, *, max_grad_norm=None) -> StepResult(stepped: bool, grad_norm: float, scale: float)`: 언스케일 → 노름 계산(`grad_norm`은 **클립 전** 노름) → `max_grad_norm`으로 클립 → **노름이 비유한이면 건너뜀**(모든 dtype에서; `optimizer.step` 미호출, 파라미터·옵티마이저 상태 불변, `skipped_steps`+1) → 스케일 갱신(성공 `growth_interval`회 연속이면 ×growth_factor, 건너뛰면 ×backoff_factor와 성장 카운터 0). 호출 하나가 backward 이후의 전부다.
+  `state_dict()`는 파이썬 기본형만 `{"v":1,"dtype","scale","growth_tracker","skipped_steps"}`, `load_state_dict`는 `v`·dtype 불일치 `ValueError`.
+- `MaxAbsMonitor(model, *, every=100, threshold=2e4, include=None)`: 기본 대상은 잎 모듈(루트 제외, 이름은 `named_modules` 이름), `include(name, module)->bool`로 바꾼다. `begin(step)->bool`(무장 = `step % every == 0`), `end() -> MaxAbsReport|None`(무장 안 했으면 `None`; 끝나면 해제), `close()`(훅 제거, 중복 호출 안전), 컨텍스트 매니저. 무장한 구간의 각 모듈 출력(텐서·튜플·리스트·딕트 재귀, 부동소수만)의 `|x|` 최댓값, 같은 구간에서 여러 번 호출되면 최댓값. 출력과 기울기를 바꾸지 않는다.
+  `MaxAbsReport(step, values: dict[str,float], alarms: tuple[Alarm,...])` + `worst -> (name, value)|None`. `Alarm(step, layer, value, threshold)` NamedTuple: `value > threshold` **엄격** 또는 비유한(nan/±inf).
+
+## ckpt.py
+- `atomic_write(path, write_fn(fileobj)) -> Path`: 부모 디렉터리 생성, `<이름>.tmp`에 쓰고 `os.fsync` 뒤 `os.replace`(**`os.` 접두로 호출**), 디렉터리 fsync. 예외(`BaseException` 포함)면 `.tmp` 제거, 기존 최종 파일 보존. 쓰는 동안 최종 경로는 옛 내용. `atomic_torch_save(obj, path)`.
+- `capture_rng()/restore_rng(s)`: python·numpy(가우시안 캐시 포함)·torch CPU·CUDA 전부. 값은 파이썬 기본형·텐서뿐(`torch.load(weights_only=True)` 가능).
+- `config_hash(cfg: Mapping) -> str`: `json.dumps(sort_keys, separators=(",",":"))`의 `hash_bytes(...).hex()`(64자). JSON 불가·nan이면 `TypeError`.
+- `make_state(step, *, model, optimizer=None, scheduler=None, ema=None, amp=None, config_hash, git_commit=None, extra=None) -> dict` = `{"v":1,"step","model","ema","optimizer","scheduler","amp","rng","config_hash","git_commit","extra"}`. 텐서는 CPU 복사본(스냅숏). 부동소수 파라미터가 fp32가 아니면 `ValueError`("fp32"). `apply_state(state, *, model, optimizer=None, scheduler=None, ema=None, amp=None, restore_rng_state=True)`.
+- `CheckpointManager(ckpt_dir, run_id, *, keep_last=3, every_steps=1000, every_seconds=900.0, upload_every_seconds=1800.0, hub=None, background_upload=False, clock=time.monotonic)`: 파일 `ckpt_dir/step_%09d.pt`(RUN-03 `checkpoint_name`). 시작 때 `*.tmp` 삭제. `list_local() -> [(step, Path)]`(오름차순, 완성 이름만), `path_for(step)`, `should_save(step)`(`step>last_saved_step` 이고 스텝 차 ≥ every_steps **또는** 경과 ≥ every_seconds), `save(step, state, *, final=False) -> Path`(원자 저장 → 최신 `keep_last`개만 남김 → `maybe_upload(step, force=final)`), `maybe_upload(step, *, force=False) -> SyncResult|None`(허브 없음·비활성·주기 전·파일 없음이면 `None`; `hub.try_upload_checkpoint`라 실패해도 안 던진다; 결과는 `last_upload`; `background_upload`면 스레드 하나, 진행 중이면 쌓지 않고 건너뜀, `force`는 기다림), `flush(timeout=None)`, `close()`.
+  `resume(*, expect_config_hash=None) -> LoadedCheckpoint(step, state, path)|None`: 허브가 켜져 있고 허브 최신 step이 로컬 최신보다 크면(또는 로컬이 없으면) 그것만 받는다(허브 오류는 경고 후 로컬로). 최신부터 `torch.load(weights_only=True)`; 읽기 실패·`v≠1`·내용 step≠파일명 step이면 경고하고 **다음으로 오래된 것으로 폴백**(파일은 지우지 않는다). `expect_config_hash`가 주어졌는데 다르면 `CheckpointMismatchError` — 폴백하지 않는다. 예외 `CheckpointError(RuntimeError)` ⊃ `CheckpointMismatchError`.
+
+## loop.py
+- `LoopConfig`(frozen; 필수 `run_id, ckpt_dir, num_samples, batch_size, max_steps`; 기본 `seed=0, grad_accum=1, grad_clip=1.0|None, amp=AmpConfig(), ema_decay=None, log_every=100, ckpt_every_steps=1000, ckpt_every_seconds=900.0, upload_every_seconds=1800.0, keep_last=3, max_abs_every=100, max_abs_threshold=2e4, max_consecutive_skips=64, time_budget_s=None, deterministic=True, git_commit=None, hparams={}`). 위반 `ValueError`(`batch_size % grad_accum`≠0 포함). `config_hash()` = `config_hash` of `{run_id, num_samples, batch_size, seed, grad_accum, grad_clip, amp_dtype, ema_decay, hparams}` — **일정 항목(max_steps·주기·keep_last·ckpt_dir·time_budget·임계값)은 해시에 없다.**
+- `ModelEMA(model, decay)`: fp32 그림자, `update(model)`(`s=d·s+(1-d)·p`), `state_dict()`(복사본)/`load_state_dict`/`copy_to(model)`. `to_device(obj, device)`: 텐서·Mapping·list/tuple 재귀.
+- `Trainer(model, optimizer, compute_loss, batch_fn, cfg, *, scheduler=None, hub=None, device="cpu", clock=time.monotonic, log=None, on_alarm=None)`. 공개 속성 `model, optimizer, scheduler, ema, amp, step`. `compute_loss(model, batch) -> Tensor | (Tensor, Mapping[str,float])`, `batch_fn(indices: int64[b]) -> batch`. 모델에 fp32 아닌 부동소수 파라미터가 있으면 생성 때 `ValueError`. `Amp`는 `device_type`을 `device.type`으로 덮어 만든다. `fit() -> FitResult(step, stop_reason: "max_steps"|"time_budget", skipped_steps, alarms, last_log, ckpt_path, resumed_from)`.
+  **fit 순서:** `resume(expect_config_hash=cfg.config_hash())`; 없으면 `enable_determinism(seed)`(deterministic=False면 시드만), 있으면 `enable_determinism(None)` 후 `apply_state`. 스텝 `t`(=완료 수): 인덱스 `sampler.indices(t)`를 `grad_accum`등분 → 조각마다 `batch_fn`·`autocast`·`scale(loss/A).backward()` → `amp.step(max_grad_norm=grad_clip)` → **stepped일 때만** `scheduler.step()`·`ema.update` → `step+=1`(건너뛴 스텝도 전진) → max-abs 보고 → 로그 → 연속 건너뜀 > `max_consecutive_skips`면 `TrainingDiverged(RuntimeError)` → `should_save`면 저장(마지막 스텝은 제외) → `time_budget_s` 경과면 중단. 끝나면(중단 포함) 이 스텝 파일이 없으면 `save(final=True)`, 있으면 `maybe_upload(force=True)`. 이미 `max_steps`면 아무것도 안 하고(배치·파일 불변) 체크포인트에서 복원만. `max_steps=0`이면 파일도 안 만든다. 모니터 훅은 예외 경로에서도 제거.
+  **max-abs:** 실행 스텝 인덱스 `t % max_abs_every == 0`(0 포함)에서 측정. 경보마다 WARNING(`"max-abs"`와 층 이름 포함)·`on_alarm(alarm)`·`FitResult.alarms`; 학습은 계속. 로그 이벤트 `{"event":"max_abs","step","worst_layer","worst","n_alarms"}`.
+  **로그:** `step % log_every == 0`(완료 수)일 때, 그 스텝의 스케줄러·EMA 갱신 후 상태에서 `{"event":"train","step","loss","lr","grad_norm","loss_scale","skipped_steps","metrics":{이름: 조각 평균}}`.
+
+## 불변식
+재개 정확성(파라미터·EMA·옵티마이저·스케줄러·스케일러·RNG 비트 동일, 손상·충돌·시간 예산 중단 후에도) · 건너뛴 스텝은 상태 불변 · 샘플러·PRP는 무상태 · 체크포인트는 완성본만 보인다(`.tmp`·`.part` 제외) · 허브 장애·무토큰은 학습을 막지 않는다 · 체크포인트에 비밀 없음 · 설정 정체성이 다르면 재개 거부.
+
+## 수용 기준
+`tests/run_06/` 전부 통과(CPU, <60 s): PRP 오라클·전단사·통계·고정값, 샘플러 무상태, GradScaler 동역학·클립·플래그·상태 왕복, max-abs 경계·투명성, 원자 쓰기 순서·실패 보존, RNG·상태 왕복(weights_only), 관리자 정리·주기·폴백·허브 업로드/재개/장애/백그라운드, 루프 의미(누적≡큰 배치, 건너뛰기, 발산, 경보, 시간 예산, 멱등), **재개 비트 동일**(정지·크래시·연쇄·허브만 있는 새 서버). `@pytest.mark.gpu`: CUDA fp16 학습·재개(allclose).
+
+## 하류 이음매
+MDL-* `train.py`는 모델·옵티마이저·`compute_loss`·`batch_fn`만 만들고 `Trainer(...).fit()`를 부른다(DataLoader 워커 없음: `batch_fn`이 샤드를 읽는다). RUN-02 러너는 `hub=HubSync.from_env()`, `time_budget_s`(2시간 잡)를 주고 `FitResult.stop_reason`·종료 코드를 본다. 모델은 norm·softmax·손실을 `amp.fp32_region()`에서 계산한다. 체크포인트 키·PRP 바이트·`"v"` 변경은 호환 파괴이므로 버전과 이 계약서를 함께 올린다.

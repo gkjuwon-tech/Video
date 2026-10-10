@@ -1,0 +1,11 @@
+{
+ "tests/tch_01/conftest.py": "8754ee611ab7924fdd6769ee4d9b0744ebc690088d090a7a0c67fac4180311f5",
+ "tests/tch_01/tch01_fakes.py": "0a0cdabc17c6b9651a81c0ccfa70e154ac89272693c30f9d33bdea23a60d6fe1",
+ "tests/tch_01/test_determinism.py": "c4520168cd3c5241682425113202e431e65eb0ad5933b299149110949a964b18",
+ "tests/tch_01/test_fingerprint.py": "ef85e28958f7f36a709bd0621bb77588e2ea6dd2c81ae93068dd56e97f2fe41f",
+ "tests/tch_01/test_gpu_real.py": "07f6c265ebd33f2ef3162219c2bdeb88fe40a93e28d441261d44690f7d28f592",
+ "tests/tch_01/test_load_teacher.py": "97544f540b61987a09c3e18d74406aed447e20fa5b8b23dc222ea3c00b42304f",
+ "tests/tch_01/test_spec_paths.py": "c99e9262b0a74a288705e71c7e5954394fd6b90b64f7e94708bcfedf923edc03",
+ "tests/tch_01/test_te_cache.py": "f04aa6780158fb6e20acfd62875bbfea7b47e4b286aea1964eb54aa8f85e1a48",
+ "tests/tch_01/test_vae_codec.py": "42333cd236807fd99012b43ee6a17839ad30b78706493ff4f717d419e7a68347"
+}
