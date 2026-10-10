@@ -798,12 +798,13 @@
    "design": "O",
    "review": "O",
    "cls": "M",
-   "slice": false,
+   "slice": true,
    "rank": 27,
    "why": "primary 래스터. sm_120 JIT 위험",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RDR-02",
@@ -983,12 +984,13 @@
    "design": "O",
    "review": "O",
    "cls": "N",
-   "slice": false,
+   "slice": true,
    "rank": 34,
-   "why": "매팅 α를 싣는 그릇. 15일 경로에서는 α 카드로 대체",
+   "why": "매팅 α를 싣는 그릇. 15일 경로에서는 α 카드로 대체 | D15 데모(야크 털 커튼)의 승부처. 슬라이스 승격 2026-10-10.",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RDR-09",
@@ -1227,7 +1229,8 @@
    "why": "look∘explain≈id 성질이 관측 소유권의 토대",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "CAM-01",
@@ -1493,7 +1496,8 @@
    "why": "비네팅·그레인 문신의 해독제(레버 4)",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-04",
@@ -1520,7 +1524,8 @@
    "why": "\"설명할 수 있는 것은 세계에 넣지 않는다\"의 구현",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-05",
@@ -1542,12 +1547,13 @@
    "design": "O",
    "review": "O",
    "cls": "P",
-   "slice": false,
+   "slice": true,
    "rank": 55,
-   "why": "이중 보케 방지의 전제",
+   "why": "이중 보케 방지의 전제 | D15 데모: 전경 양귀비 보케 제거·랙 포커스. 슬라이스 승격 2026-10-10.",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-06",
@@ -1631,7 +1637,8 @@
    "why": "DOF·레벨이 미터를 요구",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-09",
@@ -1794,7 +1801,8 @@
    "why": "소유권 수학의 핵심. MRH.obs는 소프트 의존",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-15",
@@ -1899,12 +1907,13 @@
    "design": "O",
    "review": "O",
    "cls": "P",
-   "slice": false,
+   "slice": true,
    "rank": 68,
-   "why": "예측 아티팩트 1순위(고무 시트)의 해독제. 슬라이스는 LDI 찢기로 버티고 D8에 합류",
+   "why": "예측 아티팩트 1순위(고무 시트)의 해독제. 슬라이스는 LDI 찢기로 버티고 D8에 합류 | D15 데모: 털 가닥·뿔 실루엣 경계 분해. 슬라이스 승격 2026-10-10.",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "RD-19",
@@ -2210,7 +2219,8 @@
    "why": "예측상 실제 출하 경로. 먼저 만들고 나머지가 이것을 이긴다",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "WLD-09",
@@ -2812,7 +2822,8 @@
    "why": "스크립트. 네트워크 허용 확인 필요",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "MDL-01",
@@ -3039,7 +3050,8 @@
    "why": "푸시인 끝 구간 품질. 평균0 사영이 효도 정확성의 열쇠",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "MDL-09",
@@ -3585,7 +3597,8 @@
    "why": "다운샘플 스크립트",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "DAT-07",
@@ -3829,7 +3842,8 @@
    "why": "TexelFM 학습 데이터",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "DAT-16",
@@ -3880,10 +3894,11 @@
    "cls": "S",
    "slice": true,
    "rank": 140,
-   "why": "선별 편향이 승률 해석을 오염. 매트릭스는 Fable이 적대 검토",
+   "why": "선별 편향이 승률 해석을 오염. 매트릭스는 Fable이 적대 검토 | D15 데모 히어로 입력 #1 = HF 금고 demo/d15_hero_yak.webp (docs/DEMO-D15.md). 공개 레포에 이미지 원본을 넣지 않는다.",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "EVL-02",
@@ -3911,7 +3926,8 @@
    "why": "최대 레버(반복 횟수)의 엔진",
    "status": "todo",
    "attempts": 0,
-   "log": []
+   "log": [],
+   "demo": "d15-yak"
   },
   {
    "id": "EVL-03",

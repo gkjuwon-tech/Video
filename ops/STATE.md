@@ -6,6 +6,9 @@
 - 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
 - **공장장 세션:** `session_01XA9TirqQtqJiYRyewCK8uv`(Sonnet 5.5, 태그 buc-foreman)이 교대조를 상시 가동한다(지침 `ops/harness/FOREMAN.md`). 이유: 오케스트레이터 세션에서 창업자가 실행을 중단하면 백그라운드 워크플로가 같이 죽는다(2회 발생). 공장장은 GPU·키를 다루지 않는다. 진행 신호는 `ops/harness/foreman.json`.
 - **상시 승인 A-001 (2026-10-10T14:51:47Z):** 창업자가 BUC 세션들끼리 세션 생성과 Workflow 실행을 매번 묻지 않고 하도록 승인했다. 원문·해시·서버 이벤트 ID는 `ops/harness/AUTHORIZATION.md`. GPU·결제·키는 여전히 오케스트레이터만.
+- **D15 데모 지정 (창업자, 2026-10-10T15:00Z):** 초원의 하얀 거대 야크 이미지 한 장으로 멈춘 세계 + 다양한 카메라 무브. 사양 `docs/DEMO-D15.md`, 원본은 HF 금고 `demo/d15_hero_yak.webp`(공개 레포에 넣지 않음). RDR-01·RDR-08·RD-18·RD-05를 수직 슬라이스로 승격, 관련 단위에 `demo: d15-yak` 태그.
+- **공장장 체크인:** 공장장은 send_later 권한이 막혀 있어 오케스트레이터가 매시간 :03에 공장장 세션을 깨우는 트리거 `trig_01GL7Ww48KbFj51yDHhG5EQW`를 걸었다. 창업자가 공장장 세션에서 직접 교대조 상시 가동을 지시했다(14:57Z).
+- **GPU 기동 감시:** `ops/gpu/ensure_up.py`가 인스턴스가 기한(생성 후 50분) 안에 안 뜨면 파기하고 검증된 5090(≤$0.50/h, 중국 제외)을 새로 빌려 같은 부팅 스크립트로 띄운다. 현재 인스턴스는 `ops/gpu/instance.json`.
 - 하네스 설계 워크플로(buc-harness-design)는 창업자 지시로 폐기. 조사 산출물(work/wf5/r-*.md, units.json)은 백로그 원천으로 사용.
 
 ## ▶️ 재개 (창업자 복귀, 결제 예정)
