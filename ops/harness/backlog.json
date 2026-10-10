@@ -1877,9 +1877,14 @@
    "slice": true,
    "rank": 57,
    "why": "MRH 연결부. 타일 경계 혼합만 주의",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791662508,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RD-08",
@@ -4335,9 +4340,14 @@
    "slice": true,
    "rank": 143,
    "why": "R-EVAL 격리가 핵심",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791662508,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "EVL-05",
