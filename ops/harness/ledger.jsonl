@@ -39,3 +39,5 @@
 {"id": "EVL-01", "ts": 1791662492, "event": "done", "models": "contract:opus,build:haiku,review:opus", "note": "요청: 없음. 다만 planned 23칸의 촬영 확정(sha256·size·crop·vault_path)은 창업자 촬영 D1–4 이후 해당 항목만 채워야 하며, 그 전에는 EVL-02가 load_manifest(require_ready=True)에서 실패하는 것이 정상이다. 칸 구성과 disclosure 문구는 Fable 적대 검토 대상이다."}
 {"id": "RD-07", "ts": 1791663778, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "EVL-04", "ts": 1791663778, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: FND 단위: pyproject.toml 에 선택 extra `eval` = lpips 추가(진짜 LPIPS 워커용). GPU 러너: tests/evl_04 의 @pytest.mark.gpu 테스트(test_real_lpips_worker_isolated_from_parent)를 lpips 설치 환경에서 실행 필요."}
+{"id": "RD-18", "ts": 1791664575, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "GOV-01", "ts": 1791664575, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: `.github` CI 워크플로에 `python3 ci/lineage_check.py` 단계 추가. `ci/checkpoint_denylist.json`은 운영 단위가 실제 공개 가중치 해시로 생성."}

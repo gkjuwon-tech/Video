@@ -2191,9 +2191,20 @@
    "slice": true,
    "rank": 68,
    "why": "예측 아티팩트 1순위(고무 시트)의 해독제. 슬라이스는 LDI 찢기로 버티고 D8에 합류 | D15 데모: 털 가닥·뿔 실루엣 경계 분해. 슬라이스 승격 2026-10-10.",
-   "status": "todo",
-   "attempts": 0,
-   "log": [],
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791663792,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791664575,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -4686,9 +4697,20 @@
    "slice": true,
    "rank": 155,
    "why": "하위 모델이 쓴 코드가 원칙을 어기지 못하게 하는 방화벽",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791663792,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791664575,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": "요청: `.github` CI 워크플로에 `python3 ci/lineage_check.py` 단계 추가. `ci/checkpoint_denylist.json`은 운영 단위가 실제 공개 가중치 해시로 생성."
+    }
+   ]
   },
   {
    "id": "GOV-02",

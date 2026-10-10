@@ -1,0 +1,7 @@
+{
+ "tests/gov_01/test_gov01_ancestry.py": "c16a770ffd2bc1ce021b6970ce346668dfcd95ad8828a420997a54921b5b6a27",
+ "tests/gov_01/test_gov01_denylist.py": "f6425b1c8c52c25da49dff88647978ad1a7d163f96ba4d54708fd0dd2429b619",
+ "tests/gov_01/test_gov01_ledger.py": "0028e77a797d9d4322cf99592139e1adcf752c3fd221f61f4796dc50fc2389f6",
+ "tests/gov_01/test_gov01_vault_cli.py": "3bf8f6cefd4a66774aa664d623f7a298681ea3978cb9ed6790b61c77d2de0193",
+ "tests/gov_01/test_gov01_weights_lint.py": "4851d0e367a99277683a99425ef276d3421369f08d38088dc77b826c09efe818"
+}
