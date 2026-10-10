@@ -56,7 +56,7 @@ keep() {  # keep NAME CMD...
 keep corpus python -u code/corpus_gen.py --root "$N1_ROOT" &
 GEN=$!
 sleep 60
-keep tae python -u code/tae_train.py --root "$N1_ROOT" &
+keep tae python -u code/tae_train.py --root "$N1_ROOT" --finish-margin-s 600 --micro-batch 16 --mem-gb 4.5 &
 TAE=$!
 wait $GEN; wait $TAE
 
