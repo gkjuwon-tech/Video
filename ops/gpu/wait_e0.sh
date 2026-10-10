@@ -3,7 +3,7 @@
 ID="$1"; OUT="$2"; MAXMIN="${3:-75}"
 end=$(( $(date +%s) + MAXMIN*60 ))
 while [ "$(date +%s)" -lt "$end" ]; do
-  vastai logs "$ID" --tail 400 > "$OUT.tmp" 2>&1 && mv "$OUT.tmp" "$OUT"
+  python3 "$(dirname "$0")/vlogs.py" "$ID" 400 > "$OUT.tmp" 2>&1 && mv "$OUT.tmp" "$OUT"
   if grep -q "E0_DONE" "$OUT" 2>/dev/null; then echo "E0_DONE 감지"; grep -E "E0_(START|ENV|DIFFUSERS|RESULT)" "$OUT"; exit 0; fi
   if grep -q -E "Traceback|CUDA error|out of memory|No space left" "$OUT" 2>/dev/null; then echo "오류 감지"; tail -40 "$OUT"; exit 1; fi
   sleep 60
