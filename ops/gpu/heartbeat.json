@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"epoch": 1791647379, "by": "orchestrator 5h tick"}
+=======
+{"epoch": 1791647396, "by": "shift"}
+>>>>>>> d54989f (ops: persist work state (shift: RDR-02=done RDR-06=done))

@@ -1,0 +1,9 @@
+{
+ "tests/rdr_02/rdr02_helpers.py": "e2f5db98bf80bad961a5cb53bcd42c77a858b9c043cc6f9c9b84d90cda3a4e1f",
+ "tests/rdr_02/test_rdr02_api.py": "d32b627ff0b2171d5e6d0d8c5f1fffcfe4ca5cd8aa535d40cf47ff72dab164c2",
+ "tests/rdr_02/test_rdr02_compositing.py": "8692973d85a7ab43ffe32584e1cbfd58fbb1179467d465a63cde1fc1a8293c4e",
+ "tests/rdr_02/test_rdr02_edges.py": "2b71385b6d87c65985d6f2bd307efbfe52622bbeeeb2dfbd2c6a52095bc4f1dd",
+ "tests/rdr_02/test_rdr02_geometry.py": "6d8798a17f2731b3f27910dbc5b6ff03c7f293a9a83e557fc83787d855039514",
+ "tests/rdr_02/test_rdr02_occlusion.py": "5a2d224efb95ad3e649df6c858ef1811007db9c4729a01a05c39da1a45db05c8",
+ "tests/rdr_02/test_rdr02_perf.py": "52fec7e28b9333e6f0f34fe68d00fedb5c552da1637a56e4413a50e1ae1ae174"
+}
