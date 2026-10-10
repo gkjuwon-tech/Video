@@ -36,5 +36,20 @@ ops: persist work state ($MSG)
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01DXDTH1gRJUrQo4xe26AmAr
 EOF
-for i in 1 2 3 4; do git pull --rebase --autostash -q origin "$BRANCH" 2>/dev/null; git push -u origin "$BRANCH" && exit 0; sleep $((2**i)); done
+for i in 1 2 3 4; do
+  if ! git pull --rebase --autostash -q origin "$BRANCH" 2>/dev/null; then
+    # 하트비트는 시각 값뿐이라 새 값으로 풀고 리베이스를 이어 간다. 다른 충돌은 리베이스를 취소해 저장소를 리베이스 중 상태로 남기지 않는다.
+    while [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; do
+      if [ "$(git diff --name-only --diff-filter=U)" = "ops/gpu/heartbeat.json" ]; then
+        python3 -c "import json,time; json.dump({'epoch':int(time.time()),'by':'persist-merge'},open('ops/gpu/heartbeat.json','w'))"
+        git add ops/gpu/heartbeat.json
+        GIT_EDITOR=true git rebase --continue >/dev/null 2>&1 || true
+      else
+        echo "persist: 리베이스 충돌($(git diff --name-only --diff-filter=U | tr '\n' ' ')), 취소 후 재시도" >&2
+        git rebase --abort; break
+      fi
+    done
+  fi
+  git push -u origin "$BRANCH" && exit 0; sleep $((2**i))
+done
 echo "persist: push 실패" >&2; exit 1
