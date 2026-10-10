@@ -86,3 +86,155 @@ effort 규칙 요약: Opus는 **리뷰 medium·설계 high**가 기본(Opus 5.5 
 **하위가 설계·검사를 하는 예외.** 스펙이 문서에 그대로 있는 단순 단위(인벤토리 Sonnet 설계 41개)의 카드 초안은 Sonnet high가 쓰고 Opus medium이 승인한다. Haiku 구현물의 리뷰는 Sonnet 교차 리뷰(7단위)로 충분하다. 단 **임계 사슬 12단위와 난이도≥4는 예외 없이 Opus 리뷰**.
 
 **상위가 하지 않는 일(역방향 금지).** 리뷰어는 코드를 고치지 않는다. 설계자는 자기 카드의 리뷰어가 될 수 없다. 테스트 감사관은 수용 테스트 작성자와 다른 세션이어야 한다. 같은 모델이라도 **새 세션·새 컨텍스트**면 독립성이 생기지만, 모델까지 다르면 오해를 공유할 확률이 더 낮아지므로 구현(Sonnet)↔리뷰(Opus)는 모델도 가른다.
+
+---
+
+## 2. 작업 계약(Task Contract)
+
+### 2.1 원칙
+- 카드 하나 = 기능 하나 = PR 하나 = "diff를 한 문장으로 설명할 수 있는 크기"(≤400 LOC 변경 권장, 초과 시 분할).
+- **상위가 쓰고 하위가 이행한다.** 카드는 레포 파일(`ops/harness/queue/cards/<ID>.yaml`)이며, 동결(FROZEN) 후에는 해시가 `ops/harness/protected.sha256`에 박힌다. 변경은 하루 1회 "계약 변경 창"(§5.4)에서만.
+- 모든 수용 기준은 **테스트 ID와 1:1 이상 매핑**된다. 매핑 없는 수용 기준은 린터가 거부한다. "적절히·충분히·자연스럽게" 같은 모호어는 린터가 거부한다(허용 어휘 목록 외 형용사 검출).
+- 하위에게 **정식 출구**를 준다: `IMPOSSIBLE`(명세 모순·불가능), `BLOCKED_ENV`(환경), `NEEDS_CONTRACT`(계약 공백). 출구가 없으면 모델은 테스트를 우회한다.
+
+### 2.2 스키마 (YAML, JSON Schema는 `ops/harness/schema/card.schema.json`)
+
+```yaml
+id: RD-02                      # 인벤토리 ID. 분할 시 RD-02a, RD-02b
+title: R1 기하 카메라 — 수평선·FOV 초기값
+subsystem: RD                  # FND|RUN|TCH|RDR|LNS|CAM|RD|WLD|INV|MDL|DAT|EVL|GOV|PRD|HARNESS
+class: S                       # S 슬라이스필수 | P D8-9합류 | M 주력 | N 야간 | G 안전망
+critical_chain: false          # 임계 사슬 12개면 true → 리뷰 Opus 강제, 체인 캡틴 감시
+version: 3                     # 카드 개정 번호. 승격 진단으로 고치면 +1
+status: FROZEN                 # DRAFT|G0_REVIEW|FROZEN|ASSIGNED|IN_PROGRESS|SUBMITTED|VERIFIED|MERGED|BLOCKED|IMPOSSIBLE|ESCALATED|ABANDONED
+frozen_hash: "sha256:9f1c…"    # 동결 시 하네스가 채움. 이 해시가 바뀌면 CI가 PR을 막는다
+
+goal: >
+  입력 1장에서 수평선 y좌표(px)와 수평 FOV(deg) 초기값을 추정해 ReadPacket.cam_init에 채운다.
+  plumb-line 정밀화는 RD-02b(P)로 분리. 이 카드는 초기값만.
+rationale: 슬라이스 임계 사슬의 RD-07·RD-08이 cam_init을 소비한다. 틀려도 되지만 '없으면' 안 된다.
+
+inputs:
+  docs:   [{path: docs/PARADIGM-v2.md, section: "§4.2 R1", hash: "sha256:…"}]
+  contracts: [{path: buc/contracts/read_packet.py, symbols: [ReadPacket, CamInit]}]
+  fixtures: [{path: fixtures/inputs/holdout/, note: "24장이 아닌 보류 입력 6장. 24장은 학습·튜닝에 쓰지 않는다"}]
+  upstream_cards: [FND-02, FND-06]
+
+outputs:
+  files:
+    - {path: buc/read/r1_geom.py, must_export: [estimate_cam_init]}
+    - {path: tests/unit/read/test_r1_geom_extra.py, kind: implementer_tests, min_cases: 6}
+  artifacts: []                # GPU 잡이면 HF 경로·지표 JSON 이름
+
+interface:                     # 설계자가 .pyi로도 커밋한다(buc/read/r1_geom.pyi)
+  - signature: "def estimate_cam_init(img: Float[Tensor,'3 H W'], meta: InputMeta) -> CamInit"
+    pre:  ["img in [0,1]", "H,W >= 256"]
+    post: ["0 <= cam_init.horizon_y <= H", "20 <= cam_init.hfov_deg <= 120", "cam_init.confidence in [0,1]"]
+    determinism: "같은 입력 → 같은 출력(FND-03 seed 유틸 사용)"
+    errors: ["ValueError on non-finite input"]
+
+acceptance:                    # 각 항목은 tests[].covers 로 1개 이상 매핑되어야 린터 통과
+  - {id: A1, text: "합성 체커보드 12장에서 수평선 오차 ≤ 2% H", metric: "p90 abs err / H", threshold: 0.02}
+  - {id: A2, text: "합성 FOV 라벨 12장에서 hfov 오차 ≤ 8 deg (p90)", threshold: 8}
+  - {id: A3, text: "보류 입력 6장 전부 예외 없이 CamInit 반환", threshold: "6/6"}
+  - {id: A4, text: "결정론: 동일 입력 2회 호출 결과 bit-identical"}
+  - {id: A5, text: "1024² 입력 1장 CPU ≤ 1.5 s"}
+
+tests:                         # 상위가 구현 전에 쓴다. 경로는 보호 경로. 구현 전 반드시 RED여야 한다(red-check)
+  acceptance_dir: tests/acceptance/RD-02/
+  files:
+    - {path: tests/acceptance/RD-02/test_a1_horizon.py, covers: [A1, A4]}
+    - {path: tests/acceptance/RD-02/test_a2_fov.py, covers: [A2]}
+    - {path: tests/acceptance/RD-02/test_a3_holdout.py, covers: [A3]}
+    - {path: tests/acceptance/RD-02/test_a5_perf.py, covers: [A5], marks: [slow]}
+  red_check: required          # base 브랜치에서 실행 시 실패해야 함. 통과하면 '아무것도 검증 안 하는 테스트'
+  mutation_sample: 5           # 변이 5개 중 ≥4 포착 요구(G2)
+  implementer_tests_required: true
+
+allowed_paths:  [buc/read/r1_geom.py, tests/unit/read/test_r1_geom_extra.py]
+forbidden_paths: [tests/acceptance/**, fixtures/**, buc/contracts/**, ops/**, .github/**, pyproject.toml, requirements*.txt]
+forbidden_behaviors:
+  - 입력 파일명·해시·24장 세트에 분기하는 코드
+  - "# noqa", "# type: ignore", pytest.skip/xfail 신규 추가
+  - 예외를 삼키는 except/pass, 린터 설정 변경
+  - 네트워크 호출, 사전학습 깊이·포즈 모델 로드(PARADIGM §6.6)
+  - 환경 변수·시크릿 출력
+non_goals: ["plumb-line 정밀화(RD-02b)", "DQT(RD-01)", "EXIF 앵커"]
+
+budget:
+  tier: sonnet                 # haiku|sonnet|opus (구현 등급)
+  effort: medium
+  escalate_to: {after_failures: 2, action: opus_diagnose, then: sonnet_retry_once, then: opus_implement}
+  attempts_max: 4              # 전 사다리 합계
+  tokens_out_max_per_attempt: 60000
+  wall_minutes_per_attempt: 45
+  usd_max_total: 6.0
+  timebox_day: null            # 임계 사슬·실험 단위는 자르는 날 명시(예: D5)
+  fallback_card: null          # 타임박스 실패 시 켜는 카드(예: PRD-03 스텁)
+
+deps: {hard: [FND-02, FND-03, FND-06], soft: [RD-01]}
+gpu: {needed: false}           # true면 {job_type: smoke|train|render, max_minutes, vram_gb}
+squad: C                       # 배정 스쿼드(§5). 오케스트레이터만 쓴다
+review:
+  tier: opus                   # haiku 구현물의 단순 단위만 sonnet 허용. critical_chain이면 opus 강제
+  fable_gate: false            # 인벤토리 Fable 29단위면 true
+verification_commands:         # 구현자가 반드시 실행하고 증거 번들에 남긴다
+  - "ruff check buc/read tests/unit/read"
+  - "mypy --strict buc/read/r1_geom.py"
+  - "pytest tests/acceptance/RD-02 tests/unit/read -q --junitxml=.evidence/junit.xml"
+evidence_required: [commands, exit_codes, stdout_tail_50, junit_xml, diff_stat, protected_hash_check]
+exits: [IMPOSSIBLE, BLOCKED_ENV, NEEDS_CONTRACT]   # 구현자의 정식 출구
+
+history: []                    # 하네스가 채움: [{attempt, model, effort, started, ended, result, usd, evidence}]
+```
+
+### 2.3 계약 생애주기
+
+```
+DRAFT(R3 Opus) ─lint─▶ G0_REVIEW(다른 Opus; Fable 29단위는 Fable) ─승인─▶ FROZEN(해시 고정, 수용 테스트 RED 확인)
+  └─반려(2회)─▶ Fable 1회 ─▶ 재작성
+FROZEN ─오케스트레이터 배정─▶ ASSIGNED(squad) ─스쿼드 claim─▶ IN_PROGRESS ─PR+증거─▶ SUBMITTED
+SUBMITTED ─G1·G2·G3 기계+감사+리뷰 PASS─▶ VERIFIED ─머지─▶ MERGED
+SUBMITTED ─FAIL─▶ IN_PROGRESS(attempt+1) 또는 ESCALATED(§4) 또는 IMPOSSIBLE/BLOCKED(상위가 카드 수정 → version+1 → 다시 G0 약식)
+```
+
+### 2.4 계약 린터 (`ops/harness/card_lint.py`, 기계)
+1. JSON Schema 검증. 2. 모든 `acceptance[].id`가 `tests[].covers`에 ≥1회. 3. `allowed_paths ∩ forbidden_paths = ∅`, allowed는 레포 상대경로. 4. 모호어 사전(`ops/harness/vague_words.txt`) 검출 → 반려. 5. 예산 상한이 등급별 캡(§6.3) 이내. 6. `deps.hard`가 전부 존재하고 순환 없음. 7. `critical_chain: true`면 `review.tier == opus`. 8. haiku 등급이면 `inputs` 총 토큰 추정 ≤ 90K(`count_tokens` 또는 바이트/3.2 근사). 9. 보호 경로 쓰기 요구 없음. 10. `red_check: required`인데 테스트 파일이 없으면 FROZEN 불가.
+
+### 2.5 카드 작성 작업 자체의 비용
+Opus high가 카드 1장 + .pyi + 수용 테스트 3–4파일을 쓰는 데 입력 ≈50K, 출력 ≈14K → 약 **$0.48/카드**. 교차 검토(Opus medium, 입력 30K·출력 3K) ≈ $0.18. 167장 → 약 $110. 설계가 틀리면 구현 비용이 몇 배로 헛도므로 이 돈은 아낄 곳이 아니다. 단순 단위 41장은 Sonnet 초안($0.12) + Opus 승인($0.10)으로 내려 ≈$25 절감.
+
+---
+
+## 3. 게이트 G0–G6 (카드별 파이프라인 게이트)
+
+> 용어 구분: 여기의 **G0–G6은 카드 하나가 지나는 파이프라인 게이트**다. 인벤토리가 "Fable 게이트 G0–G5"라 부른 **일정상 마일스톤**은 이 문서에서 **M0–M5**로 바꿔 부른다(§10). M-게이트의 심판이 Fable이고, G-게이트의 심판은 기계·Haiku·Opus다.
+
+### 3.1 한 장 표
+
+| 게이트 | 입력 | 통과 기준 | 담당 | 실패 시 행동 | 비용/시간(카드당) |
+|---|---|---|---|---|---|
+| **G0 계약 검토** | 카드 YAML + .pyi + 수용 테스트 | 린터 10항 전부 통과; 교차 검토자 "모호·누락·이음매 불일치 없음"; 수용 테스트가 base에서 **RED** | 기계 → Opus medium(설계자와 다른 세션) → Fable(29단위) | 설계자에게 반려(사유 목록). 2회 반려 → Fable 1회 → 그래도 → 창업자 질문 큐 | $0.18 (Fable 단위 +$2.3) / 5–10분 |
+| **G1 정적 검사** | PR diff | ruff 0 오류; mypy --strict 0 오류(허용 ignore 목록 외 신규 `type: ignore` 0); 금지 패턴 grep 0; gitleaks 0; **보호 경로 diff 없음**(해시 대조); 의존성 파일 변경 없음; LOC 변경 ≤ 카드 추정×3 | 기계(PostToolUse 훅 → CI 재확인) | 자동 반환, attempt 소모 **안 함**(정적 실패는 싸다, 단 3회 연속이면 attempt 1 소모) | $0 / 2분 |
+| **G2 단위 테스트 + 감사** | 수용 테스트 결과, 구현자 테스트, 변이 샘플 | (a) 수용 테스트 전부 PASS (b) red-check: base에서 FAIL이었음 확인 (c) 구현자 테스트 ≥ min_cases, skip 수 증가 0 (d) 변이 5개 중 ≥4 포착 (e) 감사관: 모든 구현자 테스트가 수용 기준 또는 인터페이스 post에 매핑, tautology 0 (f) 증거 번들의 pytest 집계 == CI 집계 | 기계 → Haiku 1차 체크리스트(low) → Opus medium 감사관 | (a)(b)(c)(f) 실패 → 구현자 반환 attempt+1; (d)(e) 실패 → "테스트 보강" 카드 부속 작업(Haiku/Sonnet) 1회 후 재감사; (f) 불일치는 **T5 가짜 성공**으로 기록 | Haiku $0.01 + Opus $0.34 / 8분 |
+| **G3 통합·CI** | PR | GitHub Actions `ci.yml` 전 잡 green: lint, type, unit, acceptance, **contract-tests**(스테이지 간 계약·스텁↔실물 교체), golden-fixtures, lineage-lint(GOV-01), guard-protected-paths, red-check(base 대비), evidence-match; 독립 리뷰어 PASS; 카드 상태 VERIFIED | 기계 + Opus high 리뷰어(새 세션, diff+카드+CI 로그만) | CI 실패 → 구현자 반환; 리뷰 FAIL(정확성·요구사항·범위) → 반환 attempt+1; 통합 테스트 실패인데 diff 외 원인 → 통합 캡틴(Opus) 진단 카드 | 리뷰 Opus $0.36 (재리뷰 ×1.5) / 10분 |
+| **G4 GPU 스모크** | `gpu.needed: true` 카드의 PR 브랜치 | 러너 잡 `smoke` ≤10분: import OK, 1 step train 또는 1 frame render, loss/픽셀 finite, 피크 VRAM ≤ 카드 상한, 결과 JSON 스키마 유효 | 러너(기계) → Haiku 로그 분류 → 실패 시 Sonnet 해석 | 환경 원인(T7) → RUN 카드 생성, attempt 소모 없음; 코드 원인 → 반환 | GPU 10분 ≈ $0.06 + Haiku $0.01 / 15–25분(큐 대기 포함) |
+| **G5 시각·A/B** | 머지 후 야간 24장 러너 결과 | 깨진 프레임 0; FFD·FFG·ΔE00 전일 대비 악화 ≤ 허용폭(카드 class별: S는 어떤 악화도 "회귀 후보"); 시트 생성 성공 | 기계 지표 → Haiku 필터 → Sonnet 분류 → Opus 순위 보조 | 회귀 후보 → 해당 머지 커밋에 `regression-suspect` 라벨, 아침 시트 최상단, 자동 **revert PR 초안** 생성(머지는 창업자/캡틴 결정) | $0.8/일(전 카드 공유) |
+| **G6 창업자** | 아침 시트(24장 × 오늘/전일/Seedance) + 요약 | 창업자 눈 판정(10–20분), D9·D12 블라인드 패널 | 창업자 | 판정 기록 → `ledger/founder/YYYY-MM-DD.json`; "더 나쁘다"는 즉시 revert 승인 | 창업자 시간 |
+
+### 3.2 G2를 자세히: "하위가 쓴 테스트를 상위가 감사한다"의 실행
+
+테스트 조작은 세 종류로 나뉘고 각각 다른 장치로 막는다.
+
+| 조작 유형 | 예 | 장치 |
+|---|---|---|
+| **수정·삭제** | 수용 테스트 기대값 완화, fixture 교체, conftest에 monkeypatch | ① PreToolUse 훅: 구현자 세션에서 `tests/acceptance/**`, `fixtures/**`, `buc/contracts/**`, `conftest.py` 쓰기 차단 ② CI `guard-protected-paths`: diff가 보호 경로를 건드리면 실패(`contract-change` 라벨 + G0 승인 해시가 PR 본문에 있을 때만 예외) ③ `protected.sha256` 대조 |
+| **우회** | skip/xfail 추가, `sys.exit(0)`, 테스트 수집 제외(`pytest.ini` 변경), `time`/`random` 패치, 환경 변수로 분기, 24장 파일명 특례 | ① 금지 패턴 grep(G1) ② skip/xfail/deselected 수 전일 대비 증가 0(junit 집계) ③ `pyproject`/`pytest.ini` 보호 경로 ④ 보류 입력 6장(24장 외) 테스트 ⑤ 리뷰 체크리스트 항목 "입력 식별자 분기 없음" |
+| **자기만족 테스트** | 구현 결과를 그대로 기대값으로 박음, assert True, 구현 함수를 호출해 구현 함수와 비교 | ① **red-check**: 수용 테스트는 base에서 반드시 실패해야 함(통과하면 아무것도 검증 안 함) ② **변이 샘플**: `mutmut`로 구현 파일에 변이 5개(연산자·경계·상수) → 구현자 테스트+수용 테스트가 ≥4개 잡아야 함 ③ 감사관(Opus medium)이 매핑표 작성: 테스트 → 수용 기준/post 조건. 매핑 없는 테스트는 "장식"으로 표기, 장식 비율 >50%면 FAIL |
+
+감사관 출력 스키마: `{mapping: [{test, covers}], tautology: [test…], decorative_ratio, mutation_caught: n/5, verdict: PASS|FAIL, reasons[]}`. 감사관은 **테스트를 고치지 않는다.** 보강은 별도 부속 작업(Haiku/Sonnet)으로 돌리고 재감사한다.
+
+### 3.3 G3 리뷰어 프롬프트의 불변 요소
+- 입력: 카드(동결본), `git diff base...head`, CI 로그 꼬리, 증거 번들, 감사 JSON. **구현자의 자기 보고문은 넣지 않는다**(설득당하지 않기 위해).
+- 질문 3개만: (1) 수용 기준을 실제로 만족하는가(테스트가 아니라 코드를 읽고) (2) 요구사항·인터페이스 pre/post 위반이 있는가 (3) 허용 경로 밖 변경·금지 행동·입력 특례가 있는가. 스타일·취향은 보고 금지(리뷰어는 흠을 만들어 내므로).
+- 출력: `{verdict, violations:[{kind: correctness|requirement|scope, file, line, text}], confidence}`. `violations`가 비면 PASS여야 하고, PASS인데 violations가 있으면 스키마 위반으로 재실행.
