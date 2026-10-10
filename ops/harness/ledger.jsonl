@@ -47,3 +47,5 @@
 {"id": "PRD-03", "ts": 1791666327, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
 {"id": "FND-05", "ts": 1791668249, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: pyproject.toml의 [project.optional-dependencies] dev 목록에 pyyaml>=6 추가(FND 단위 소유). docs/number-ledger.yaml은 카탈로그 렌즈 소유이며, 채워지면 CI의 원장 단계가 자동으로 켜진다. ci.yml에 단계를 더하는 하류 단위는 요청으로 올릴 것."}
 {"id": "FND-08", "ts": 1791668249, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
+{"id": "RUN-04", "ts": 1791668837, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "RUN-07", "ts": 1791668837, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: 소유 밖 요청 없음. 참고: ops/report/ 디렉터리는 새로 만들었다(이전에 없었다). 하류 공장장·오케스트레이터는 `python3 ops/report/hourly.py --out work/reports`로 .md와 .png를 받으면 된다. --ledger를 생략하면 load_config()의 ledger_path(기본 runs/ledger.sqlite, 상대 경로는 실행 위치 기준)를 쓴다."}
