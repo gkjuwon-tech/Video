@@ -5,6 +5,7 @@
 - 모델 배정: 선택·게이트·커밋 Haiku, 계약서+테스트 Sonnet(난이도·위험 ≥4는 Opus medium), 구현은 백로그 impl_model, 수리 Sonnet→Opus, 위험 ≥4 검토 Opus low. Fable은 교대조에서 쓰지 않음.
 - 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
 - **공장장 세션:** `session_01XA9TirqQtqJiYRyewCK8uv`(Sonnet 5.5, 태그 buc-foreman)이 교대조를 상시 가동한다(지침 `ops/harness/FOREMAN.md`). 이유: 오케스트레이터 세션에서 창업자가 실행을 중단하면 백그라운드 워크플로가 같이 죽는다(2회 발생). 공장장은 GPU·키를 다루지 않는다. 진행 신호는 `ops/harness/foreman.json`.
+- **상시 승인 A-001 (2026-10-10T14:51:47Z):** 창업자가 BUC 세션들끼리 세션 생성과 Workflow 실행을 매번 묻지 않고 하도록 승인했다. 원문·해시·서버 이벤트 ID는 `ops/harness/AUTHORIZATION.md`. GPU·결제·키는 여전히 오케스트레이터만.
 - 하네스 설계 워크플로(buc-harness-design)는 창업자 지시로 폐기. 조사 산출물(work/wf5/r-*.md, units.json)은 백로그 원천으로 사용.
 
 ## ▶️ 재개 (창업자 복귀, 결제 예정)
