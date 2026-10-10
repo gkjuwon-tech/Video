@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CPU torch, then the package with dev extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[dev]" pyyaml blake3
+
+      - name: Lint (fatal rules only)
+        run: ruff check --select E9,F63,F7,F82 buc ops tools ci
+
+      - name: Test (CPU only, GPU tests excluded)
+        run: python -m pytest -m "not gpu" tests
+
+      - name: Number ledger recompute (runs once the ledger file exists)
+        if: hashFiles('docs/number-ledger.yaml') != ''
+        run: python tools/ledger_check.py

@@ -45,3 +45,5 @@
 {"id": "PRD-01", "ts": 1791665372, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: buc/pipeline/__init__.py는 만들지 않았다(namespace package로 테스트 통과). 필요하면 PRD 단위가 만들어야 한다. 의존성 추가 요청은 없다."}
 {"id": "EVL-02", "ts": 1791666327, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "PRD-03", "ts": 1791666327, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
+{"id": "FND-05", "ts": 1791668249, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: pyproject.toml의 [project.optional-dependencies] dev 목록에 pyyaml>=6 추가(FND 단위 소유). docs/number-ledger.yaml은 카탈로그 렌즈 소유이며, 채워지면 CI의 원장 단계가 자동으로 켜진다. ci.yml에 단계를 더하는 하류 단위는 요청으로 올릴 것."}
+{"id": "FND-08", "ts": 1791668249, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}

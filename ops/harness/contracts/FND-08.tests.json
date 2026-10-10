@@ -1,0 +1,6 @@
+{
+ "tests/fnd_08/fnd08_support.py": "7605925f594afb4d763090c8620ece9169cffcd513b3ca74d8484c98b0dfddb0",
+ "tests/fnd_08/test_fnd08_catalog.py": "a1a5bcaa9510ed9b40b900600e7071a79501cf5cef409e4b4acba0eda326a15a",
+ "tests/fnd_08/test_fnd08_files.py": "1f4fff5b485503007efa87d83e3d72bca8b724df95f3a46fce8c85524760917c",
+ "tests/fnd_08/test_fnd08_geometry.py": "94636cc26d57a2e12ff85f7cebe7bed3d0fc187d53e395876a72295efac6d4d6"
+}

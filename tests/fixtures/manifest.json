@@ -1,0 +1,45 @@
+{
+ "scenes": {
+  "box_pair": {
+   "file": "box_pair.npz",
+   "hash": "9ad23598c1a54a6237174bb9df3ca27be658e12053998c3e68cfd43a12fa6584"
+  },
+  "color_chart": {
+   "file": "color_chart.npz",
+   "hash": "f0dae1420086629691d68e2396de2b118aa55cd1b6833c957cb142fbc55705eb"
+  },
+  "corridor": {
+   "file": "corridor.npz",
+   "hash": "7be2c642ed2455c2683f1d50e7c1a72694b22a38f80dd190ef09cf6ae21a4275"
+  },
+  "distortion_dots": {
+   "file": "distortion_dots.npz",
+   "hash": "6a3fa3c112a63fd320b4f93a74a9c8015cedb655d08e672372d4ac58f7cf250f"
+  },
+  "ground_horizon": {
+   "file": "ground_horizon.npz",
+   "hash": "3bc29bcab5cf28a27f1716a99ef241f1563342f84376d4dc97700a54c2b5e74e"
+  },
+  "plane_frontal": {
+   "file": "plane_frontal.npz",
+   "hash": "cf9d7b0050812f694efed05f4572121e954d79662cd435f7204d14cedbc895a7"
+  },
+  "plane_tilted": {
+   "file": "plane_tilted.npz",
+   "hash": "e821b7e6328847010ab97c9e656af612a2120575c0fb363580fcefdbe5a75ae1"
+  },
+  "sphere_lit": {
+   "file": "sphere_lit.npz",
+   "hash": "ec3c5d7481a5ea8699a1942a2a3527d87f5c6c28680386ac600c37b0572ada2a"
+  },
+  "two_layer_card": {
+   "file": "two_layer_card.npz",
+   "hash": "84979a2421c82e76c0e8bbe6c9778731f4afe6f34bbd569d2ddb6ed61cd21935"
+  },
+  "two_view_parallax": {
+   "file": "two_view_parallax.npz",
+   "hash": "2549cac9054a9890fa6545e6abbdf53d88734c3c1730a85bfe38977abcb9cbe6"
+  }
+ },
+ "version": "1"
+}
