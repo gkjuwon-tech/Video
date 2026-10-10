@@ -1480,9 +1480,14 @@
    "slice": true,
    "rank": 44,
    "why": "CPU 수식. 슬라이더·달리·오빗 3종부터",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791655141,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "CAM-02",
@@ -1667,9 +1672,14 @@
    "slice": true,
    "rank": 51,
    "why": "정형 입출력과 통계 추정",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791655141,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RD-02",
