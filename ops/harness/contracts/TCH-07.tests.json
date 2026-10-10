@@ -1,0 +1,8 @@
+{
+ "tests/tch_07/tch07_support.py": "fcaa80b360ec84d861deb54028b9a3c21627ff9685639ec515037dd57a93de07",
+ "tests/tch_07/test_tch07_gate_stage_plan.py": "58cc4be79d97fcfda4cf24a11628d6d1aa2f12b15443d18cb27d0a0b8ebcc60f",
+ "tests/tch_07/test_tch07_gates_firewall.py": "267fe7e8dc338653366b8483fe0283d5c42b77f5f63db739339e1226486f5748",
+ "tests/tch_07/test_tch07_grades_stats.py": "4f49aae09bf11030336d60c245dd2ec8e912726f41b02758e77f8d06081bb3af",
+ "tests/tch_07/test_tch07_scoring.py": "2f18951277da798b1af6fb4e3ac641c97334823a6851ab453e7fbcce71c9697e",
+ "tests/tch_07/test_tch07_select.py": "4fee69b750333fdd5ea754623235a7ea7e5c6a2b4b0ab113b43519a1f0c9a9c6"
+}

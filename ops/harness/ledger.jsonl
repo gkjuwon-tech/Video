@@ -55,3 +55,5 @@
 {"id": "TCH-06", "ts": 1791670454, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: Optional: TCH-02 could expose public versions of the private helpers listed in the notes."}
 {"id": "TCH-08", "ts": 1791671218, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "TCH-09", "ts": 1791671218, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "TCH-07", "ts": 1791671926, "event": "done", "models": "contract:sonnet,build:sonnet,review:opus", "note": ""}
+{"id": "TCH-10", "ts": 1791671926, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: None. The contract lists no requests outside the owned paths, and the GPU backends (tensorrt, nunchaku) are only needed in the GPU runner environment."}

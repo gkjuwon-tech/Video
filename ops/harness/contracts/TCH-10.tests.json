@@ -1,0 +1,9 @@
+{
+ "tests/tch_10/tch10_toys.py": "63483ba8ff7d3fac1b18ae42cc2d6e3fa7c364bcc7c9c6767d85af8c5afc5e1f",
+ "tests/tch_10/test_calib_prov.py": "997cd71d8b839e6c19df3f5711f94b2ec8602a8530acea05f38662f0dc5f8b4e",
+ "tests/tch_10/test_gate_backend.py": "d3acc2d2903ad6ffa359c6952c714180074cc5fd11b736ae991d060e3bfb3a8c",
+ "tests/tch_10/test_gpu_backends.py": "6fe4cf60f5abf68eb8071f7f04fc64a4c1620f71380424001a0226bfd8dbc83e",
+ "tests/tch_10/test_primitives.py": "c381795db07b206886e3e2b07f04273a3a244f46d41446e904ef09be51e592f4",
+ "tests/tch_10/test_quant_linear.py": "7fe182641466e17cfb7386708f0a1378fe680601bf87a8ff8394f9efa0080fda",
+ "tests/tch_10/test_quantize_model.py": "5192adf1f08b62a29c1ebf09fae75de81063bd635d610e34da5014e44f9e2401"
+}
