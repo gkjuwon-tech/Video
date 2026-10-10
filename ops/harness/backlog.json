@@ -1,0 +1,4559 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "id": "FND-01",
+   "name": "레포 골격·툴체인 락·GPU 이미지",
+   "paths": [
+    "pyproject.toml",
+    "docker/gpu.Dockerfile",
+    "Makefile",
+    "buc/__init__.py",
+    "tests/fnd_01"
+   ],
+   "deps": [],
+   "diff": 2,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 0,
+   "why": "5090(sm_120) 빌드 핀이 함정이나 정형 작업",
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791642891,
+     "event": "done",
+     "models": "orchestrator",
+     "note": "repo skeleton by orchestrator to unblock harness"
+    }
+   ]
+  },
+  {
+   "id": "FND-02",
+   "name": "데이터 계약 v0 (World·ReadPacket·Obs·Shot·Theta·KPI·StageIO)",
+   "paths": [
+    "buc/core/contracts.py",
+    "docs/contracts.md"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 3,
+   "risk": 5,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 1,
+   "why": "모든 이음매의 원천. 틀리면 전 레인 재작업이라 동결 검토만 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-03",
+   "name": "결정론 유틸 (Philox WNF·int64 고정소수점 segment-reduce·blake3 Merkle)",
+   "paths": [
+    "buc/core/det.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 2,
+   "why": "수식이 명세에 완결돼 있고 테스트로 판정됨",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-04",
+   "name": "계보 태그·prov 비트 (taint·ext/comp/hold·BLOCK_TRAIN/DEV)",
+   "paths": [
+    "buc/gov/prov.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 3,
+   "why": "방화벽의 어휘. 규칙이 미묘해 동결 검토는 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-05",
+   "name": "CI(GitHub Actions)+수치 원장 재계산",
+   "paths": [
+    ".github/workflows/ci.yml",
+    "tools/ledger_check.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 4,
+   "why": "정형 yaml과 합계 검사",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-06",
+   "name": "기하·색·필터 수학 유틸 (K·포즈·투영, sRGB↔선형, 피라미드, 리샘플)",
+   "paths": [
+    "buc/core/geom.py",
+    "color.py",
+    "pyramid.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 5,
+   "why": "전 단위가 쓰는 공용 수학. 수치 테스트로 판정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-07",
+   "name": "설정·실험 매니페스트·장부 (SQLite: TFU·GPU-h·비용)",
+   "paths": [
+    "buc/core/config.py",
+    "manifest.py",
+    "ledger.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 1,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.6,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 6,
+   "why": "CRUD 수준, 스키마만 정하면 됨",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "FND-08",
+   "name": "골든 픽스처·기하 정답 합성 장면 10종",
+   "paths": [
+    "tests/fixtures/*",
+    "tools/make_fixtures.py"
+   ],
+   "deps": [
+    "FND-02",
+    "FND-06"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 7,
+   "why": "정답을 아는 소형 장면. 단위 테스트의 땅",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-01",
+   "name": "Vast.ai 오케스트레이터 (오퍼 검색·임대·유휴 자동 종료·일/누적 예산 캡)",
+   "paths": [
+    "buc/rt/vast.py"
+   ],
+   "deps": [
+    "FND-01",
+    "FND-07"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 8,
+   "why": "돈이 새는 코드. 모킹 테스트+캡 로직은 Opus가 검토",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-02",
+   "name": "pull 러너 (GitHub 잡 당김→실행→지표·산출 푸시, 락·멱등·재개)",
+   "paths": [
+    "buc/rt/runner.py",
+    "jobs/*.yaml"
+   ],
+   "deps": [
+    "FND-01",
+    "FND-07",
+    "RUN-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 9,
+   "why": "SSH 불가라 유일한 GPU 경로. 멱등·재개가 핵심",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-03",
+   "name": "체크포인트·HF Hub 비공개 저장소 동기",
+   "paths": [
+    "buc/rt/hf_sync.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 10,
+   "why": "정형 I/O",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-04",
+   "name": "잡 큐·GPU 예산 집행",
+   "paths": [
+    "buc/rt/queue.py"
+   ],
+   "deps": [
+    "FND-07"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 11,
+   "why": "SQLite, 명세 완결",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-05",
+   "name": "GPU 서버 부트스트랩 (가중치 prefetch·gsplat 캐시 빌드)",
+   "paths": [
+    "ops/gpu/bootstrap.sh"
+   ],
+   "deps": [
+    "RUN-01"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.3,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 12,
+   "why": "Blackwell JIT 빌드 시행착오",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-06",
+   "name": "학습 하네스 공용 (AMP·원자 체크포인트·Feistel PRP·max-abs 경보)",
+   "paths": [
+    "buc/train/loop.py",
+    "amp.py",
+    "ckpt.py",
+    "sampler.py"
+   ],
+   "deps": [
+    "FND-03",
+    "RUN-05",
+    "RUN-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 13,
+   "why": "14종 전체의 기반. 한 번 틀리면 14번 틀림",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-07",
+   "name": "시간별 보고 생성기 (시각화 PNG+한국어 요약)",
+   "paths": [
+    "ops/report/hourly.py"
+   ],
+   "deps": [
+    "FND-07"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "V",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "G",
+   "slice": false,
+   "rank": 14,
+   "why": "템플릿 작업. 창업자 보고 형식",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RUN-08",
+   "name": "T4 실측 부록 (\"Shot on T4\": 4K 프레임 시간·메모리)",
+   "paths": [
+    "ops/t4/shot_on_t4.py"
+   ],
+   "deps": [
+    "RUN-01",
+    "PRD-01",
+    "RDR-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 15,
+   "why": "D14. T4 몇 시간 임대 측정 스크립트",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-01",
+   "name": "교사 로더 (Z-Image-Turbo BF16·TE encode-only 캐시·VAE·결정론 모드)",
+   "paths": [
+    "buc/teacher/zimage.py"
+   ],
+   "deps": [
+    "RUN-05",
+    "FND-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 16,
+   "why": "공식 모델 래핑. 메모리·결정론 시행착오",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-02",
+   "name": "σ 스냅 스케줄·SDEdit·x̂0 API (뷰 배치 lockstep)",
+   "paths": [
+    "buc/teacher/sample.py"
+   ],
+   "deps": [
+    "TCH-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 17,
+   "why": "모든 교사 호출의 단일 입구. 시그니처는 Opus가 확정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-03",
+   "name": "Feature-Tap Bus (층 8/15/23 훅·고정 PCA-128 int8·링버퍼·ext 바이패스)",
+   "paths": [
+    "buc/teacher/taps.py"
+   ],
+   "deps": [
+    "TCH-01",
+    "FND-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 18,
+   "why": "MRH 학습 입력의 원천. prov 검사 포함",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-04",
+   "name": "Exhaust Ledger (blake3 키·int8 x̂0 저장·ext/hold 분리·세션 재개)",
+   "paths": [
+    "buc/teacher/exhaust.py"
+   ],
+   "deps": [
+    "TCH-02",
+    "FND-03",
+    "FND-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 19,
+   "why": "키 설계가 방화벽과 닿아 있음",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-05",
+   "name": "결정 곡선 X1-slim (σ별 옥타브 분리)+가난선 프로브 (E2)",
+   "paths": [
+    "buc/teacher/decision_curve.py"
+   ],
+   "deps": [
+    "TCH-02",
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 20,
+   "why": "결과 해석이 σ 채택을 정함. 해석은 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-06",
+   "name": "Teacher-DCA·DR 판정",
+   "paths": [
+    "buc/teacher/dca.py"
+   ],
+   "deps": [
+    "TCH-02"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.3,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 21,
+   "why": "수식 명세 완결",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-07",
+   "name": "교사 선정 시험 (TCT-v3 NVF·ES_v3, Z 현직 vs klein 도전자)",
+   "paths": [
+    "buc/teacher/tct.py"
+   ],
+   "deps": [
+    "TCH-02",
+    "TCH-08",
+    "EVL-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "F",
+   "review": "F",
+   "cls": "N",
+   "slice": false,
+   "rank": 22,
+   "why": "교사 잠금 판정은 최상위. D15 경로는 Z 유지",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-08",
+   "name": "참조 교사 슬롯 (klein 4B 로더·Reference Ring/Ring-R)",
+   "paths": [
+    "buc/teacher/ref_slot.py"
+   ],
+   "deps": [
+    "TCH-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 23,
+   "why": "P1-확장(L2b). 그림체 입력용, 15일 경로 밖",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-09",
+   "name": "FP16 Rescue (T4 부록: 잔차 1/s·SwiGLU 재균형·FP32 섬)",
+   "paths": [
+    "buc/teacher/t4_fp16.py"
+   ],
+   "deps": [
+    "TCH-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 24,
+   "why": "T4 전용. 5090 BF16에서는 불필요, 범위 유지·순서 최후",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-10",
+   "name": "양자화 (W4A4·INT8·TRT, 자체 보정셋+prov 검사)",
+   "paths": [
+    "buc/teacher/quant.py"
+   ],
+   "deps": [
+    "TCH-09",
+    "FND-04"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 25,
+   "why": "T4 전용 부록. 어려우나 화면 경로 밖",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "TCH-11",
+   "name": "입구 생성 Entry-Gen (Z-Image T2I 8 NFE로 AI풍 dev 입력 생산)",
+   "paths": [
+    "buc/teacher/entry_gen.py"
+   ],
+   "deps": [
+    "TCH-02"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 26,
+   "why": "dev·학습 입력 공급용 단순 루프",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-01",
+   "name": "gsplat 2DGS 래퍼 (미분 래스터·dual-cut LOD·COLMAP 점 초기화 피팅)",
+   "paths": [
+    "buc/render/splat2d.py",
+    "fit.py"
+   ],
+   "deps": [
+    "RUN-05",
+    "FND-06"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 27,
+   "why": "primary 래스터. sm_120 JIT 위험",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-02",
+   "name": "평면 쿼드·LDI 래스터 (빠른 경로: 알파·소프트 에지)",
+   "paths": [
+    "buc/render/quads.py"
+   ],
+   "deps": [
+    "FND-02",
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 28,
+   "why": "슬라이스용 렌더. 단순하고 빠르게 돌아야 함",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-03",
+   "name": "TSQ 텍스처 쿼드 커널 (8×8 페이지 바이리니어·n≥2 에지·미분·BC 압축)",
+   "paths": [
+    "buc/render/tsq_kernel.cu",
+    "tsq.py"
+   ],
+   "deps": [
+    "RDR-01"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 1.8,
+   "impl_model": "opus",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 29,
+   "why": "CUDA 커널. Sonnet 1일 타임박스 후 실패 시 Opus. 폴백은 2DGS",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-04",
+   "name": "EWA 비등방 필터·C_0 정합 렌더 필터 (카디널 B-스플라인 사전필터)",
+   "paths": [
+    "buc/render/filters.py"
+   ],
+   "deps": [
+    "RDR-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 30,
+   "why": "첫 프레임 충실도(FFD 바닥)를 정함",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-05",
+   "name": "AOV (depth·normal·flow·원자 id)·관측 bitset·안정 정렬",
+   "paths": [
+    "buc/render/aov.py"
+   ],
+   "deps": [
+    "RDR-02",
+    "FND-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 31,
+   "why": "IR·halo 지표·마스크의 원천",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-06",
+   "name": "영상 인코더·타임라인 (ffmpeg·NVENC·24fps·1080p/4K)",
+   "paths": [
+    "buc/render/video.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "S",
+   "slice": true,
+   "rank": 32,
+   "why": "정형 래퍼",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-07",
+   "name": "평면 재귀 반사·secondary (Warp BVH 폴백)",
+   "paths": [
+    "buc/render/mirror.py"
+   ],
+   "deps": [
+    "RDR-02"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 33,
+   "why": "거울 입력은 메뉴에서 안전 등급으로 내림(예측 0.15)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-08",
+   "name": "STRAND/SGGX 체적 (털·잎·솜털)",
+   "paths": [
+    "buc/render/vol.py"
+   ],
+   "deps": [
+    "RDR-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 34,
+   "why": "매팅 α를 싣는 그릇. 15일 경로에서는 α 카드로 대체",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RDR-09",
+   "name": "Proof-of-Shot·왕복 비트 동일 검증",
+   "paths": [
+    "buc/render/pos.py"
+   ],
+   "deps": [
+    "RDR-05",
+    "FND-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 35,
+   "why": "결정론 증거. 헤드라인 주장 하나를 받침",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-01",
+   "name": "θ 스키마·사전분포 샘플러·수제 프리셋 20",
+   "paths": [
+    "buc/lens/theta.py",
+    "presets/*.yaml"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 36,
+   "why": "물리 범위는 Opus가 확정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-02",
+   "name": "DOF·Defocus Pyramid·포커스 브리딩·랙 스케줄",
+   "paths": [
+    "buc/lens/dof.py"
+   ],
+   "deps": [
+    "RDR-02"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 37,
+   "why": "랙 포커스가 데모의 얼굴. 칼선 방지가 관건",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-03",
+   "name": "셔터 (Longuet-Higgins split·롤링·180°)",
+   "paths": [
+    "buc/lens/shutter.py"
+   ],
+   "deps": [
+    "RDR-02"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 38,
+   "why": "호모그래피 적분 수식. 단위 테스트로 검증",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-04",
+   "name": "센서·필름 (Poisson-Gauss·ADC·Newson 그레인·65³ LUT·할레이션·비네팅)",
+   "paths": [
+    "buc/lens/sensor_film.py"
+   ],
+   "deps": [
+    "FND-06",
+    "LNS-01"
+   ],
+   "diff": 3,
+   "risk": 2,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 39,
+   "why": "순수 수식. 가장 싸고 가장 먼저 눈에 띔",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-05",
+   "name": "렌즈 수차 (왜곡·CA·cat-eye·Hullin 고스트·veiling glare·회절 스타)",
+   "paths": [
+    "buc/lens/optics.py"
+   ],
+   "deps": [
+    "LNS-02"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 40,
+   "why": "근사식으로 충분",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-06",
+   "name": "애너모픽·빈티지 처방 (Kolb 근사 출사동 LUT)",
+   "paths": [
+    "buc/lens/prescriptions.py"
+   ],
+   "deps": [
+    "LNS-05"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 41,
+   "why": "예측 L1–L2. 근사식 대체가 기본",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-07",
+   "name": "CPL 편광 필터",
+   "paths": [
+    "buc/lens/cpl.py"
+   ],
+   "deps": [
+    "LNS-04"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.2,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "N",
+   "slice": false,
+   "rank": 42,
+   "why": "한 줄 수식",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "LNS-08",
+   "name": "θ 사슬 합성기+ExplainAway 역사슬 왕복 검증",
+   "paths": [
+    "buc/lens/chain.py",
+    "tests/test_roundtrip.py"
+   ],
+   "deps": [
+    "LNS-01",
+    "LNS-04"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "P",
+   "slice": false,
+   "rank": 43,
+   "why": "look∘explain≈id 성질이 관측 소유권의 토대",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-01",
+   "name": "리그 1 kHz ODE (14종: 질량·감쇠·홀로노믹·진자·PID, min-jerk)",
+   "paths": [
+    "buc/camera/rigs.py"
+   ],
+   "deps": [
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 44,
+   "why": "CPU 수식. 슬라이더·달리·오빗 3종부터",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-02",
+   "name": "무브 레시피·촬영 메뉴 봉투 Π_g (푸시인·슬라이더·±20° 오빗·랙)",
+   "paths": [
+    "buc/camera/moves.py"
+   ],
+   "deps": [
+    "CAM-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 45,
+   "why": "벤치 경로 정의식의 원천",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-03",
+   "name": "DP-0 v0 탐색 (후보 1000→프리뷰 50, PR·Wipe·FL·FiF·IR 캡)",
+   "paths": [
+    "buc/camera/dp0.py"
+   ],
+   "deps": [
+    "CAM-02",
+    "CAM-04",
+    "CAM-07",
+    "EVL-05"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G+V",
+   "loc_k": 1.2,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 46,
+   "why": "24장 A/B는 고정 경로라 우회 가능. 보상 설계는 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-04",
+   "name": "얼굴 봉투 규칙 (F0–F3·α_σ·미관측 얼굴면 5%)",
+   "paths": [
+    "buc/camera/face_envelope.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 47,
+   "why": "인물 입력의 하드 제약",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-05",
+   "name": "Gaffer CEM (조명 ≤8, ΔFFD≤0.01 제약)",
+   "paths": [
+    "buc/camera/gaffer.py"
+   ],
+   "deps": [
+    "WLD-05",
+    "RDR-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 48,
+   "why": "CEM 루프, 제약식 명세 완결",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-06",
+   "name": "IMU 파이프 (GPMF·폰 IMU 파서·정렬·증강 ×5.5)",
+   "paths": [
+    "buc/camera/imu.py"
+   ],
+   "deps": [
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 49,
+   "why": "창업자 촬영 데이터 도착 후 가동",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "CAM-07",
+   "name": "충돌·클리어런스·가시성 유틸",
+   "paths": [
+    "buc/camera/clearance.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 50,
+   "why": "기하 질의",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-01",
+   "name": "R0 수납 (색관리·ICC·EXIF/C2PA·DQT·레터박스·r_eff)",
+   "paths": [
+    "buc/read/ingest.py"
+   ],
+   "deps": [
+    "FND-02",
+    "FND-06"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 51,
+   "why": "정형 입출력과 통계 추정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-02",
+   "name": "R1 기하 카메라 (LSD→J-Linkage VP→K 공동 LM·plumb-line·수평선)",
+   "paths": [
+    "buc/read/geom_cam.py"
+   ],
+   "deps": [
+    "RD-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 1.1,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 52,
+   "why": "고전 기하. AI 이미지 불성립 사례가 함정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-03",
+   "name": "R2 화면 고정 효과 추정기 (비네팅·그레인 PSD·CA·할레이션·고스트)",
+   "paths": [
+    "buc/read/screen_fx.py"
+   ],
+   "deps": [
+    "RD-01",
+    "LNS-04"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 53,
+   "why": "비네팅·그레인 문신의 해독제(레버 4)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-04",
+   "name": "ExplainAway 연산자 (역사슬·대역 마스크·Wiener 대역 제한)",
+   "paths": [
+    "buc/read/explain_away.py"
+   ],
+   "deps": [
+    "RD-03",
+    "LNS-08"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "P",
+   "slice": false,
+   "rank": 54,
+   "why": "\"설명할 수 있는 것은 세계에 넣지 않는다\"의 구현",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-05",
+   "name": "R3 광학 블러 추정 (c(z) 회귀→z_f·N_eq·모션블러 방향장)",
+   "paths": [
+    "buc/read/blur_est.py"
+   ],
+   "deps": [
+    "RD-07",
+    "RD-08"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 55,
+   "why": "이중 보케 방지의 전제",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-06",
+   "name": "R4 톤·색 (4파라미터 필름 곡선·WB·CDL·룩 잔차 LUT 17³ TTO)",
+   "paths": [
+    "buc/read/tone_color.py"
+   ],
+   "deps": [
+    "RD-01",
+    "LNS-08"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 56,
+   "why": "명제 L2(선형 오귀속 상쇄)에 의존",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-07",
+   "name": "R5 독심 판독 호출 (전역 σ 2점+1024² 타일·혼합·r_dis·클린룸 레인)",
+   "paths": [
+    "buc/read/mrh_call.py"
+   ],
+   "deps": [
+    "TCH-02",
+    "TCH-03",
+    "MDL-03",
+    "RD-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 57,
+   "why": "MRH 연결부. 타일 경계 혼합만 주의",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-08",
+   "name": "R6 미터 스케일 (크기 사전 로그 가중 LS+FOV+EXIF)",
+   "paths": [
+    "buc/read/metric_scale.py"
+   ],
+   "deps": [
+    "RD-02",
+    "RD-07",
+    "DAT-16"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 58,
+   "why": "DOF·레벨이 미터를 요구",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-09",
+   "name": "R7 내재 분해 (Retinex+기하 음영)",
+   "paths": [
+    "buc/read/intrinsics.py"
+   ],
+   "deps": [
+    "RD-07",
+    "RD-06"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 59,
+   "why": "재조명 용도. 첫 프레임은 L_d를 직접 소유",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-10",
+   "name": "R8 FitLights+치트 라이트 (NNLS·CMA-ES·그림자 에지·CL1–CL6)",
+   "paths": [
+    "buc/read/fit_lights.py"
+   ],
+   "deps": [
+    "RD-09",
+    "RD-08"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 1.2,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 60,
+   "why": "예측 L1. 기본은 복사휘도 굽기로 폴백",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-11",
+   "name": "Esc 7성분+r_dis+r_refl (에셔 점수)",
+   "paths": [
+    "buc/read/escher_score.py"
+   ],
+   "deps": [
+    "RD-02",
+    "RD-07",
+    "RD-08",
+    "RD-10"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 61,
+   "why": "파라미터 0 잔차 합. 메뉴 등급의 근거",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-12",
+   "name": "기하 화해 솔버 (IRLS×λ 6점·평면 스냅·강체 가중 ARAP 워프·FFG)",
+   "paths": [
+    "buc/read/reconcile.py"
+   ],
+   "deps": [
+    "RD-11"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 1.5,
+   "impl_model": "opus",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 62,
+   "why": "수식·경계조건 과다. Sonnet 반복 비용이 Opus 1회보다 큼",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-13",
+   "name": "변형 브랜치 D_g (케이지 ARAP-3D·CoW 재오픈)",
+   "paths": [
+    "buc/read/deform_branch.py"
+   ],
+   "deps": [
+    "RD-12",
+    "WLD-03"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "◐",
+   "verify": "U+G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "N",
+   "slice": false,
+   "rank": 63,
+   "why": "등급 전환 재사용용. 15일 경로 밖",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-14",
+   "name": "R10 관측 대역 지도 (l_obs 경/부분·w(ν)·O bitset)",
+   "paths": [
+    "buc/read/obs_map.py"
+   ],
+   "deps": [
+    "RD-01",
+    "RD-08"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 64,
+   "why": "소유권 수학의 핵심. MRH.obs는 소프트 의존",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-15",
+   "name": "R11a 얼굴 맵 (템플릿 검출+MRH sem OR·머리 모형 LM·σ_z)",
+   "paths": [
+    "buc/read/faces.py"
+   ],
+   "deps": [
+    "RD-07",
+    "RD-08",
+    "MDL-03"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 65,
+   "why": "실제 얼굴 재현율 미측정(F-M8)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-16",
+   "name": "R11b 글자 런·SYMBOL 재구성 (OFL 폰트 매칭·MSDF)",
+   "paths": [
+    "buc/read/glyph_runs.py",
+    "render/symbol_msdf.py"
+   ],
+   "deps": [
+    "RD-01",
+    "MDL-20"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 66,
+   "why": "한글 메뉴판 베스트 클립의 핵심",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-17",
+   "name": "R12 반사 판독 (M_refl·평면 RANSAC·C_0^R·프레넬)",
+   "paths": [
+    "buc/read/reflection.py"
+   ],
+   "deps": [
+    "RD-07",
+    "RD-02"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "U+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 67,
+   "why": "거울 입력은 안전 등급 강등",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-18",
+   "name": "R13 경계 분해 (깊이 불연속 trimap·Levin 닫힌형 매팅)",
+   "paths": [
+    "buc/read/edge_unmix.py"
+   ],
+   "deps": [
+    "RD-07",
+    "RD-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 68,
+   "why": "예측 아티팩트 1순위(고무 시트)의 해독제. 슬라이스는 LDI 찢기로 버티고 D8에 합류",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-19",
+   "name": "PCI 레벨 판정·문법 커버리지 분류",
+   "paths": [
+    "buc/read/pci.py"
+   ],
+   "deps": [
+    "RD-07"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 69,
+   "why": "규칙 기반 분류",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-20",
+   "name": "θ_in 전역 최적화 (InverseLook TTO·r_look·자기일관 검사)",
+   "paths": [
+    "buc/read/inverse_look.py"
+   ],
+   "deps": [
+    "RD-02",
+    "RD-03",
+    "RD-04",
+    "RD-05",
+    "RD-06"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 70,
+   "why": "최종 룩 일치. 설계 검토는 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "RD-21",
+   "name": "판독 오케스트레이터·패킷 조립 (R0–R13 순서·캐시·단계별 폴백)",
+   "paths": [
+    "buc/read/pipeline.py"
+   ],
+   "deps": [
+    "RD-01",
+    "RD-02",
+    "RD-07",
+    "RD-08"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 71,
+   "why": "실패 격리와 폴백값이 설계의 전부",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-01",
+   "name": "세계 컨테이너 STRATA-lite-min (blocks·charts·SoA·meta/prov·Merkle·직렬화)",
+   "paths": [
+    "buc/world/strata.py"
+   ],
+   "deps": [
+    "FND-02",
+    "FND-03"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 1.2,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 72,
+   "why": "v0은 LDI 층+far-field+meta 부분집합만",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-02",
+   "name": "입력 역투영 TABP-입력 (경/부분 소유·카디널 사전필터)",
+   "paths": [
+    "buc/world/input_bp.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "RD-14",
+    "RDR-04"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 73,
+   "why": "\"프레임 0 = 입력\"의 구현",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-03",
+   "name": "깊이 세계 빌더 (MRH 깊이→불연속 찢기→LDI→2DGS 초기화; α 매팅은 RD-18이 나중에 합류)",
+   "paths": [
+    "buc/world/depth_world.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "RD-07",
+    "RD-08",
+    "RDR-02"
+   ],
+   "diff": 4,
+   "risk": 5,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 74,
+   "why": "고무 시트 방지 핵심. 시각 판정 필요",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-04",
+   "name": "xatlas 세계축 차트·Fold 그래프·Fold 뷰",
+   "paths": [
+    "buc/world/charts.py"
+   ],
+   "deps": [
+    "WLD-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "U+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 75,
+   "why": "OTBI의 전제",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-05",
+   "name": "L0 조명 bake (Warp/OptiX 경로추적·동기+치트)",
+   "paths": [
+    "buc/world/bake.py"
+   ],
+   "deps": [
+    "WLD-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 76,
+   "why": "발명 영역 조명 일치용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-06",
+   "name": "입력 견본 Swatch Bank (정면 패치 정류·탈조명·퀼팅 synth·세계 로컬)",
+   "paths": [
+    "buc/world/swatch.py"
+   ],
+   "deps": [
+    "WLD-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 77,
+   "why": "Texel Bank은 엔진 세계 전용, 입력 견본은 전역 금지",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-07",
+   "name": "의미 패스 lockstep (48 cine 뷰 동시 디노이즈+TSQ 피팅+관측항+gauge)",
+   "paths": [
+    "buc/world/semantic_pass.py"
+   ],
+   "deps": [
+    "WLD-03",
+    "WLD-05",
+    "WLD-04",
+    "TCH-02",
+    "RDR-01",
+    "MDL-03"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 1.6,
+   "impl_model": "opus",
+   "impl_effort": "high",
+   "design": "F",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 78,
+   "why": "가장 새롭고 위험. 예측 0.35. 설계·검토 Fable, 구현 Opus",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-08",
+   "name": "뷰별 SDEdit+평균 역투영 폴백 (실제 화면에 나가는 발명 채움)",
+   "paths": [
+    "buc/world/sdedit_avg.py"
+   ],
+   "deps": [
+    "WLD-03",
+    "TCH-02",
+    "RDR-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 79,
+   "why": "예측상 실제 출하 경로. 먼저 만들고 나머지가 이것을 이긴다",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-09",
+   "name": "Grid-Locked OTBI+TABP 닫힌형 sync+Context Ring",
+   "paths": [
+    "buc/world/otbi_tabp.py"
+   ],
+   "deps": [
+    "WLD-04",
+    "WLD-07",
+    "RDR-03",
+    "MDL-02"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 1.5,
+   "impl_model": "opus",
+   "impl_effort": "high",
+   "design": "F",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 80,
+   "why": "독창 핵심, 예측 0.35. 타임박스 D12, 실패 시 WLD-08 유지",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-10",
+   "name": "graph cut+multiband commit (maxflow·Laplacian 저대역 교체·VAE 1회)",
+   "paths": [
+    "buc/world/commit.py"
+   ],
+   "deps": [
+    "WLD-04",
+    "WLD-08"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 81,
+   "why": "이음매 제거의 기계",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-11",
+   "name": "이음매 지우기 (입력 gauge 저대역 고정·apron 40%·Ref Ring 띠·발명 영역 θ_in)",
+   "paths": [
+    "buc/world/seam.py"
+   ],
+   "deps": [
+    "WLD-02",
+    "WLD-08"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "P",
+   "slice": false,
+   "rank": 82,
+   "why": "확장·풀 +5–8%p 레버. 진짜 적은 이음매",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-12",
+   "name": "Router+Spec-commit+가난선 o_s",
+   "paths": [
+    "buc/world/router.py"
+   ],
+   "deps": [
+    "WLD-09",
+    "MDL-08",
+    "MDL-10",
+    "TCH-06"
+   ],
+   "diff": 5,
+   "risk": 5,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "N",
+   "slice": false,
+   "rank": 83,
+   "why": "예측 0.10. 주의력 분류로 밤 잡 처리",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-13",
+   "name": "관할 이양 래칫 루프",
+   "paths": [
+    "buc/world/ratchet.py"
+   ],
+   "deps": [
+    "WLD-12",
+    "MDL-08"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "N",
+   "slice": false,
+   "rank": 84,
+   "why": "예측 0.10. 세대 한 번 돌 시간 없음",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-14",
+   "name": "InputPolish (S8.5 첫 프레임 게이트: FFD>τ→CoW 1 Jacobi)",
+   "paths": [
+    "buc/world/input_polish.py"
+   ],
+   "deps": [
+    "WLD-02",
+    "RD-14",
+    "WLD-08",
+    "MDL-11",
+    "EVL-04"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 85,
+   "why": "FFD 게이트",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-15",
+   "name": "CoW·Merkle 델타 솔브·세션 재개",
+   "paths": [
+    "buc/world/cow.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "FND-03",
+    "TCH-04"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 86,
+   "why": "재현성과 InputPolish·등급 전환의 토대",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-16",
+   "name": "감사 S7 (적대 카메라 CMA-ES)+레이아웃 거부권 S2d",
+   "paths": [
+    "buc/world/audit.py"
+   ],
+   "deps": [
+    "WLD-08",
+    "TCH-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 87,
+   "why": "품질 보증. 화면 경로 밖",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-17",
+   "name": "far-field (팔면체 HDR·Hosek–Wilkie 하늘·지평선·지면 연장)",
+   "paths": [
+    "buc/world/farfield.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "RD-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 88,
+   "why": "뒤통수 하늘 이음매 방지. 해석식",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-18",
+   "name": "중첩 lot 3겹 결합 (스케일 DAG·E_couple·best-of-16×16)",
+   "paths": [
+    "buc/world/lots.py"
+   ],
+   "deps": [
+    "MDL-13",
+    "MDL-14",
+    "WLD-17"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 89,
+   "why": "실외 피사체 확장용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-19",
+   "name": "턴어라운드 링 (3패널 동시 디노이즈)",
+   "paths": [
+    "buc/world/turnaround_ring.py"
+   ],
+   "deps": [
+    "WLD-07",
+    "TCH-02",
+    "INV-08"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 90,
+   "why": "뒷면 정체성. 비회귀 조항 위반 유혹 지점",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-20",
+   "name": "레이어 카드 세계 (2.5D)+NPR 렌더+스트로크 밉 (L2)",
+   "paths": [
+    "buc/world/layer_cards.py",
+    "npr.py"
+   ],
+   "deps": [
+    "WLD-03",
+    "RD-19"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+G+V",
+   "loc_k": 1.3,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 91,
+   "why": "그림체 입력 D15 기본값. 예측상 의외로 볼 만함",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "WLD-21",
+   "name": "Demand (Ray-Bundle+Corman–Shannon·IR 맵·입력 소유 B_I)",
+   "paths": [
+    "buc/world/demand.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "CAM-02",
+    "LNS-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 92,
+   "why": "OTBI·TexelFM의 수요 입력",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-01",
+   "name": "문법 코어+RoomGen v0 (장면 프로그램·numba 레이캐스트·G1–G13 에너지 골격)",
+   "paths": [
+    "buc/invent/grammar/core.py",
+    "room.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 1.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 93,
+   "why": "MRH 합성 데이터의 원천. v0 RoomGen을 먼저",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-02",
+   "name": "장르 문법 (한옥·을지로·바·거실·거리)",
+   "paths": [
+    "buc/invent/grammar/genres.py"
+   ],
+   "deps": [
+    "INV-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+V",
+   "loc_k": 1.2,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 94,
+   "why": "규칙 코드. 도메인 지식은 Opus 설계",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-03",
+   "name": "OOG 문법 6종 (스튜디오·사구·해안·계곡·숲 바닥·광장)",
+   "paths": [
+    "buc/invent/grammar/oog.py"
+   ],
+   "deps": [
+    "INV-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U+V",
+   "loc_k": 1.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 95,
+   "why": "문법 밖 장면 예측 0.15. 범위 유지·순서 후순위",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-04",
+   "name": "부분 점유 lift·카빙·Render-Hide-Complete 샘플러",
+   "paths": [
+    "buc/invent/lift.py"
+   ],
+   "deps": [
+    "INV-01",
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 96,
+   "why": "MassingFM 학습 라벨 공장",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-05",
+   "name": "사용자 텍스트 파서 (규칙 한·영·슬롯 사전 800·재질 사전 150)",
+   "paths": [
+    "buc/invent/parse_text.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 97,
+   "why": "24장 A/B는 텍스트 없이 가능. 사전 초안은 Haiku",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-06",
+   "name": "CaptionComposer+ReadCaption (TE 사전 최근접)",
+   "paths": [
+    "buc/invent/caption.py"
+   ],
+   "deps": [
+    "INV-01",
+    "TCH-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 98,
+   "why": "템플릿 조합",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-07",
+   "name": "best-of-N 선택 에너지 (E_gram·E_light·E_text·E_cont·E_obs·E_face)",
+   "paths": [
+    "buc/invent/select.py"
+   ],
+   "deps": [
+    "INV-01",
+    "INV-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 99,
+   "why": "문법 에너지 합",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-08",
+   "name": "대칭 완성+CC0 에셋 정렬 ICP (뒷면 초기값)",
+   "paths": [
+    "buc/invent/backside.py"
+   ],
+   "deps": [
+    "WLD-01",
+    "INV-09"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 100,
+   "why": "초기값일 뿐 소유권 없음",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "INV-09",
+   "name": "CC0 에셋 수집·색인 (Poly Haven·ambientCG, 라이선스 manifest)",
+   "paths": [
+    "tools/assets/fetch_cc0.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 1,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 101,
+   "why": "스크립트. 네트워크 허용 확인 필요",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-01",
+   "name": "M1 TAE-T (2.5M f8 AE, 교사 VAE 쌍 증류, T-LPIPS 항)",
+   "paths": [
+    "buc/models/tae_t/model.py",
+    "train.py",
+    "eval.py"
+   ],
+   "deps": [
+    "TCH-01",
+    "DAT-05",
+    "RUN-06"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 102,
+   "why": "TAESD 선례. 곡면 경로·프리뷰용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-02",
+   "name": "M2 LatentDown/Up-S (각 1M)",
+   "paths": [
+    "buc/models/latent_ud/*.py"
+   ],
+   "deps": [
+    "MDL-01",
+    "RUN-06"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "G+U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 103,
+   "why": "6층 conv. 가장 작은 모델",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-03",
+   "name": "M3 MRH 본체 (PCA 탭→DPT neck→깊이·법선·알베도·rough/metal·shading·defocus·sem·σ̂)",
+   "paths": [
+    "buc/models/mrh/neck.py",
+    "heads.py",
+    "train.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-02",
+    "DAT-05",
+    "TCH-03"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 1.5,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 104,
+   "why": "D15 화면의 심장(기여 0.60). 헤드 정의 검토는 Fable",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-04",
+   "name": "M3 MRH 전역 헤드 28+NPR 6+비물리 플래그 3",
+   "paths": [
+    "buc/models/mrh/glob_heads.py"
+   ],
+   "deps": [
+    "MDL-03",
+    "DAT-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 105,
+   "why": "InverseLook 초기값. 고전 추정이 폴백",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-05",
+   "name": "M3 MRH.obs 관측 대역 헤드+정밀화 (H/2–H)",
+   "paths": [
+    "buc/models/mrh/obs_head.py"
+   ],
+   "deps": [
+    "MDL-03",
+    "DAT-10"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 106,
+   "why": "흐림과 매끈함 구분. 얼굴 경계에도 사용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-06",
+   "name": "M3 MRH 실사 MVS 차선·홀드아웃 평가 (GT 비율 ≥55% 규칙)",
+   "paths": [
+    "buc/models/mrh/real_lane.py"
+   ],
+   "deps": [
+    "MDL-03",
+    "DAT-08",
+    "DAT-04"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G+U",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 107,
+   "why": "합성만으로는 일반화가 나쁨. 실사 차선 필수",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-07",
+   "name": "M4 G-Adapter (25M, zero-init 5곳, 동결 교사 역전파; E3가 생략 판정)",
+   "paths": [
+    "buc/models/g_adapter/*.py"
+   ],
+   "deps": [
+    "MDL-03",
+    "DAT-01",
+    "TCH-02"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "N",
+   "slice": false,
+   "rank": 108,
+   "why": "조건부. SDEdit만으로 충분하면 생략하나 코드는 만든다",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-08",
+   "name": "M5 TexelFM-35 본체 (s2d·conv-res·window attn·견본 cross-attn·2×2 평균0 사영)",
+   "paths": [
+    "buc/models/texelfm/model.py",
+    "train.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-06",
+    "DAT-15"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 1.4,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 109,
+   "why": "푸시인 끝 구간 품질. 평균0 사영이 효도 정확성의 열쇠",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-09",
+   "name": "M5 TexelFM 입력 부모 모드·견본 로더 (열화 부모 30%)",
+   "paths": [
+    "buc/models/texelfm/data.py"
+   ],
+   "deps": [
+    "MDL-08",
+    "DAT-10"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 110,
+   "why": "푸시인 역설 대응",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-10",
+   "name": "M5 TexelFM native 추론 (WNF 고정 타일 격자·마모장 계산·T8 비트 동일)",
+   "paths": [
+    "buc/models/texelfm/native.py",
+    "wear.py"
+   ],
+   "deps": [
+    "MDL-08",
+    "FND-03"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 111,
+   "why": "결정론 검사로 판정",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-11",
+   "name": "M6 T-LPIPS-S (4M, 교사 특징 거리 라벨, θ 불변 헤드)",
+   "paths": [
+    "buc/models/t_lpips/*.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-10",
+    "TCH-02"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 112,
+   "why": "내부 FFD 자. 공개 FFD는 평가 전용 LPIPS",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-12",
+   "name": "M7 MassingFM 본체 (DiT 12L d384·FM+masked·3D patchify·3상태 조건)",
+   "paths": [
+    "buc/models/massing/model.py",
+    "train.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "INV-04",
+    "INV-01"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "◐",
+   "verify": "G",
+   "loc_k": 1.3,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 113,
+   "why": "프레임 밖 레이아웃. 기여 0.45",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-13",
+   "name": "M7 MassingFM 샘플러 (관측 고정 집합 inpainting·best-of-N 연결)",
+   "paths": [
+    "buc/models/massing/sample.py"
+   ],
+   "deps": [
+    "MDL-12",
+    "INV-07"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 114,
+   "why": "집합 공간 inpainting. 비회귀 조항 안",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-14",
+   "name": "M8 BRP (42M 3D U-Net)",
+   "paths": [
+    "buc/models/brp/*.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "INV-03",
+    "INV-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 115,
+   "why": "실외 지형용. 예측상 화면 기여 0.20",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-15",
+   "name": "M9 IPM-S (8M ConvNeXt식)",
+   "paths": [
+    "buc/models/ipm/*.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "INV-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "N",
+   "slice": false,
+   "rank": 116,
+   "why": "작고 명세 완결. 기여 0.20",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-16",
+   "name": "M10 CamFM-Intent (20M DiT 8L)",
+   "paths": [
+    "buc/models/camfm/intent.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-13"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 117,
+   "why": "벤치 경로 고정이라 덜 중요(0.20)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-17",
+   "name": "M11 CamFM-Hand (8M causal xfmr·μ-law 256-bin)",
+   "paths": [
+    "buc/models/camfm/hand.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "CAM-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 118,
+   "why": "손떨림이 \"진짜 카메라\" 느낌을 만듦(0.55). IMU 데이터 의존",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-18",
+   "name": "M12 CamFM-CRM (12M, 해석 통계)",
+   "paths": [
+    "buc/models/camfm/crm.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-14"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 119,
+   "why": "선호 쌍 5k가 15일에 안 모임(0.10–0.15)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-19",
+   "name": "M13 Rig-ID-S (3M 1D conv)",
+   "paths": [
+    "buc/models/rig_id/*.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "CAM-01"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "N",
+   "slice": false,
+   "rank": 120,
+   "why": "돌아가지만 클립 기여 약 0.05",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-20",
+   "name": "M14 Glyph-S 검출기 (4M U-Net-lite)",
+   "paths": [
+    "buc/models/glyph/detector.py"
+   ],
+   "deps": [
+    "RUN-06",
+    "DAT-12"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 121,
+   "why": "한글 SYMBOL 교체의 입구",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-21",
+   "name": "모델 레지스트리·export 추론 API",
+   "paths": [
+    "buc/models/registry.py"
+   ],
+   "deps": [
+    "FND-02"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "M",
+   "slice": false,
+   "rank": 122,
+   "why": "체크포인트 해시·weights=None 검사 연동",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "MDL-22",
+   "name": "M14 Glyph-S CTC 인식기 (2.8M)",
+   "paths": [
+    "buc/models/glyph/ctc.py"
+   ],
+   "deps": [
+    "MDL-20"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 123,
+   "why": "CTC·SYMBOL 교체 기여 0.25–0.30",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-01",
+   "name": "절차 장면 GT 렌더 파이프 (G-buffer 12ch·디노이저 OFF)",
+   "paths": [
+    "buc/data/synth_render.py"
+   ],
+   "deps": [
+    "INV-01",
+    "RDR-02",
+    "RDR-05"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 124,
+   "why": "MRH 학습 GT의 원천",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-02",
+   "name": "Realify+탭 동시 추출 패스 (SDEdit 2–3 NFE·결정 곡선 대역 마스크)",
+   "paths": [
+    "buc/data/realify.py"
+   ],
+   "deps": [
+    "DAT-01",
+    "TCH-02",
+    "TCH-03"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 125,
+   "why": "한 번의 교사 호출로 라벨과 학습 특징을 동시에",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-03",
+   "name": "θ-Realify (θ 적용본+ExplainAway 통과본)",
+   "paths": [
+    "buc/data/theta_realify.py"
+   ],
+   "deps": [
+    "DAT-02",
+    "LNS-01",
+    "LNS-08"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 126,
+   "why": "MRH가 추론 때 보는 분포에 맞춤",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-04",
+   "name": "실사 노이즈 탭 패스 (RAW+MVS GT→VAE enc→1 NFE)",
+   "paths": [
+    "buc/data/real_tap.py"
+   ],
+   "deps": [
+    "TCH-03",
+    "DAT-08"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.4,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 127,
+   "why": "생성 없음, 탭만 추출",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-05",
+   "name": "샤드 I/O (WebDataset·Merkle 주소·prov 검사)",
+   "paths": [
+    "buc/data/shards.py"
+   ],
+   "deps": [
+    "FND-03",
+    "FND-04"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 128,
+   "why": "계보 검사가 여기서 걸림",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-06",
+   "name": "CC0 PBR 옥타브 피라미드",
+   "paths": [
+    "buc/data/pbr_pyramid.py"
+   ],
+   "deps": [
+    "FND-01",
+    "INV-09"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 129,
+   "why": "다운샘플 스크립트",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-07",
+   "name": "RAW 매크로 처리 (고전 디모자이크·무작위 현상·크롭 샤드)",
+   "paths": [
+    "buc/data/raw_macro.py"
+   ],
+   "deps": [
+    "DAT-05",
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 130,
+   "why": "창업자 촬영 의존. 예측상 계획의 1–10%만 모임",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-08",
+   "name": "실사 MVS 파이프 (COLMAP SIFT·GLOMAP·PatchMatch·ArUco 스케일)",
+   "paths": [
+    "buc/data/mvs.py"
+   ],
+   "deps": [
+    "FND-01",
+    "DAT-05"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "●",
+   "verify": "G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 131,
+   "why": "MRH 실사 차선의 유일한 씨앗. 빌드·옵션 시행착오",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-09",
+   "name": "I2V 학습쌍 생성기 (Degrade∘Escher∘Style∘Look∘Render+라벨)",
+   "paths": [
+    "buc/data/i2v_pairs.py"
+   ],
+   "deps": [
+    "DAT-01",
+    "DAT-10",
+    "DAT-11",
+    "LNS-08",
+    "TCH-11"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 132,
+   "why": "라벨이 구성상 정확하다는 것이 해자",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-10",
+   "name": "열화·AI 아티팩트 라이브러리 (JPEG·리샘플 체인·샤프닝·VAE 왕복·AI 업스케일)",
+   "paths": [
+    "buc/data/degrade.py"
+   ],
+   "deps": [
+    "FND-06",
+    "TCH-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 133,
+   "why": "열화 파라미터가 곧 MRH.obs 라벨",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-11",
+   "name": "에셔 합성 9계열",
+   "paths": [
+    "buc/data/escher_synth.py"
+   ],
+   "deps": [
+    "DAT-01",
+    "INV-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 134,
+   "why": "판독기 국소 진실 라벨(CT-M14)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-12",
+   "name": "글리프 합성 (OFL 폰트·한글 11,172자·가짜 글리프 음성)",
+   "paths": [
+    "buc/data/glyph_synth.py"
+   ],
+   "deps": [
+    "FND-06"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 135,
+   "why": "스크립트",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-13",
+   "name": "카메라 궤적 코퍼스 (Toric 문법·Blender 카메라 추출·GLOMAP)",
+   "paths": [
+    "buc/data/traj.py"
+   ],
+   "deps": [
+    "CAM-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 136,
+   "why": "CamFM-Intent용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-14",
+   "name": "CRM 합성 선호쌍 (지터·충돌·수평 기울기·전경 레이어링 제거)",
+   "paths": [
+    "buc/data/crm_pairs.py"
+   ],
+   "deps": [
+    "CAM-01",
+    "DAT-13"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 137,
+   "why": "열화 규칙 적용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-15",
+   "name": "band-iso 타일·견본 학습셋 공장",
+   "paths": [
+    "buc/data/bandiso.py"
+   ],
+   "deps": [
+    "TCH-02",
+    "DAT-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 138,
+   "why": "TexelFM 학습 데이터",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "DAT-16",
+   "name": "크기 사전 테이블 (~500 클래스 μ·σ)",
+   "paths": [
+    "data/size_prior.yaml",
+    "tools/size_prior_check.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 139,
+   "why": "Haiku가 초안, Opus가 수치 검수(도메인 지식)",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-01",
+   "name": "고정 입력 24장 매니페스트 (출처 태그·크롭 규약·커버리지 매트릭스)",
+   "paths": [
+    "eval/inputs24/manifest.yaml",
+    "tools/inputs_qa.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 4,
+   "screen": "●",
+   "verify": "U+V",
+   "loc_k": 0.2,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 140,
+   "why": "선별 편향이 승률 해석을 오염. 매트릭스는 Fable이 적대 검토",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-02",
+   "name": "일일 A/B 러너 (24장 고정 무브→전 구간→mp4→전일 대비 시트, 야간 잡)",
+   "paths": [
+    "eval/daily_ab.py"
+   ],
+   "deps": [
+    "PRD-01",
+    "EVL-01",
+    "RDR-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 141,
+   "why": "최대 레버(반복 횟수)의 엔진",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-03",
+   "name": "경쟁 클립 수집 도구 (COMP 격리·프레임 정렬·해상도 정규화)",
+   "paths": [
+    "eval/comp_ingest.py"
+   ],
+   "deps": [
+    "FND-04"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 142,
+   "why": "Seedance 클립은 창업자가 생성",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-04",
+   "name": "FFD·FFG·ΔE00·ΔG·FP(t)·OIR (평가 전용 LPIPS, 별도 프로세스)",
+   "paths": [
+    "eval/first_frame.py"
+   ],
+   "deps": [
+    "FND-06"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 143,
+   "why": "R-EVAL 격리가 핵심",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-05",
+   "name": "IR 계산기 (IR_geo·area·info·C·m_eff)",
+   "paths": [
+    "eval/ir.py"
+   ],
+   "deps": [
+    "RDR-05"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 144,
+   "why": "렌더러 AOV에서 공짜로 나옴",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-06",
+   "name": "GeCo 재구현 (평가 전용, R-EVAL)",
+   "paths": [
+    "eval/geco.py"
+   ],
+   "deps": [
+    "RUN-05"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "G",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 145,
+   "why": "평가 모델은 시스템 경로 밖에서만 허용",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-07",
+   "name": "halo 지수·반사 문신 지수·seam 2AFC 자동 지표",
+   "paths": [
+    "eval/artifact_metrics.py"
+   ],
+   "deps": [
+    "EVL-04",
+    "RDR-05"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 146,
+   "why": "예측 아티팩트 1순위를 수치로 추적",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-08",
+   "name": "블라인드 패널 페이지 (2AFC 수집, 정적 HTML)",
+   "paths": [
+    "eval/panel/index.html",
+    "collect.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "●",
+   "verify": "V",
+   "loc_k": 0.6,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 147,
+   "why": "D9·D12 패널용. 눈 적응 방지",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-09",
+   "name": "BT 집계·KPI 카드·일일 한국어 리포트",
+   "paths": [
+    "eval/report.py"
+   ],
+   "deps": [
+    "EVL-04",
+    "EVL-08"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 148,
+   "why": "집계와 렌더링",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-10",
+   "name": "벤치 정의식·벤치 모드 계약 (경로 고정·β=0·사다리 단계·홈/어웨이)",
+   "paths": [
+    "eval/bench_def.py"
+   ],
+   "deps": [
+    "CAM-02",
+    "FND-04"
+   ],
+   "diff": 3,
+   "risk": 4,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "F",
+   "cls": "M",
+   "slice": false,
+   "rank": 149,
+   "why": "공정성 규칙. 홈 경기 편향 방지",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-11",
+   "name": "골든 회귀·결정론 스모크 (no-op PR에서 Merkle 불변)",
+   "paths": [
+    "tests/golden/*"
+   ],
+   "deps": [
+    "FND-03",
+    "PRD-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U+G",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 150,
+   "why": "야간 A/B와 별도의 빠른 안전망",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-12",
+   "name": "실험 패키지 A (X-FF0 항등 루프·X-FF·X-INV)",
+   "paths": [
+    "eval/exp_a.py"
+   ],
+   "deps": [
+    "EVL-04",
+    "WLD-02",
+    "RDR-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "●",
+   "verify": "G+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 151,
+   "why": "첫 프레임 바닥 FFD ≤0.015 확인",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-13",
+   "name": "실험 패키지 B (X-ESC·X-ESC-H·MRH 게이트 E3 (a)(d))",
+   "paths": [
+    "eval/exp_b.py"
+   ],
+   "deps": [
+    "RD-11",
+    "RD-12",
+    "EVL-04",
+    "MDL-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.7,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 152,
+   "why": "판독기 정확도 게이트",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-14",
+   "name": "실험 패키지 C (X-REFL·X-EDGE·X-LOT·X-TURN·X-FACE-Z)",
+   "paths": [
+    "eval/exp_c.py"
+   ],
+   "deps": [
+    "EVL-07",
+    "RD-17",
+    "RD-18",
+    "WLD-19",
+    "CAM-04"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.9,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "N",
+   "slice": false,
+   "rank": 153,
+   "why": "확장 레버 검증. 15일 후반·밤 잡",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "EVL-15",
+   "name": "자기 대국 왕복 회귀 (엔진 세계→입력 한 장→파이프라인→정답 새 시점 비교)",
+   "paths": [
+    "eval/self_play.py"
+   ],
+   "deps": [
+    "DAT-09",
+    "PRD-01",
+    "EVL-04"
+   ],
+   "diff": 3,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "G+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 154,
+   "why": "정답 세계가 있어 발명 영역의 오차를 직접 잰다. 우리 렌더러 룩 과적합은 실사 쌍과 병행해 감시",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-01",
+   "name": "Lineage Ledger CI+vault 구조 (조상 DAG 해시·BLOCK_TRAIN 검사·weights=None·체크포인트 해시 금지목록)",
+   "paths": [
+    "buc/gov/lineage.py",
+    "ci/lineage_check.py"
+   ],
+   "deps": [
+    "FND-04"
+   ],
+   "diff": 4,
+   "risk": 4,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 155,
+   "why": "하위 모델이 쓴 코드가 원칙을 어기지 못하게 하는 방화벽",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-02",
+   "name": "카나리아 (가짜 USER/EXTGEN 샘플 주입→CI 실패가 정상)",
+   "paths": [
+    "tests/canary/*"
+   ],
+   "deps": [
+    "GOV-01"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 156,
+   "why": "테스트 작성은 Haiku 적합",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-03",
+   "name": "렌더 경로 린트 세트 (no_input_pixels_in_render_path·canvas_extension_lint·refl_bake_lint·preset_lineage_check)",
+   "paths": [
+    "buc/gov/lints.py"
+   ],
+   "deps": [
+    "FND-01",
+    "FND-02"
+   ],
+   "diff": 4,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 157,
+   "why": "I6(Read-Only Camera)를 코드로 강제. AST 규칙은 Fable이 설계 검토",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-04",
+   "name": "순서 순도 체크 (셔플 8회 Merkle/OIE·branch/ring order)",
+   "paths": [
+    "buc/gov/order_purity.py"
+   ],
+   "deps": [
+    "FND-03",
+    "PRD-01"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "○",
+   "verify": "U+G",
+   "loc_k": 0.5,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 158,
+   "why": "비회귀 조항의 자동 증명",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-05",
+   "name": "사전학습 import 금지 린트·R-EVAL 격리 검사",
+   "paths": [
+    "buc/gov/import_ban.py"
+   ],
+   "deps": [
+    "FND-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 159,
+   "why": "금지 목록 AST 검사",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "GOV-06",
+   "name": "홈/어웨이·HOLDOUT·벤치 모드 검사",
+   "paths": [
+    "buc/gov/bench_guard.py"
+   ],
+   "deps": [
+    "FND-04",
+    "EVL-10"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.3,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "G",
+   "slice": false,
+   "rank": 160,
+   "why": "꼬리표 검사",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-01",
+   "name": "파이프라인 스파인 (S−1…S11 스테이지 DAG·Merkle 캐시·부분 재실행·스텁↔실물 교체)",
+   "paths": [
+    "buc/pipeline/spine.py"
+   ],
+   "deps": [
+    "FND-02",
+    "FND-03",
+    "FND-07"
+   ],
+   "diff": 3,
+   "risk": 5,
+   "screen": "●",
+   "verify": "U+G",
+   "loc_k": 1.0,
+   "impl_model": "sonnet",
+   "impl_effort": "high",
+   "design": "O",
+   "review": "F",
+   "cls": "S",
+   "slice": true,
+   "rank": 161,
+   "why": "이음매를 지배. 교체 가능성이 설계의 전부",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-02",
+   "name": "CLI/API (buc world·shoot·report)",
+   "paths": [
+    "buc/cli.py"
+   ],
+   "deps": [
+    "PRD-01"
+   ],
+   "diff": 1,
+   "risk": 1,
+   "screen": "○",
+   "verify": "U",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 162,
+   "why": "얇은 래퍼",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-03",
+   "name": "스텁 팩 (고전 판독 스텁·평면 세계 스텁·고정 무브 스텁)",
+   "paths": [
+    "buc/pipeline/stubs/*.py"
+   ],
+   "deps": [
+    "PRD-01",
+    "FND-02"
+   ],
+   "diff": 2,
+   "risk": 3,
+   "screen": "●",
+   "verify": "U",
+   "loc_k": 0.8,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "S",
+   "slice": true,
+   "rank": 163,
+   "why": "걷는 해골. 계약만 지키면 되는 단순 코드",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-04",
+   "name": "촬영 메뉴+등급 추천 (IR_pred·경고·m_eff)",
+   "paths": [
+    "buc/pipeline/menu.py"
+   ],
+   "deps": [
+    "CAM-02",
+    "CAM-04",
+    "EVL-05",
+    "RD-21"
+   ],
+   "diff": 3,
+   "risk": 3,
+   "screen": "◐",
+   "verify": "U+V",
+   "loc_k": 0.6,
+   "impl_model": "sonnet",
+   "impl_effort": "medium",
+   "design": "O",
+   "review": "O",
+   "cls": "P",
+   "slice": false,
+   "rank": 164,
+   "why": "정직한 메뉴가 확장·풀 승률을 지킴",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-05",
+   "name": "납품 패키징+S11 리포트 (KPI·사다리 단계·치트 몫·Proof-of-Shot)",
+   "paths": [
+    "buc/pipeline/deliver.py"
+   ],
+   "deps": [
+    "EVL-04",
+    "EVL-05",
+    "RD-21",
+    "PRD-01"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "◐",
+   "verify": "U",
+   "loc_k": 0.5,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "O",
+   "cls": "M",
+   "slice": false,
+   "rank": 165,
+   "why": "집계와 직렬화",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  },
+  {
+   "id": "PRD-06",
+   "name": "비교 시트 생성기 (vs Seedance A/B 토글·크롭 확대·FFD 오버레이)",
+   "paths": [
+    "buc/pipeline/compare_sheet.py"
+   ],
+   "deps": [
+    "EVL-02",
+    "EVL-03"
+   ],
+   "diff": 2,
+   "risk": 2,
+   "screen": "●",
+   "verify": "V",
+   "loc_k": 0.4,
+   "impl_model": "haiku",
+   "impl_effort": "medium",
+   "design": "S",
+   "review": "S",
+   "cls": "P",
+   "slice": false,
+   "rank": 166,
+   "why": "창업자 판정용 화면. 시각 자료",
+   "status": "todo",
+   "attempts": 0,
+   "log": []
+  }
+ ]
+}
