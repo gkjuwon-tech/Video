@@ -59,8 +59,8 @@
    "slice": true,
    "rank": 1,
    "why": "모든 이음매의 원천. 틀리면 전 레인 재작업이라 동결 검토만 Fable",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791642997,
@@ -73,6 +73,12 @@
     {
      "ts": 1791644346,
      "event": "claimed"
+    },
+    {
+     "ts": 1791644828,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
     }
    ]
   },
@@ -98,8 +104,8 @@
    "slice": true,
    "rank": 2,
    "why": "수식이 명세에 완결돼 있고 테스트로 판정됨",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791642997,
@@ -112,6 +118,12 @@
     {
      "ts": 1791644346,
      "event": "claimed"
+    },
+    {
+     "ts": 1791644828,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: 소유 밖 요청: pyproject 의존성에 blake3>=1.0을 추가해 달라(FND 단위 담당). buc/core/__init__.py는 없어도 namespace 패키지로 동작해서 만들지 않았다."
     }
    ]
   },

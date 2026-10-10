@@ -1,1 +1,3 @@
 {"id": "FND-01", "ts": 1791642891, "event": "done", "models": "orchestrator", "note": "repo skeleton by orchestrator to unblock harness"}
+{"id": "FND-02", "ts": 1791644828, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "FND-03", "ts": 1791644828, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: 소유 밖 요청: pyproject 의존성에 blake3>=1.0을 추가해 달라(FND 단위 담당). buc/core/__init__.py는 없어도 namespace 패키지로 동작해서 만들지 않았다."}
