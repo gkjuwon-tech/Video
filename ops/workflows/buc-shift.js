@@ -103,7 +103,7 @@ for (let bi = 0; bi < BATCHES; bi++) {
 1) ${lines}
 2) git status --porcelain 을 보고, 이번 배치 단위(${res.map(r => r.id).join(', ')})의 소유 경로·tests·contracts 와 ops/harness/backlog.json, ops/harness/ledger.jsonl, ops/gpu/heartbeat.json 이 아닌 변경 파일이 있으면 그 목록을 notes에 적고 \`git checkout -- <파일>\`(추적 파일) 또는 \`rm\`(새 파일)로 되돌려라. 단 work/, ops/harness/contracts/ 는 건드리지 마라.
 3) python3 -c "import json,time; json.dump({'epoch': int(time.time()), 'by': 'shift'}, open('ops/gpu/heartbeat.json','w'))"
-4) BUC_SCRATCH=__SCRATCH__ ops/persist.sh "shift: ${res.map(r => `${r.id}=${r.status}`).join(' ')}"`,
+4) ops/persist.sh "shift: ${res.map(r => `${r.id}=${r.status}`).join(' ')}"`,
     { label: `commit:${bi + 1}`, phase: 'Commit', model: 'haiku', effort: 'low', schema: DONE })
 }
 return { units: summary, done: summary.filter(s => s.status === 'done').length, blocked: summary.filter(s => s.status === 'blocked').map(s => `${s.id}: ${s.note}`) }

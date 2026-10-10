@@ -36,5 +36,5 @@ ops: persist work state ($MSG)
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01DXDTH1gRJUrQo4xe26AmAr
 EOF
-for i in 1 2 3 4; do git push -u origin "$BRANCH" && exit 0; sleep $((2**i)); done
+for i in 1 2 3 4; do git pull --rebase --autostash -q origin "$BRANCH" 2>/dev/null; git push -u origin "$BRANCH" && exit 0; sleep $((2**i)); done
 echo "persist: push 실패" >&2; exit 1
