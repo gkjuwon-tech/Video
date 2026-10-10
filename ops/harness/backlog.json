@@ -1185,9 +1185,14 @@
    "slice": false,
    "rank": 30,
    "why": "첫 프레임 충실도(FFD 바닥)를 정함",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791673225,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RDR-05",
@@ -1286,9 +1291,14 @@
    "slice": false,
    "rank": 33,
    "why": "거울 입력은 메뉴에서 안전 등급으로 내림(예측 0.15)",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791673225,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RDR-08",
