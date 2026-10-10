@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" 2>/dev/null && [ -f ops/STATE.md ] && { echo '=== Block Universe Cinema: 재개 상태 (ops/STATE.md) ==='; head -n 120 ops/STATE.md; echo; echo '재개 절차는 ops/RESUME.md 를 따른다.'; } || true"
+          }
+        ]
+      }
+    ]
+  }
+}
