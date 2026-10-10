@@ -1,0 +1,7 @@
+{
+ "tests/gov_03/test_gov03_canvas.py": "b11a408ea10e2adb2efb551e7aa4f5ce40892a225cb65a7c753c780b07cdd607",
+ "tests/gov_03/test_gov03_preset.py": "58e0dd7381ab5d0151943b4e5b2c90fdb6df9c1b6503932370f9644971ebded5",
+ "tests/gov_03/test_gov03_refl.py": "e88bdb322318a99998aa2561f8144461cfa5c67d79d122c9e6c71ce34bb0cf87",
+ "tests/gov_03/test_gov03_render_path.py": "0131649992b44d1fbfb4467595912945ff577bed1874df42950f8b18a92cdc51",
+ "tests/gov_03/test_gov03_runall_cli.py": "dcc9b26286511ea39026f1ff39f979bcfca3b1f2d1ef06e4a75283152bd4226c"
+}
