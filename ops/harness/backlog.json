@@ -326,12 +326,18 @@
    "slice": true,
    "rank": 8,
    "why": "돈이 새는 코드. 모킹 테스트+캡 로직은 Opus가 검토",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791647501,
      "event": "claimed"
+    },
+    {
+     "ts": 1791648347,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
     }
    ]
   },
@@ -975,12 +981,18 @@
    "slice": true,
    "rank": 31,
    "why": "IR·halo 지표·마스크의 원천",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791647501,
      "event": "claimed"
+    },
+    {
+     "ts": 1791648347,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ]
   },

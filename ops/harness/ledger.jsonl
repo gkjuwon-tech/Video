@@ -11,3 +11,5 @@
 {"id": "RDR-02", "ts": 1791647390, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "RDR-06", "ts": 1791647390, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: 없음"}
 >>>>>>> d54989f (ops: persist work state (shift: RDR-02=done RDR-06=done))
+{"id": "RUN-01", "ts": 1791648347, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "RDR-05", "ts": 1791648347, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
