@@ -1,0 +1,6 @@
+{
+ "tests/fnd_04/test_bits_record.py": "bd52c9b3868ee879d63cc21b4145bc13b9338f091a43840086f160a7a86d489e",
+ "tests/fnd_04/test_derive.py": "080ec808f947b6c15df4a381ceb5faa527875d98d4b4a1ab531f5f1e5970e32a",
+ "tests/fnd_04/test_gates.py": "3b654d177ff3646e6a6df714256767387d3f2593b13b3f47ddfb5c79d918ed62",
+ "tests/fnd_04/test_tags.py": "e0011777671233d0e783a41d151c8d4e0cb3ac8debbf231f77aa14427162f30f"
+}

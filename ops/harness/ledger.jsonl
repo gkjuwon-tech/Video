@@ -1,3 +1,5 @@
 {"id": "FND-01", "ts": 1791642891, "event": "done", "models": "orchestrator", "note": "repo skeleton by orchestrator to unblock harness"}
 {"id": "FND-02", "ts": 1791644828, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "FND-03", "ts": 1791644828, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: 소유 밖 요청: pyproject 의존성에 blake3>=1.0을 추가해 달라(FND 단위 담당). buc/core/__init__.py는 없어도 namespace 패키지로 동작해서 만들지 않았다."}
+{"id": "FND-04", "ts": 1791645843, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: 계약서의 기존 요청 그대로: FND-02 TAINT_BASES에 USER-DERIVED·BIO·EXTGEN-DERIVED 등을 추가하고 Prov.ext를 FND-04 ext_bit 정의(USER 포함)로 맞출 것. 그 전까지 FND-02 Prov.ext는 방화벽 판정에 쓰면 안 된다."}
+{"id": "FND-06", "ts": 1791645843, "event": "done", "models": "contract:sonnet,build:sonnet,repair:sonnet,repair:opus", "note": "요청: ops/harness/backlog.json 의 FND-06 paths 를 [buc/core/geom.py, buc/core/color.py, buc/core/pyramid.py] 로 고쳐 주세요. 고치면 gate.py FND-06 이 통과할 것으로 보입니다. 나머지 체크는 이미 모두 ok 입니다. FND-06 이 아닌 다른 항목도 같은 축약 표기를 쓰고 있다면 같은 문제가 날 수 있습니다."}

@@ -149,9 +149,20 @@
    "slice": true,
    "rank": 3,
    "why": "방화벽의 어휘. 규칙이 미묘해 동결 검토는 Fable",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791644845,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791645843,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": "요청: 계약서의 기존 요청 그대로: FND-02 TAINT_BASES에 USER-DERIVED·BIO·EXTGEN-DERIVED 등을 추가하고 Prov.ext를 FND-04 ext_bit 정의(USER 포함)로 맞출 것. 그 전까지 FND-02 Prov.ext는 방화벽 판정에 쓰면 안 된다."
+    }
+   ]
   },
   {
    "id": "FND-05",
@@ -185,8 +196,8 @@
    "name": "기하·색·필터 수학 유틸 (K·포즈·투영, sRGB↔선형, 피라미드, 리샘플)",
    "paths": [
     "buc/core/geom.py",
-    "color.py",
-    "pyramid.py"
+    "buc/core/color.py",
+    "buc/core/pyramid.py"
    ],
    "deps": [
     "FND-01"
@@ -204,9 +215,20 @@
    "slice": true,
    "rank": 5,
    "why": "전 단위가 쓰는 공용 수학. 수치 테스트로 판정",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791644845,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791645843,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet,repair:sonnet,repair:opus",
+     "note": "요청: ops/harness/backlog.json 의 FND-06 paths 를 [buc/core/geom.py, buc/core/color.py, buc/core/pyramid.py] 로 고쳐 주세요. 고치면 gate.py FND-06 이 통과할 것으로 보입니다. 나머지 체크는 이미 모두 ok 입니다. FND-06 이 아닌 다른 항목도 같은 축약 표기를 쓰고 있다면 같은 문제가 날 수 있습니다."
+    }
+   ]
   },
   {
    "id": "FND-07",

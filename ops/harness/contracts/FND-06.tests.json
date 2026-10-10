@@ -1,0 +1,7 @@
+{
+ "tests/fnd_06/test_fnd06_color.py": "6c5aef112dbab69ad09508144015961f73a188d1231a2919bf5908e0ce2adaa7",
+ "tests/fnd_06/test_fnd06_geom.py": "8e08e220924435479b76631eebc17f62aae897cdd5d5c844ccfa3f30bca5bfab",
+ "tests/fnd_06/test_fnd06_pyramid.py": "7b6f28515bf34288ab6a484aac5a44f67f661157b0d96e3915e06a19445e35ba",
+ "tests/fnd_06/test_fnd06_resample.py": "fb43286f57b6fc99bce214abb9bc2811e87529b9210d2a63482518a8cac5ee48",
+ "tests/fnd_06/test_fnd06_seams.py": "1c50274e648b3480b664fd4a1f6f8ebdc563e1df4b0eaa38fa7083b8e68ccf0c"
+}
