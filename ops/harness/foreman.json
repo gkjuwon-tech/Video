@@ -1,1 +1,1 @@
-{"epoch":3,"last_shift":"wf_0ff6f67d-1ef","done":8,"blocked":[]}
+{"epoch":4,"last_shift":"wf_6bd1228e-a0c","done":7,"blocked":["RD-02(동결 테스트 헬퍼 tests/rd_02/rd02_helpers.py:211이 np.cross에 2D 벡터를 넘겨 NumPy 2.x에서 실패; 구현은 정상, 테스트 수정 필요)"]}
