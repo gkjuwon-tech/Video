@@ -2293,9 +2293,14 @@
    "slice": true,
    "rank": 72,
    "why": "v0은 LDI 층+far-field+meta 부분집합만",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791658134,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "WLD-02",
@@ -2878,9 +2883,14 @@
    "slice": true,
    "rank": 93,
    "why": "MRH 합성 데이터의 원천. v0 RoomGen을 먼저",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791658134,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "INV-02",
