@@ -57,3 +57,5 @@
 {"id": "TCH-11", "ts": 1791673193, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: 없음"}
 {"id": "RDR-03", "ts": 1791673193, "event": "done", "models": "contract:opus,build:opus,review:opus", "note": "요청: For the GPU runner: run `pytest -m gpu tests/rdr_03` on a machine with CUDA and nvcc to confirm the kernel compiles and the CUDA-vs-torch tests pass. If compilation fails, `load_extension` raises BackendUnavailable and `backend=\"auto\"` falls back to torch with a warning, so nothing downstream breaks."}
 {"id": "RD-02", "ts": 1791664717, "event": "done", "models": "contract:opus,build:sonnet,repair:sonnet,repair:opus", "note": "오케스트레이터: 동결 테스트 헬퍼 버그(np.cross 2D, numpy 2 거부)를 고치고 재동결. 구현 코드는 그대로 게이트 통과"}
+{"id": "RDR-04", "ts": 1791674204, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "RDR-07", "ts": 1791674204, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}

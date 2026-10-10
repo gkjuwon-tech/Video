@@ -1185,12 +1185,18 @@
    "slice": false,
    "rank": 30,
    "why": "첫 프레임 충실도(FFD 바닥)를 정함",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791673225,
      "event": "claimed"
+    },
+    {
+     "ts": 1791674204,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ]
   },
@@ -1291,12 +1297,18 @@
    "slice": false,
    "rank": 33,
    "why": "거울 입력은 메뉴에서 안전 등급으로 내림(예측 0.15)",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791673225,
      "event": "claimed"
+    },
+    {
+     "ts": 1791674204,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
     }
    ]
   },
