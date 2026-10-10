@@ -326,9 +326,14 @@
    "slice": true,
    "rank": 8,
    "why": "돈이 새는 코드. 모킹 테스트+캡 로직은 Opus가 검토",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791647501,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RUN-02",
@@ -970,9 +975,14 @@
    "slice": true,
    "rank": 31,
    "why": "IR·halo 지표·마스크의 원천",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791647501,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RDR-06",
