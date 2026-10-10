@@ -366,9 +366,20 @@
    "slice": true,
    "rank": 9,
    "why": "SSH 불가라 유일한 GPU 경로. 멱등·재개가 핵심",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791648360,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791649045,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": "요청: pyproject.toml 의존성에  추가(FND 단위 소관). 그 외 소유 밖 파일 수정 요청은 없음."
+    }
+   ]
   },
   {
    "id": "RUN-03",
@@ -455,9 +466,20 @@
    "slice": true,
    "rank": 12,
    "why": "Blackwell JIT 빌드 시행착오",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791648360,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791649045,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "RUN-06",

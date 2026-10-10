@@ -13,3 +13,5 @@
 >>>>>>> d54989f (ops: persist work state (shift: RDR-02=done RDR-06=done))
 {"id": "RUN-01", "ts": 1791648347, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "RDR-05", "ts": 1791648347, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "RUN-02", "ts": 1791649045, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": "요청: pyproject.toml 의존성에  추가(FND 단위 소관). 그 외 소유 밖 파일 수정 요청은 없음."}
+{"id": "RUN-05", "ts": 1791649045, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}

@@ -1,0 +1,12 @@
+# 예시 잡 명세(스모크). 실서버가 바로 집지 않게 enabled: false.
+# 켜려면 enabled: true 로 바꾸고 푸시한다. 비밀(TOKEN/KEY 등)은 env 에 쓰지 않는다: 서버 환경에서만 주입된다.
+schema: buc.job/v1
+id: example-smoke
+kind: train
+cmd: [python3, -c, "import json, os, pathlib; o = pathlib.Path(os.environ['BUC_OUT_DIR']); o.mkdir(parents=True, exist_ok=True); (o / 'metrics.json').write_text(json.dumps({'smoke': 1})); (o / 'hello.txt').write_text('hello')"]
+timeout_s: 300
+max_attempts: 2
+outputs: ["hello.txt"]
+gpu: false
+priority: 0
+enabled: false
