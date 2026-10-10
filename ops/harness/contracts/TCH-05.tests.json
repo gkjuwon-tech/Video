@@ -1,0 +1,9 @@
+{
+ "tests/tch_05/tch05_support.py": "9fab66c54eff5b52504a4249070ef7c38f407b8d7b10d1761200016d41b74b5d",
+ "tests/tch_05/test_tch05_bands.py": "a9d319873c2001791597ef2215fd8c757243a5ce843e36e7ff6560b2b3ac2009",
+ "tests/tch_05/test_tch05_curve.py": "c1987a22078d7a06de525efacfdcffbcfbd3472a451916be0319cc1611c2c51e",
+ "tests/tch_05/test_tch05_gpu_real.py": "8de2279f797a838e770e45552c768bd263731cfe03342884deb333d65e5f91f6",
+ "tests/tch_05/test_tch05_import.py": "b00f7e1c8868b38c0c55b2ecf91f653476775b2f18e2244df2f5f116a3010813",
+ "tests/tch_05/test_tch05_poverty.py": "693b503fdbd19a25ff075fe3033bde6f76006e04a07a81f38da70b9c0e18fdbf",
+ "tests/tch_05/test_tch05_runner.py": "89d4b5d94ed63e7415d52e1cc8baf5a39dd085bf3e692c19508666547587e918"
+}

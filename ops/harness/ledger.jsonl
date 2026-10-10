@@ -51,3 +51,5 @@
 {"id": "RUN-07", "ts": 1791668837, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: 소유 밖 요청 없음. 참고: ops/report/ 디렉터리는 새로 만들었다(이전에 없었다). 하류 공장장·오케스트레이터는 `python3 ops/report/hourly.py --out work/reports`로 .md와 .png를 받으면 된다. --ledger를 생략하면 load_config()의 ledger_path(기본 runs/ledger.sqlite, 상대 경로는 실행 위치 기준)를 쓴다."}
 {"id": "RUN-08", "ts": 1791669591, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
 {"id": "TCH-04", "ts": 1791669591, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "TCH-05", "ts": 1791670454, "event": "done", "models": "contract:sonnet,build:sonnet,review:opus", "note": ""}
+{"id": "TCH-06", "ts": 1791670454, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: Optional: TCH-02 could expose public versions of the private helpers listed in the notes."}

@@ -1,0 +1,6 @@
+{
+ "tests/tch_06/tch06_fakes.py": "3c83d89bc0a7970604846849a56991152f4d557dab78278358d1de0bbb2d3f34",
+ "tests/tch_06/test_tch06_dca.py": "5cf1aca0a1ca935600df53b9cb87e46cd84f4852e3d7e56320b4ba352f7feb14",
+ "tests/tch_06/test_tch06_gpu_real.py": "0842bda3f0cac389339136d77e2169f653855d5efb34b42e425514bd060509ba",
+ "tests/tch_06/test_tch06_math.py": "83bcfaa261b1ddef2aea828f046962aae26ffebc7bb94fb44e37f2d9ba3286e0"
+}

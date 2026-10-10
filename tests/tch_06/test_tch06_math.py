@@ -129,7 +129,7 @@ def test_dr_verdict_boundary_is_inclusive():
 
 def test_dr_verdict_default_and_os_thresholds():
     dr = torch.tensor([119.0, 121.0, 100.0, 109.0, 111.0])
-    assert D.dr_verdict(dr, 100.0).accept.tolist() == [True, False, True, True, False]          # 1.2
+    assert D.dr_verdict(dr, 100.0).accept.tolist() == [True, False, True, True, True]           # 1.2
     assert D.dr_verdict(dr, 100.0, max_rel=D.DR_REL_MAX_OS).accept.tolist() == [False, False, True, True, False]
     # 기준이 원소별일 때
     v = D.dr_verdict(torch.tensor([1.0, 5.0]), torch.tensor([1.0, 10.0]))
