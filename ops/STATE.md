@@ -14,7 +14,7 @@
 
 ## 블로커 / 창업자 결정 대기
 1. **Kaggle 자격 증명:** 클라우드 환경 설정의 Network secrets(또는 환경 변수)에 `KAGGLE_USERNAME_1..3`, `KAGGLE_KEY_1..3`. 채팅에 붙여넣지 않는다. 새 세션(또는 새 컨테이너)에서 읽힌다.
-2. **Kaggle 약관:** 계정 3개가 서로 다른 실제 사람 3명의 계정인지 확인(1인 다계정은 약관 위반으로 정지 위험).
+2. **Kaggle 약관 (2026-10-10 원문 확인, kaggle.com/terms):** "You will not share your account or password with anyone"(계정 공유 금지), "You will only use the Services for your own internal, personal, non-commercial use, and not on behalf of or for the benefit of any third party"(개인·비상업 전용). → 친구 계정 빌려 쓰기는 계정 공유, 스타트업 R&D는 비상업 조항과 충돌. Kaggle을 주력 컴퓨트로 쓰지 않는 쪽을 권고. 참고: Colab Pro/Pro+ 연동 시 Kaggle GPU 주 +15/+30시간(실험 프로모션).
 3. **컴퓨트 부족분:** Kaggle만으로는 Phase 1 스프린트 필요량(500–775 T4-h)의 약 25–75%. 상시 2×T4 임대(15일 720 T4-h) 여부.
 4. **사람 데이터:** CamFM-Hand용 IMU(폰 들고 걷기), MRH용 실사 방 촬영, TexelFM용 RAW 매크로.
 5. **Seedance 비교 영상:** 창업자의 Higgsfield 구독(Seedance 포함)으로 같은 사진 I2V 생성.
