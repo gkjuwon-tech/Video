@@ -35,3 +35,5 @@
 {"id": "DAT-05", "ts": 1791660619, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: buc/data/__init__.py 가 없다(네임스페이스 패키지로 동작 중). 정식 패키지화가 필요하면 FND 단위에서 추가 요청."}
 {"id": "DAT-02", "ts": 1791661527, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
 {"id": "DAT-16", "ts": 1791661527, "event": "done", "models": "contract:sonnet,build:haiku", "note": "요청: RD-08(buc/read/metric_scale.py) 쪽에 tools/size_prior_check.py를 파일 경로로 적재하는 얇은 래퍼가 필요하다(DAT-16 계약서 하류 이음매 참고). Opus 수치 검수 요청: data/size_prior.yaml의 비앵커 중앙값·σ, 특히 중복 해소로 +1–5% 보정된 항목들(동일 중앙값이 여러 개였던 항목)을 원래 추정치로 되돌릴지 판단. whale_humpback을 crocodile로 교체한 것도 확인."}
+{"id": "MDL-03", "ts": 1791662492, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "EVL-01", "ts": 1791662492, "event": "done", "models": "contract:opus,build:haiku,review:opus", "note": "요청: 없음. 다만 planned 23칸의 촬영 확정(sha256·size·crop·vault_path)은 창업자 촬영 D1–4 이후 해당 항목만 채워야 하며, 그 전에는 EVL-02가 load_manifest(require_ready=True)에서 실패하는 것이 정상이다. 칸 구성과 disclosure 문구는 Fable 적대 검토 대상이다."}

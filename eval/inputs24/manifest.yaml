@@ -1,0 +1,422 @@
+# EVL-01 고정 입력 24장 매니페스트 (장부). 원본 이미지는 HF 비공개 금고에 있고 여기에는 경로·SHA-256·크기만 적는다.
+# 검사: python3 tools/inputs_qa.py [--ready] [--matrix]
+# 상태: 슬롯 1(D15 히어로)만 ready. 나머지 23칸은 planned (창업자 촬영 D1-4 후 sha256·size·crop을 채운다. 해시를 지어내지 않는다).
+# 주의: aspect 값은 YAML 1.1에서 1:1, 16:9 등이 60진수 정수로 읽히므로 반드시 따옴표로 감싼다.
+schema: 1
+name: inputs24
+vault_repo: sdsdsdsdsdsdsd123/buc-artifacts
+moves: ["I1", "I2", "I3", "I4", "I5"]
+selection:
+  method: "D0 후보 풀 80장을 칸(category x kind)별로 층화 선별"
+  candidate_pool: 80
+  seed: 20261010
+  disclosure: "입력 24장은 팀이 후보 풀에서 칸 구성을 보고 선별했다. 선별 주체는 항목의 picked_by에, 칸 분포는 coverage 매트릭스에 적는다. 공개 수치는 public_ok 항목만 쓴다."
+items:
+  - slot: 1
+    id: in01
+    title: d15_hero_yak
+    status: ready
+    kind: gen
+    origin: unverified
+    category: C3
+    features: [fur, people, bokeh, far, outdoor]
+    difficulty: hard
+    picked_by: hero
+    taint: ["EXTGEN:unknown", "EVAL-ONLY"]
+    generator: null
+    vault_path: demo/d15_hero_yak.webp
+    sha256: "7c1fc8dcebcfb485e93cff2b206405dd4af155acf3085213df82128876362bda"
+    size: [2000, 861]
+    crop: {aspect: "native", mode: center, box: [0, 0, 2000, 861]}
+    note: "D15 데모 히어로 (docs/DEMO-D15.md 4절 #1). 권리 미확인이라 공개 수치에서 제외."
+
+  - slot: 2
+    id: in02
+    title: cap_indoor_text_night
+    status: planned
+    kind: photo
+    origin: capture
+    category: C1
+    features: [text, indoor, night]
+    difficulty: hard
+    picked_by: founder
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 3
+    id: in03
+    title: cap_street_sign_dusk
+    status: planned
+    kind: photo
+    origin: capture
+    category: C1
+    features: [text, outdoor, night, reflective]
+    difficulty: hard
+    picked_by: founder
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 4
+    id: in04
+    title: cap_indoor_text_glass
+    status: planned
+    kind: photo
+    origin: capture
+    category: C2
+    features: [indoor, reflective, text]
+    difficulty: mid
+    picked_by: third_party
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 5
+    id: in05
+    title: cap_indoor_glass
+    status: planned
+    kind: photo
+    origin: capture
+    category: C2
+    features: [indoor, reflective]
+    difficulty: mid
+    picked_by: random
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 6
+    id: in06
+    title: cap_fur_outdoor
+    status: planned
+    kind: photo
+    origin: capture
+    category: C3
+    features: [outdoor, fur]
+    difficulty: easy
+    picked_by: founder
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 7
+    id: in07
+    title: cap_far_outdoor
+    status: planned
+    kind: photo
+    origin: capture
+    category: C4
+    features: [outdoor, far]
+    difficulty: easy
+    picked_by: random
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 8
+    id: in08
+    title: cap_far_night
+    status: planned
+    kind: photo
+    origin: capture
+    category: C4
+    features: [outdoor, far, night]
+    difficulty: mid
+    picked_by: founder
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 9
+    id: in09
+    title: cap_face_indoor
+    status: planned
+    kind: photo
+    origin: capture
+    category: C5
+    features: [people, indoor, face]
+    difficulty: mid
+    picked_by: third_party
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 10
+    id: in10
+    title: cap_people_street
+    status: planned
+    kind: photo
+    origin: capture
+    category: C5
+    features: [people, outdoor]
+    difficulty: hard
+    picked_by: random
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 11
+    id: in11
+    title: cap_macro_outdoor
+    status: planned
+    kind: photo
+    origin: capture
+    category: C1
+    features: [outdoor, macro]
+    difficulty: mid
+    picked_by: founder
+    taint: [CAPTURE, EVAL-ONLY]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 12
+    id: in12
+    title: asset_people_park
+    status: planned
+    kind: photo
+    origin: asset
+    category: C4
+    features: [outdoor, people]
+    difficulty: easy
+    picked_by: random
+    taint: ["ASSET:CC0", "EVAL-ONLY"]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 13
+    id: in13
+    title: asset_indoor_room
+    status: planned
+    kind: photo
+    origin: asset
+    category: C2
+    features: [indoor]
+    difficulty: easy
+    picked_by: founder
+    taint: ["ASSET:CC0", "EVAL-ONLY"]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 14
+    id: in14
+    title: gen_soul_night_sign
+    status: planned
+    kind: gen
+    origin: extgen
+    category: C1
+    features: [night, text, outdoor]
+    difficulty: hard
+    picked_by: founder
+    taint: ["EXTGEN:soul", "EVAL-ONLY"]
+    generator: soul
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 15
+    id: in15
+    title: gen_soul_people_street
+    status: planned
+    kind: gen
+    origin: extgen
+    category: C5
+    features: [people, outdoor]
+    difficulty: hard
+    picked_by: founder
+    taint: ["EXTGEN:soul", "EVAL-ONLY"]
+    generator: soul
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 16
+    id: in16
+    title: gen_gpt_indoor_glass
+    status: planned
+    kind: gen
+    origin: extgen
+    category: C2
+    features: [indoor, reflective]
+    difficulty: mid
+    picked_by: founder
+    taint: ["EXTGEN:gpt-image", "EVAL-ONLY"]
+    generator: gpt-image
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 17
+    id: in17
+    title: gen_gpt_far_outdoor
+    status: planned
+    kind: gen
+    origin: extgen
+    category: C4
+    features: [outdoor, far]
+    difficulty: easy
+    picked_by: founder
+    taint: ["EXTGEN:gpt-image", "EVAL-ONLY"]
+    generator: gpt-image
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 18
+    id: in18
+    title: eng_zit_people_indoor
+    status: planned
+    kind: gen
+    origin: engine
+    category: C5
+    features: [people, indoor]
+    difficulty: mid
+    picked_by: random
+    taint: [ENGINE, EVAL-ONLY]
+    generator: z-image-turbo
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 19
+    id: in19
+    title: eng_zit_outdoor
+    status: planned
+    kind: gen
+    origin: engine
+    category: C4
+    features: [outdoor]
+    difficulty: easy
+    picked_by: founder
+    taint: [ENGINE, EVAL-ONLY]
+    generator: z-image-turbo
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 20
+    id: in20
+    title: eng_zit_indoor_glass
+    status: planned
+    kind: gen
+    origin: engine
+    category: C2
+    features: [indoor, reflective]
+    difficulty: mid
+    picked_by: third_party
+    taint: [ENGINE, EVAL-ONLY]
+    generator: z-image-turbo
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 21
+    id: in21
+    title: paint_pd_outdoor
+    status: planned
+    kind: painting
+    origin: asset
+    category: C6
+    features: [outdoor]
+    difficulty: hard
+    picked_by: third_party
+    taint: ["ASSET:PD", "EVAL-ONLY"]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 22
+    id: in22
+    title: paint_pd_indoor
+    status: planned
+    kind: painting
+    origin: asset
+    category: C6
+    features: [indoor]
+    difficulty: mid
+    picked_by: founder
+    taint: ["ASSET:PD", "EVAL-ONLY"]
+    generator: null
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 23
+    id: in23
+    title: paint_soul_people
+    status: planned
+    kind: painting
+    origin: extgen
+    category: C6
+    features: [outdoor, people]
+    difficulty: hard
+    picked_by: founder
+    taint: ["EXTGEN:soul", "EVAL-ONLY"]
+    generator: soul
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null
+
+  - slot: 24
+    id: in24
+    title: paint_zit_indoor
+    status: planned
+    kind: painting
+    origin: engine
+    category: C6
+    features: [indoor]
+    difficulty: easy
+    picked_by: founder
+    taint: [ENGINE, EVAL-ONLY]
+    generator: z-image-turbo
+    vault_path: null
+    sha256: null
+    size: null
+    crop: null

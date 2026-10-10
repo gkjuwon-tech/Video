@@ -1,0 +1,8 @@
+{
+ "tests/mdl_03/mdl03_helpers.py": "caffb3a968d751f2b65bd4f137ad33ff17811fb71bf12c548c96ce46e20785cc",
+ "tests/mdl_03/test_mdl03_data_train.py": "1fd79a7be0188c4ae9f231024f6d4c4038eccf284b29bda08b108f33e45ee038",
+ "tests/mdl_03/test_mdl03_gpu.py": "1622fec4b8b2edfb9fdf8ef45a02af5bfb878b4b84056b0eb9dde60f8965bda4",
+ "tests/mdl_03/test_mdl03_labels.py": "3ea08c1c6f2371af116a5397e339ffb2e57e06da5faef49787cb545927332155",
+ "tests/mdl_03/test_mdl03_loss.py": "d1c131f94782cc5fbf937da987ebc7b4509b4994e3962bb09ecb74edb618e5ce",
+ "tests/mdl_03/test_mdl03_model.py": "7c5feaf74aad145574344a2de63528f9695448893594c26d7fa2789ca228d1ce"
+}

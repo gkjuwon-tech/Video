@@ -3201,9 +3201,20 @@
    "slice": true,
    "rank": 104,
    "why": "D15 화면의 심장(기여 0.60). 헤드 정의 검토는 Fable",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791661554,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791662492,
+     "event": "done",
+     "models": "contract:opus,build:sonnet,review:opus",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "MDL-04",
@@ -4231,9 +4242,20 @@
    "slice": true,
    "rank": 140,
    "why": "선별 편향이 승률 해석을 오염. 매트릭스는 Fable이 적대 검토 | D15 데모 히어로 입력 #1 = HF 금고 demo/d15_hero_yak.webp (docs/DEMO-D15.md). 공개 레포에 이미지 원본을 넣지 않는다.",
-   "status": "todo",
-   "attempts": 0,
-   "log": [],
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791661554,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791662492,
+     "event": "done",
+     "models": "contract:opus,build:haiku,review:opus",
+     "note": "요청: 없음. 다만 planned 23칸의 촬영 확정(sha256·size·crop·vault_path)은 창업자 촬영 D1–4 이후 해당 항목만 채워야 하며, 그 전에는 EVL-02가 load_manifest(require_ready=True)에서 실패하는 것이 정상이다. 칸 구성과 disclosure 문구는 Fable 적대 검토 대상이다."
+    }
+   ],
    "demo": "d15-yak"
   },
   {
