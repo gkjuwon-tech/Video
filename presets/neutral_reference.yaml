@@ -1,0 +1,14 @@
+name: neutral_reference
+description: 'Plain reference look: 35mm lens, no LUT, no film artifacts, no sun cue.'
+provenance: handmade
+tags:
+- reference
+- clean
+theta:
+  aspect: 1.7778
+  focal_mm: 35
+  sensor_width_mm: 24.89
+  f_stop: 4
+  focus_m: 3
+  lut: none
+  lens_rx: spherical_clean

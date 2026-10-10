@@ -1,0 +1,21 @@
+name: portrait_85_shallow
+description: 85mm full-frame portrait at f/1.4 with soft warm rim light and matte
+  colors.
+provenance: handmade
+tags:
+- portrait
+- shallow
+theta:
+  aspect: 1.85
+  focal_mm: 85
+  sensor_width_mm: 36.0
+  f_stop: 1.4
+  focus_m: 2
+  lut: faded_matte
+  grain: 0.2
+  halation: 0.3
+  rim: 0.6
+  sun_elev_deg: 25
+  sun_azim_deg: 120
+  extra:
+    blades: 9

@@ -1,0 +1,18 @@
+name: midday_harsh
+description: High overhead sun, hard light, slightly underexposed wide 28mm look.
+provenance: handmade
+tags:
+- midday
+- harsh
+theta:
+  aspect: 1.85
+  focal_mm: 28
+  sensor_width_mm: 24.89
+  f_stop: 8
+  focus_m: 5
+  fps: 25
+  ev: -0.3
+  nd_stops: 2.0
+  lut: neutral_709
+  sun_elev_deg: 70
+  sun_azim_deg: 180

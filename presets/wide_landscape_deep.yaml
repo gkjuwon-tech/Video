@@ -1,0 +1,17 @@
+name: wide_landscape_deep
+description: 16mm ultra wide on full frame, stopped down and focused far for deep
+  landscape.
+provenance: handmade
+tags:
+- landscape
+- wide
+theta:
+  aspect: 1.7778
+  focal_mm: 16
+  sensor_width_mm: 36.0
+  f_stop: 11
+  focus_m: 20
+  lut: neutral_709
+  vignette: 0.1
+  sun_elev_deg: 40
+  sun_azim_deg: 90

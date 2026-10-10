@@ -1,0 +1,21 @@
+name: noir_monochrome
+description: Silver monochrome noir with deep vignette, heavy grain and hard rim light.
+provenance: handmade
+tags:
+- noir
+- monochrome
+theta:
+  aspect: 1.3333
+  focal_mm: 50
+  sensor_width_mm: 24.89
+  f_stop: 2.0
+  focus_m: 3
+  wb_kelvin: 5500
+  lut: mono_silver
+  grain: 0.6
+  halation: 0.2
+  vignette: 0.5
+  rim: 0.9
+  lens_rx: vintage_double_gauss
+  sun_elev_deg: 20
+  sun_azim_deg: 70

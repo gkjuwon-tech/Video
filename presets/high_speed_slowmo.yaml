@@ -1,0 +1,19 @@
+name: high_speed_slowmo
+description: 120 fps slow motion with a short shutter for crisp frozen motion.
+provenance: handmade
+tags:
+- slowmo
+- highspeed
+theta:
+  aspect: 1.7778
+  focal_mm: 50
+  sensor_width_mm: 24.89
+  f_stop: 2.8
+  focus_m: 4
+  shutter_deg: 90
+  fps: 120
+  ev: 0.2
+  lut: neutral_709
+  grain: 0.15
+  sun_elev_deg: 45
+  sun_azim_deg: 100

@@ -1,0 +1,20 @@
+name: blue_hour_dusk
+description: Sun just below the horizon, cool dusk color, fast lens wide open.
+provenance: handmade
+tags:
+- dusk
+- cool
+theta:
+  aspect: 1.7778
+  focal_mm: 35
+  sensor_width_mm: 36.0
+  f_stop: 1.4
+  focus_m: 10
+  fps: 30
+  wb_kelvin: 4200
+  wb_tint: 0.1
+  lut: fuji_cool
+  grain: 0.35
+  halation: 0.4
+  sun_elev_deg: -3
+  sun_azim_deg: 300

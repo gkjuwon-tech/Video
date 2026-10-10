@@ -1,0 +1,21 @@
+name: vintage_petzval_swirl
+description: Vintage Petzval portrait lens with strong vignette and swirl character.
+provenance: handmade
+tags:
+- vintage
+- petzval
+theta:
+  aspect: 1.5
+  focal_mm: 75
+  sensor_width_mm: 24.89
+  f_stop: 2.0
+  focus_m: 3
+  lut: cross_process
+  grain: 0.35
+  halation: 0.5
+  vignette: 0.55
+  lens_rx: vintage_petzval
+  sun_elev_deg: 30
+  sun_azim_deg: 200
+  extra:
+    blades: 6

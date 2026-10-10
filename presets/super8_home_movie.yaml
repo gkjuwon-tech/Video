@@ -1,0 +1,22 @@
+name: super8_home_movie
+description: 'Small gauge home movie: tiny sensor, 18 fps, thick grain, faded colors.'
+provenance: handmade
+tags:
+- retro
+- super8
+theta:
+  aspect: 1.3333
+  focal_mm: 6
+  sensor_width_mm: 5.79
+  f_stop: 1.8
+  focus_m: 3
+  shutter_deg: 172.8
+  fps: 18
+  wb_kelvin: 4800
+  lut: faded_matte
+  grain: 0.8
+  halation: 0.3
+  vignette: 0.4
+  lens_rx: soft_single_coat
+  sun_elev_deg: 45
+  sun_azim_deg: 150

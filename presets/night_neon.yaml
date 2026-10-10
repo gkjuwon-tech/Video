@@ -1,0 +1,20 @@
+name: night_neon
+description: Night city with neon colors, fast lens, heavy grain and strong halation,
+  no sun.
+provenance: handmade
+tags:
+- night
+- neon
+theta:
+  aspect: 1.7778
+  focal_mm: 32
+  sensor_width_mm: 24.89
+  f_stop: 1.8
+  focus_m: 4
+  wb_kelvin: 4000
+  ev: 0.3
+  lut: neon_night
+  grain: 0.5
+  halation: 0.6
+  vignette: 0.3
+  rim: 1.0

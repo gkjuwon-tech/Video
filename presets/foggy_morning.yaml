@@ -1,0 +1,21 @@
+name: foggy_morning
+description: Dense morning fog with a low sun, long lens and a milky haze.
+provenance: handmade
+tags:
+- fog
+- atmosphere
+theta:
+  aspect: 2.39
+  focal_mm: 70
+  sensor_width_mm: 36.0
+  f_stop: 5.6
+  focus_m: 30
+  lut: neutral_709
+  grain: 0.1
+  halation: 0.35
+  rim: 0.4
+  atmos_beta: 0.02
+  sun_elev_deg: 10
+  sun_azim_deg: 80
+  extra:
+    atmos_g: 0.6

@@ -1,0 +1,20 @@
+name: cpl_blue_sky_polarized
+description: Polarizer set at 90 degrees to the sun for a deep blue sky, 60 fps.
+provenance: handmade
+tags:
+- polarizer
+- sky
+theta:
+  aspect: 1.7778
+  focal_mm: 24
+  sensor_width_mm: 24.89
+  f_stop: 8
+  focus_m: 10
+  fps: 60
+  wb_kelvin: 6000
+  cpl: 0.9
+  lut: none
+  sun_elev_deg: 50
+  sun_azim_deg: 160
+  extra:
+    cpl_angle_deg: 90.0

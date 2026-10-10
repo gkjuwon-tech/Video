@@ -1,0 +1,21 @@
+name: bleach_bypass_war
+description: Desaturated high contrast bleach bypass with grit, haze and a low sun.
+provenance: handmade
+tags:
+- war
+- gritty
+theta:
+  aspect: 2.0
+  focal_mm: 32
+  sensor_width_mm: 24.89
+  f_stop: 4
+  focus_m: 8
+  ev: -0.5
+  wb_kelvin: 5600
+  lut: bleach_bypass
+  grain: 0.5
+  halation: 0.1
+  vignette: 0.35
+  atmos_beta: 0.008
+  sun_elev_deg: 15
+  sun_azim_deg: 60

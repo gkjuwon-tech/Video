@@ -1,0 +1,21 @@
+name: long_exposure_nd_water
+description: Strong ND and long shutter to silk the water, polarizer on, wide lens.
+provenance: handmade
+tags:
+- long_exposure
+- water
+theta:
+  aspect: 1.7778
+  focal_mm: 24
+  sensor_width_mm: 36.0
+  f_stop: 11
+  focus_m: 12
+  shutter_deg: 270
+  fps: 24
+  nd_stops: 6.0
+  cpl: 0.6
+  lut: fuji_cool
+  sun_elev_deg: 30
+  sun_azim_deg: 200
+  extra:
+    cpl_angle_deg: 45.0

@@ -1,0 +1,16 @@
+name: imax_large_format
+description: Giant sensor large format, clean and nearly grain free.
+provenance: handmade
+tags:
+- large_format
+- clean
+theta:
+  aspect: 1.43
+  focal_mm: 40
+  sensor_width_mm: 54.12
+  f_stop: 5.6
+  focus_m: 15
+  lut: neutral_709
+  grain: 0.05
+  sun_elev_deg: 35
+  sun_azim_deg: 45

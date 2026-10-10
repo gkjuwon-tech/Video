@@ -1,0 +1,18 @@
+name: telephoto_compression_sports
+description: 400mm telephoto with a fast shutter for compressed sports action at 48
+  fps.
+provenance: handmade
+tags:
+- telephoto
+- sports
+theta:
+  aspect: 1.7778
+  focal_mm: 400
+  sensor_width_mm: 36.0
+  f_stop: 4
+  focus_m: 80
+  shutter_deg: 90
+  fps: 48
+  lut: none
+  sun_elev_deg: 50
+  sun_azim_deg: 20

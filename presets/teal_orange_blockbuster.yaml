@@ -1,0 +1,19 @@
+name: teal_orange_blockbuster
+description: Teal and orange blockbuster grade with rim light and bloom.
+provenance: handmade
+tags:
+- blockbuster
+- grade
+theta:
+  aspect: 2.39
+  focal_mm: 50
+  sensor_width_mm: 36.0
+  f_stop: 2.8
+  focus_m: 5
+  lut: teal_orange
+  grain: 0.15
+  halation: 0.4
+  vignette: 0.25
+  rim: 0.7
+  sun_elev_deg: 20
+  sun_azim_deg: 315

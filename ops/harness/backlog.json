@@ -928,9 +928,14 @@
    "slice": true,
    "rank": 27,
    "why": "primary 래스터. sm_120 JIT 위험",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": [],
+   "log": [
+    {
+     "ts": 1791651080,
+     "event": "claimed"
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -1202,9 +1207,14 @@
    "slice": true,
    "rank": 36,
    "why": "물리 범위는 Opus가 확정",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791651080,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "LNS-02",

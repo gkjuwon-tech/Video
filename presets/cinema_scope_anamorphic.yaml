@@ -1,0 +1,22 @@
+name: cinema_scope_anamorphic
+description: Two-times anamorphic scope frame with gentle halation and a low evening
+  sun.
+provenance: handmade
+tags:
+- cinema
+- anamorphic
+theta:
+  aspect: 2.39
+  focal_mm: 40
+  sensor_width_mm: 24.89
+  f_stop: 2.8
+  focus_m: 4
+  lut: neutral_709
+  lens_rx: anamorphic_2x
+  grain: 0.15
+  halation: 0.2
+  sun_elev_deg: 20
+  sun_azim_deg: 250
+  extra:
+    squeeze: 2.0
+    blades: 8

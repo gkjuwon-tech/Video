@@ -1,0 +1,18 @@
+name: macro_closeup
+description: Macro close-up on a micro four thirds sensor with a very near focus plane.
+provenance: handmade
+tags:
+- macro
+- closeup
+theta:
+  aspect: 1.7778
+  focal_mm: 60
+  sensor_width_mm: 17.3
+  f_stop: 4
+  focus_m: 0.4
+  lut: kodak_warm
+  grain: 0.1
+  vignette: 0.2
+  rim: 0.5
+  sun_elev_deg: 35
+  sun_azim_deg: 300

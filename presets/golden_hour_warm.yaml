@@ -1,0 +1,21 @@
+name: golden_hour_warm
+description: Low warm sun, warm film stock, halation and rim light on a 50mm lens.
+provenance: handmade
+tags:
+- golden_hour
+- warm
+theta:
+  aspect: 1.7778
+  focal_mm: 50
+  sensor_width_mm: 24.89
+  f_stop: 2.8
+  focus_m: 6
+  lut: kodak_warm
+  wb_kelvin: 5000
+  grain: 0.2
+  halation: 0.3
+  vignette: 0.15
+  rim: 0.8
+  nd_stops: 1.0
+  sun_elev_deg: 8
+  sun_azim_deg: 270
