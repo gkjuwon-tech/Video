@@ -364,7 +364,7 @@ class Renderer:
         )
         uu, vv = uu.reshape(-1), vv.reshape(-1)
         self.P = torch.stack([(uu - self.cx) / self.f0 * d, (vv - self.cy) / self.f0 * d, d], dim=1)
-        self.colors = torch.from_numpy(np.ascontiguousarray(rgb, dtype=np.uint8)).to(self.device).reshape(-1, 3)
+        self.colors = torch.from_numpy(np.array(rgb, dtype=np.uint8)).to(self.device).reshape(-1, 3)
 
     def render(self, pose: Pose):
         """-> (rgb uint8 (H,W,3) with holes black, hole bool (H,W))."""
@@ -954,7 +954,8 @@ def prepare_scene(args, token, depth_fn, download_fn, out_dir: Path, root: Path)
     tear = float(discontinuity_mask(depth).mean())
     log({"depth": "ok", "z_min": round(float(depth.min()), 3), "z_max": round(float(depth.max()), 2),
          "tear_frac": round(tear, 4), "s": round(time.time() - t0, 1)})
-    return Scene(rgb, depth, args.hfov, args.device)
+    person = person_point(size[0], size[1], args.hfov, box)
+    return Scene(rgb, depth, args.hfov, args.device, person)
 
 
 if __name__ == "__main__":

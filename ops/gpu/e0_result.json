@@ -1,0 +1,14 @@
+{
+ "download_s": 237.4,
+ "load_s": 25.5,
+ "vram_after_load_GB": 20.7,
+ "t_1024_s": [
+  3.04,
+  3.04,
+  3.04
+ ],
+ "t_per_fwd_1024_s": 0.38,
+ "t_512_s": 0.9,
+ "img_ok": true,
+ "peak_vram_GB": 23.27
+}
