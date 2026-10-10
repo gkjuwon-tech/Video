@@ -17,8 +17,8 @@ self_stop() {
   [ -n "${CONTAINER_API_KEY:-}" ] && [ -n "${CONTAINER_ID:-}" ] && vastai stop instance "$CONTAINER_ID" --api-key "$CONTAINER_API_KEY" || true
   sleep 60; exit 0
 }
-# 마커 줄만 표준출력으로 보낸다(vastai logs가 줄을 약 489자에서 자르므로 400자로 자른다). 전체 로그는 logs/ 에.
-marks() { grep --line-buffered -E '^N1_|Traceback|Error|error|Killed' | cut -c1-400; }
+# 마커 줄만 표준출력으로 보낸다(vastai logs가 줄을 약 489자에서 자르므로 400자로 자른다. cut은 파이프에서 4KB씩 버퍼링해 마커가 몇 시간씩 안 보이므로 awk fflush를 쓴다). 전체 로그는 logs/ 에.
+marks() { grep --line-buffered -E '^N1_|Traceback|Error|error|Killed' | awk '{ print substr($0, 1, 400); fflush() }'; }
 
 echo "N1_START $(date -u +%FT%TZ) id=${CONTAINER_ID:-?} hf_token=$([ -n "${HF_TOKEN:-}" ] && echo yes || echo no) deadline=$N1_DEADLINE"
 
