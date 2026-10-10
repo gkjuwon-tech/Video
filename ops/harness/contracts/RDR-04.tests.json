@@ -1,0 +1,7 @@
+{
+ "tests/rdr_04/rdr04_helpers.py": "6366d9d4aebdfafbc752d52d43600df7d1687343458ddca771da3db9a1999faf",
+ "tests/rdr_04/test_rdr04_api.py": "0d1d29415efb3655a6b5baa23551978aa70e86092b3fc6641b20ca8a74041867",
+ "tests/rdr_04/test_rdr04_bspline.py": "07285af111ae0b165e9407dc781c4ecfbf2428bf81312051376d278861ba7427",
+ "tests/rdr_04/test_rdr04_ewa.py": "bd247da84f2151b29ea543b02359aadbccd5ec785b45480b54f205c3c6967ed1",
+ "tests/rdr_04/test_rdr04_warp.py": "8dd5f6d1ebb18b0a7c6fee43dbabf6e7ac73dd88dc9b611c0d4e815bae311203"
+}

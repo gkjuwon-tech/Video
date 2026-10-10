@@ -1,0 +1,8 @@
+{
+ "tests/rdr_07/rdr07_helpers.py": "622af94c5f6db62e4ac3f9b089f59b3e0da27e53b49017f73a6da7b75092effb",
+ "tests/rdr_07/test_rdr07_api.py": "b6f9305843df45a1df2baf98b325a02d343794681bf10fc4db550fda028dc4b2",
+ "tests/rdr_07/test_rdr07_geometry.py": "39fb6b2f9b367708ca4ebf88a8bfbf7e2aa8e71dba8cd48c82f3cc24d7aea1b3",
+ "tests/rdr_07/test_rdr07_recursion.py": "1d3b7ea6bc1a12b3d9c543e46f2fde7a3d08df9ddc9a94be7b88d267e13b03db",
+ "tests/rdr_07/test_rdr07_render.py": "930b0b6ec1c42623ddfed4eee5c41404e1d56cf2658066a762ec8bc23e46a16b",
+ "tests/rdr_07/test_rdr07_secondary.py": "fcecf7cbc4c48d51c4f4cec3b1ad29a343bdd6f921204dc7b3909c5c0f6098c9"
+}
