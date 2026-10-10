@@ -1517,9 +1517,20 @@
    "slice": true,
    "rank": 45,
    "why": "벤치 경로 정의식의 원천",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791656482,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791658123,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "CAM-03",
@@ -1715,9 +1726,20 @@
    "slice": true,
    "rank": 52,
    "why": "고전 기하. AI 이미지 불성립 사례가 함정",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "blocked",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791656482,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791658123,
+     "event": "blocked",
+     "models": "contract:opus,build:sonnet,repair:sonnet,repair:opus",
+     "note": "게이트 3회 실패: {\"id\": \"RD-02\", \"checks\": {\"frozen\": \"ok\", \"paths\": \"ok\", \"compile\": \"ok\", \"ruff\": \"ok\", \"pytest\": \"[numpy.cross docstring omitted here for length] ... if a.shape[-1] != 3 or b.shape[-1] != 3: raise ValueError(f\\\"Both input arrays must be (arrays of) 3-dimensional vectors, but they are {a.shape[-1]} and {b.shape[-1]} dimensional instead.\\\")\\nE           ValueError: Both input arrays must be (array The gate still fails, and changing the implementation cant fix it: the error is in the f"
+    }
+   ]
   },
   {
    "id": "RD-03",

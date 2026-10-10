@@ -1,0 +1,8 @@
+{
+ "tests/cam_02/cam02_helpers.py": "9ac2a71443643b27bc77b7fdc7ae9f21cb85a5ec700a0b7f86a1b1f969bf36fc",
+ "tests/cam_02/test_cam02_envelope.py": "336eba87275f2404592fde3389d76cf59f86f24214878f127f2e580ef99cead0",
+ "tests/cam_02/test_cam02_paths.py": "5320a785b8264cb948f8cd4d1b3caf664d38a72682a33b16bd1bea484ea0ec99",
+ "tests/cam_02/test_cam02_recipes.py": "9bf55fbc73fbe5d6b204563ea692ab21c820c99a34ea980fa9c1156d4b791b8e",
+ "tests/cam_02/test_cam02_rig.py": "94af2dfa07e7ece23a0a17cd213ea8a610c39b88f57fb787eba4e731fec3da7e",
+ "tests/cam_02/test_cam02_seams.py": "95b0899b874599d3df62ffc45bf365122d0a294f268c2b0c7fac872ceec94806"
+}
