@@ -2098,12 +2098,18 @@
    "slice": true,
    "rank": 58,
    "why": "DOF·레벨이 미터를 요구",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791674220,
      "event": "claimed"
+    },
+    {
+     "ts": 1791675180,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ],
    "demo": "d15-yak"
@@ -2959,12 +2965,18 @@
    "slice": true,
    "rank": 88,
    "why": "뒤통수 하늘 이음매 방지. 해석식",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791674220,
      "event": "claimed"
+    },
+    {
+     "ts": 1791675180,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ]
   },

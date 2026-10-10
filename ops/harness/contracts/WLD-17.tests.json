@@ -1,0 +1,7 @@
+{
+ "tests/wld_17/test_wld17_ground.py": "d2e6a0d00b974472f003882136396697011c2895db603a5f616bbf19057fe3f8",
+ "tests/wld_17/test_wld17_octahedral.py": "2523fbdc17ef2d027e9bdc0cfb30ea62612851d6c3fd99b6de26ad546e5a33f4",
+ "tests/wld_17/test_wld17_sky.py": "b029cf863bf020561a487913f4b6b34f01de04511e5d6c2e9613e152bda1b22a",
+ "tests/wld_17/test_wld17_spec_build.py": "389c775e342c09399949ed869c14e920dcbe533ca1fd5132ca926b4ac840e591",
+ "tests/wld_17/wld17_helpers.py": "1a55a2006dfc74a6363cb98c531a27dad0aad0a4368f66f101402e6d94c6730a"
+}

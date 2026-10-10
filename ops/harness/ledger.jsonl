@@ -59,3 +59,5 @@
 {"id": "RD-02", "ts": 1791664717, "event": "done", "models": "contract:opus,build:sonnet,repair:sonnet,repair:opus", "note": "오케스트레이터: 동결 테스트 헬퍼 버그(np.cross 2D, numpy 2 거부)를 고치고 재동결. 구현 코드는 그대로 게이트 통과"}
 {"id": "RDR-04", "ts": 1791674204, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "RDR-07", "ts": 1791674204, "event": "done", "models": "contract:opus,build:sonnet,review:opus", "note": ""}
+{"id": "RD-08", "ts": 1791675180, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "WLD-17", "ts": 1791675180, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}

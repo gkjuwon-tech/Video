@@ -1,80 +1,157 @@
-"""SCRATCH REFERENCE (test calibration only; not part of the repo)."""
+"""WLD-17 far-field: octahedral HDR environment, Hosek-Wilkie-form analytic sky, horizon blend, ground extension.
+
+Frame outside the camera (back of the head, orbit ends) is filled by an analytic environment with zero learned
+parameters. The result is a FND-02 ``FarField`` ((S,S,3) float32 octahedral map) that is seam-free at -z and at the four
+fold edges because ``sample`` mirrors out-of-range texels across the map edges.
+
+Units: linear Rec.709, luminance in kcd/m^2 (zenith ~1-20), illuminance in klux.
+
+HONESTY NOTE on the sky coefficients. The original Hosek-Wilkie coefficient tables are NOT in this repository and could
+not be verified, so none of their numbers are used here. ``hw_shape`` is the Hosek-Wilkie *functional form*; the nine
+coefficients per colour channel come from ``hw_params``, a deterministic closed-form approximation hand-set in this file:
+  * zenith luminance Yz(T, sun elevation): the Preetham et al. (1999) closed form, in kcd/m^2, with a smooth twilight
+    fall-off below the horizon;
+  * zenith chroma: a smooth analytic blue/red ratio that whitens with turbidity;
+  * (A..I) shape coefficients: simple analytic functions of turbidity and sun elevation (horizon brightening, Mie
+    circumsolar lobe, forward scattering), chosen by hand to match the qualitative behaviour of Perez-type skies. No
+    least-squares fit against Perez/Preetham data was run; this is an approximation, not HW data.
+The zenith scale Z is derived analytically so that the sky at the zenith equals the target zenith luminance/chroma.
+Sun direct illuminance uses Rayleigh + Angstrom aerosol transmittance with the Kasten-Young air mass.
+No iterative solver, no torch/scipy, no global RNG, no import side effects.
+"""
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
-from functools import lru_cache
+from typing import Optional
 
 import numpy as np
-from scipy import optimize
 
 from buc.core import contracts as C
 
 FARFIELD_VERSION = "farfield/v0"
 DEFAULT_SIZE = 256
-MIN_SIZE, MAX_SIZE = 8, 4096
+MIN_SIZE = 8
+MAX_SIZE = 4096
 SUN_ANGULAR_RADIUS_DEG = 0.2665
 TURBIDITY_RANGE = (1.0, 10.0)
 DEFAULT_SUN_ELEV_DEG = 45.0
 DEFAULT_SUN_AZIM_DEG = 180.0
-HW_NCOEF = 9
-_LUM = np.array([0.2126, 0.7152, 0.0722])
 
 
 class FarFieldError(C.ContractError):
-    pass
+    """far-field 입력·파라미터 위반."""
 
 
-def _unit(v, name="v"):
+# ---------------------------------------------------------------------------------------------------------------
+# 검증 도우미
+# ---------------------------------------------------------------------------------------------------------------
+def _num(name, v, lo=None, hi=None, lo_open=False):
+    if isinstance(v, (bool, np.bool_)) or not isinstance(v, (int, float, np.integer, np.floating)):
+        raise FarFieldError(f"{name}: 숫자여야 한다 ({type(v).__name__})")
+    x = float(v)
+    if not math.isfinite(x):
+        raise FarFieldError(f"{name}: 유한하지 않다")
+    if lo is not None and (x <= lo if lo_open else x < lo):
+        raise FarFieldError(f"{name}={x}: 범위 밖")
+    if hi is not None and x > hi:
+        raise FarFieldError(f"{name}={x}: 범위 밖")
+    return x
+
+
+def _vec3(name, v):
+    if isinstance(v, (str, bytes)):
+        raise FarFieldError(f"{name}: 3-벡터여야 한다")
+    try:
+        a = np.asarray(v)
+    except Exception as e:  # noqa: BLE001
+        raise FarFieldError(f"{name}: 배열로 바꿀 수 없다") from e
+    if a.shape != (3,) or a.dtype == bool or a.dtype.kind not in "iuf":
+        raise FarFieldError(f"{name}: 실수 3-벡터여야 한다 (shape {a.shape}, dtype {a.dtype})")
+    a = a.astype(np.float64)
+    if not np.isfinite(a).all():
+        raise FarFieldError(f"{name}: 유한하지 않다")
+    return a
+
+
+def _check_size(size):
+    if isinstance(size, (bool, np.bool_)) or not isinstance(size, (int, np.integer)):
+        raise FarFieldError(f"size: int 여야 한다 ({type(size).__name__})")
+    s = int(size)
+    if s < MIN_SIZE or s > MAX_SIZE:
+        raise FarFieldError(f"size={s}: [{MIN_SIZE}, {MAX_SIZE}] 밖")
+    return s
+
+
+def _unit_dirs(d, name="d"):
+    a = np.asarray(d, dtype=np.float64)
+    if a.ndim < 1 or a.shape[-1] != 3:
+        raise FarFieldError(f"{name}: 마지막 차원이 3 이어야 한다 (shape {a.shape})")
+    if not np.isfinite(a).all():
+        raise FarFieldError(f"{name}: 유한하지 않다")
+    n = np.linalg.norm(a, axis=-1, keepdims=True)
+    if (n <= 0.0).any():
+        raise FarFieldError(f"{name}: 영벡터")
+    return a / n
+
+
+def _normalize_fixed(v):
+    """정규화를 (거의) 멱등이 되도록 반복한다."""
     v = np.asarray(v, dtype=np.float64)
-    n = np.linalg.norm(v, axis=-1, keepdims=True)
-    if not np.isfinite(v).all() or (n <= 0).any():
-        raise FarFieldError(f"{name}: bad vector")
-    return v / n
+    for _ in range(4):
+        w = v / np.linalg.norm(v)
+        if np.array_equal(w, v):
+            break
+        v = w
+    return v
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# 팔면체 코덱
+# ---------------------------------------------------------------------------------------------------------------
 def _sgn(x):
-    return np.where(x >= 0, 1.0, -1.0)
+    return np.where(x >= 0.0, 1.0, -1.0)
 
 
 def oct_encode(d):
-    d = _unit(d, "d")
+    d = _unit_dirs(d)
     l1 = np.abs(d).sum(-1, keepdims=True)
     p = d[..., :2] / l1
     z = d[..., 2]
     px, py = p[..., 0], p[..., 1]
-    neg = z < 0
-    fx = (1 - np.abs(py)) * _sgn(px)
-    fy = (1 - np.abs(px)) * _sgn(py)
+    fx = (1.0 - np.abs(py)) * _sgn(px)
+    fy = (1.0 - np.abs(px)) * _sgn(py)
+    neg = z < 0.0
     px = np.where(neg, fx, px)
     py = np.where(neg, fy, py)
-    return (np.stack([px, py], -1) + 1) * 0.5
+    uv = (np.stack([px, py], axis=-1) + 1.0) * 0.5
+    return np.clip(uv, 0.0, 1.0)
 
 
 def oct_decode(uv):
-    uv = np.asarray(uv, dtype=np.float64)
-    p = uv * 2 - 1
+    a = np.asarray(uv, dtype=np.float64)
+    if a.ndim < 1 or a.shape[-1] != 2:
+        raise FarFieldError(f"uv: 마지막 차원이 2 여야 한다 (shape {a.shape})")
+    if not np.isfinite(a).all():
+        raise FarFieldError("uv: 유한하지 않다")
+    p = a * 2.0 - 1.0
     px, py = p[..., 0], p[..., 1]
-    z = 1 - np.abs(px) - np.abs(py)
-    neg = z < 0
-    fx = (1 - np.abs(py)) * _sgn(px)
-    fy = (1 - np.abs(px)) * _sgn(py)
-    px2 = np.where(neg, fx, px)
-    py2 = np.where(neg, fy, py)
-    d = np.stack([px2, py2, z], -1)
+    z = 1.0 - np.abs(px) - np.abs(py)
+    neg = z < 0.0
+    fx = (1.0 - np.abs(py)) * _sgn(px)
+    fy = (1.0 - np.abs(px)) * _sgn(py)
+    x = np.where(neg, fx, px)
+    y = np.where(neg, fy, py)
+    d = np.stack([x, y, z], axis=-1)
     return d / np.linalg.norm(d, axis=-1, keepdims=True)
 
 
-def _chk_size(size):
-    if isinstance(size, (bool, np.bool_)) or not isinstance(size, (int, np.integer)) or not (MIN_SIZE <= size <= MAX_SIZE):
-        raise FarFieldError("size")
-
-
 def texel_centers(size):
-    _chk_size(size)
-    t = (np.arange(size) + 0.5) / size
-    v, u = np.meshgrid(t, t, indexing="ij")
-    return np.stack([u, v], -1)
+    s = _check_size(size)
+    c = (np.arange(s, dtype=np.float64) + 0.5) / s
+    u, v = np.meshgrid(c, c, indexing="xy")  # [i, j] -> u from j, v from i
+    return np.stack([u, v], axis=-1)
 
 
 def texel_dirs(size):
@@ -82,130 +159,129 @@ def texel_dirs(size):
 
 
 def texel_solid_angle(size):
-    d = texel_dirs(size)
-    l1 = np.abs(d).sum(-1)
-    return 4.0 / (size * size) * l1 ** 3
+    s = _check_size(size)
+    l1 = np.abs(texel_dirs(s)).sum(-1)
+    return 4.0 / (s * s) * l1 ** 3
+
+
+def _fold(i, j, s):
+    """범위 밖 텍셀 인덱스를 변 거울 접힘으로 되돌린다(모서리는 두 번 적용)."""
+    for _ in range(2):
+        m = j < 0
+        i = np.where(m, s - 1 - i, i)
+        j = np.where(m, -1 - j, j)
+        m = j >= s
+        i = np.where(m, s - 1 - i, i)
+        j = np.where(m, 2 * s - 1 - j, j)
+        m = i < 0
+        j = np.where(m, s - 1 - j, j)
+        i = np.where(m, -1 - i, i)
+        m = i >= s
+        j = np.where(m, s - 1 - j, j)
+        i = np.where(m, 2 * s - 1 - i, i)
+    return i, j
 
 
 def sample(far, d):
-    rgb = far.rgb if hasattr(far, "rgb") else np.asarray(far)
-    if rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.shape[0] != rgb.shape[1]:
-        raise FarFieldError("rgb")
-    S = rgb.shape[0]
-    d = np.asarray(d, dtype=np.float64)
-    shp = d.shape[:-1]
-    uv = oct_encode(d.reshape(-1, 3))
-    x = uv[:, 0] * S - 0.5
-    y = uv[:, 1] * S - 0.5
-    j0 = np.floor(x).astype(int)
-    i0 = np.floor(y).astype(int)
-    fx = x - j0
-    fy = y - i0
-    out = np.zeros((uv.shape[0], 3))
-
-    def fetch(i, j):
-        i = i.copy()
-        j = j.copy()
-        m = (j < 0) | (j >= S)
-        j2 = np.where(j < 0, -1 - j, np.where(j >= S, 2 * S - 1 - j, j))
-        i2 = np.where(m, S - 1 - i, i)
-        m2 = (i2 < 0) | (i2 >= S)
-        i3 = np.where(i2 < 0, -1 - i2, np.where(i2 >= S, 2 * S - 1 - i2, i2))
-        j3 = np.where(m2, S - 1 - j2, j2)
-        return rgb[i3, j3].astype(np.float64)
-
-    for di, dj, w in ((0, 0, (1 - fy) * (1 - fx)), (0, 1, (1 - fy) * fx), (1, 0, fy * (1 - fx)), (1, 1, fy * fx)):
-        out += w[:, None] * fetch(i0 + di, j0 + dj)
-    return out.reshape(*shp, 3)
+    rgb = getattr(far, "rgb", far)
+    rgb = np.asarray(rgb)
+    if rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.shape[0] != rgb.shape[1] or rgb.shape[0] < 1:
+        raise FarFieldError(f"far: (S,S,3) 여야 한다 (shape {rgb.shape})")
+    s = rgb.shape[0]
+    du = _unit_dirs(d)
+    lead = du.shape[:-1]
+    uv = oct_encode(du.reshape(-1, 3))
+    x = uv[:, 0] * s - 0.5  # 열
+    y = uv[:, 1] * s - 0.5  # 행
+    j0 = np.floor(x).astype(np.int64)
+    i0 = np.floor(y).astype(np.int64)
+    fx = (x - j0)[:, None]
+    fy = (y - i0)[:, None]
+    out = np.zeros((uv.shape[0], 3), dtype=np.float64)
+    for di, wy in ((0, 1.0 - fy), (1, fy)):
+        for dj, wx in ((0, 1.0 - fx), (1, fx)):
+            ii, jj = _fold(i0 + di, j0 + dj, s)
+            out += rgb[ii, jj].astype(np.float64) * (wy * wx)
+    return out.reshape(lead + (3,))
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Hosek-Wilkie 함수형과 계수
+# ---------------------------------------------------------------------------------------------------------------
 def hw_shape(coeffs, cos_theta, gamma):
-    A, B, Cc, D, E, F, G, H, I = [float(x) for x in coeffs]
+    c = np.asarray(coeffs, dtype=np.float64)
+    if c.shape[-1:] != (9,):
+        raise FarFieldError(f"coeffs: 마지막 차원이 9 여야 한다 (shape {c.shape})")
+    A, B, Cc, D, E, Ff, G, H, I = (c[..., k] for k in range(9))
     ct = np.clip(np.asarray(cos_theta, dtype=np.float64), 0.0, 1.0)
     g = np.asarray(gamma, dtype=np.float64)
     cg = np.cos(g)
     chi = (1 + cg ** 2) / (1 + H * H - 2 * H * cg) ** 1.5
-    return (1 + A * np.exp(B / (ct + 0.01))) * (Cc + D * np.exp(E * g) + F * cg ** 2 + G * chi + I * np.sqrt(ct))
+    return (1 + A * np.exp(B / (ct + 0.01))) * (Cc + D * np.exp(E * g) + Ff * cg ** 2 + G * chi + I * np.sqrt(ct))
 
 
-# ---- Preetham target for the fit -------------------------------------------------------------------------------
-def _preetham_rgb(T, elev_deg, view_elev, view_dazim):
-    ts = math.radians(90 - max(elev_deg, 0.0))
-    tv = np.pi / 2 - view_elev
-    cosg = np.cos(tv) * math.cos(ts) + np.sin(tv) * math.sin(ts) * np.cos(view_dazim)
-    gam = np.arccos(np.clip(cosg, -1, 1))
-    cm = {"Y": (0.1787 * T - 1.4630, -0.3554 * T + 0.4275, -0.0227 * T + 5.3251, 0.1206 * T - 2.5771, -0.0670 * T + 0.3703),
-          "x": (-0.0193 * T - 0.2592, -0.0665 * T + 0.0008, -0.0004 * T + 0.2125, -0.0641 * T - 0.8989, -0.0033 * T + 0.0452),
-          "y": (-0.0167 * T - 0.2608, -0.0950 * T + 0.0092, -0.0079 * T + 0.2102, -0.0441 * T - 1.6537, -0.0109 * T + 0.0529)}
-
-    def perez(k, tv_, gam_):
-        A, B, Cc, D, E = cm[k]
-        return (1 + A * np.exp(B / np.maximum(np.cos(tv_), 1e-3))) * (1 + Cc * np.exp(D * gam_) + E * np.cos(gam_) ** 2)
-
-    chi = (4.0 / 9.0 - T / 120.0) * (math.pi - 2 * ts)
-    Yz = (4.0453 * T - 4.9710) * math.tan(chi) - 0.2155 * T + 2.4192
-    th = ts
-    xz = (T * T * (0.00166 * th ** 3 - 0.00375 * th ** 2 + 0.00209 * th) + T * (-0.02903 * th ** 3 + 0.06377 * th ** 2 - 0.03202 * th + 0.00394)
-          + (0.11693 * th ** 3 - 0.21196 * th ** 2 + 0.06052 * th + 0.25886))
-    yz = (T * T * (0.00275 * th ** 3 - 0.00610 * th ** 2 + 0.00317 * th) + T * (-0.04214 * th ** 3 + 0.08970 * th ** 2 - 0.04153 * th + 0.00516)
-          + (0.15346 * th ** 3 - 0.26756 * th ** 2 + 0.06670 * th + 0.26688))
-    out = []
-    Y = Yz * perez("Y", tv, gam) / perez("Y", 0.0, ts)
-    x = xz * perez("x", tv, gam) / perez("x", 0.0, ts)
-    y = yz * perez("y", tv, gam) / perez("y", 0.0, ts)
-    X = x / y * Y
-    Z = (1 - x - y) / y * Y
-    r = 3.2406 * X - 1.5372 * Y - 0.4986 * Z
-    g = -0.9689 * X + 1.8758 * Y + 0.0415 * Z
-    b = 0.0557 * X - 0.2040 * Y + 1.0570 * Z
-    return np.maximum(np.stack([r, g, b], -1), 1e-6)
+_A_RGB = (-0.80, -0.70, -0.55)  # 붉은 채널이 지평선에서 더 밝아진다 -> 지평선이 더 희다
+_LUM = np.array([0.2126, 0.7152, 0.0722])
 
 
-@lru_cache(maxsize=256)
-def _fit(Tq, eq):
-    ve = np.linspace(0.0, 89.0, 30) * np.pi / 180
-    va = np.linspace(0, np.pi, 24)
-    VE, VA = np.meshgrid(ve, va, indexing="ij")
-    tgt = _preetham_rgb(Tq, eq, VE, VA)  # (..,3)
-    ct = np.sin(VE)
-    ts = math.radians(90 - eq)
-    cosg = np.cos(np.pi / 2 - VE) * math.cos(ts) + np.sin(np.pi / 2 - VE) * math.sin(ts) * np.cos(VA)
-    gam = np.arccos(np.clip(cosg, -1, 1))
-    zen = _preetham_rgb(Tq, eq, np.array(np.pi / 2), np.array(0.0))
-    lo = [-3, -3, -1, -3, -12, -3, -3, 0.5, -1]
-    hi = [3, 0, 3, 6, 0, 3, 3, 0.999, 3]
-    x0 = np.array([-0.9, -0.25, 0.3, 0.8, -2.0, 0.1, 0.3, 0.9, 0.05])
-    cs = []
-    for c in range(3):
-        t = tgt[..., c] / zen[c]
+def _zenith_luminance(turb, elev_deg):
+    """Preetham 천정 휘도(kcd/m^2). 고도 65도 이상은 같은 값으로 고정, 지평선 아래는 박명 감쇠."""
+    e = min(max(elev_deg, 0.0), 65.0)
+    theta_s = math.radians(90.0 - e)
+    chi = (4.0 / 9.0 - turb / 120.0) * (math.pi - 2.0 * theta_s)
+    y = (4.0453 * turb - 4.9710) * math.tan(chi) - 0.2155 * turb + 2.4192
+    y = max(y, 0.05)
+    if elev_deg < 0.0:
+        y *= math.exp(elev_deg / 3.0)
+    return y
 
-        def res(p):
-            return ((hw_shape(p, ct, gam) - t) / (t + 0.05)).ravel()
 
-        sol = optimize.least_squares(res, x0, bounds=(lo, hi), max_nfev=200)
-        cs.append(sol.x)
-    return np.array(cs), zen.copy()
+def _zenith_chroma(turb):
+    rho = 1.0 + 2.2 * math.exp(-0.18 * (turb - 1.0))  # B/R
+    c = np.array([1.0, 1.0 + 0.62 * (rho - 1.0), rho])
+    return c / float(c @ _LUM)
+
+
+@functools.lru_cache(maxsize=256)
+def _hw_params_cached(turb, albedo, elev):
+    boost = 1.0 + 0.6 * math.cos(math.radians(min(max(elev, 0.0), 90.0)))
+    h = min(0.78 + 0.018 * (turb - 1.0), 0.97)
+    gm = 0.25 * (1.0 + 0.25 * (turb - 1.0)) * boost
+    gk = gm * (1.0 - h) ** 3 / 2.0  # G*chi(0) = gm
+    ee = -3.5 / (1.0 + 0.15 * (turb - 1.0))
+    ds = 1.4 * boost
+    sa = 1.0 + 0.03 * (turb - 1.0)
+    coeffs = np.zeros((3, 9))
+    for k in range(3):
+        coeffs[k] = (max(_A_RGB[k] * sa, -1.2), -0.30, 0.50, ds, ee, 0.10, gk, h, 0.10)
+    g_ref = max(math.pi / 2.0 - math.radians(elev), 0.6 if elev > 0.0 else 0.0)
+    g_ref = max(g_ref, 0.6) if elev > 0.0 else g_ref
+    shape_z = np.array([float(hw_shape(coeffs[k], 1.0, g_ref)) for k in range(3)])
+    z = _zenith_luminance(turb, elev) * _zenith_chroma(turb) * (1.0 + 0.12 * albedo) / shape_z
+    coeffs.setflags(write=False)
+    z.setflags(write=False)
+    return coeffs, z
 
 
 def hw_params(turbidity, albedo, sun_elev_deg):
-    for v in (turbidity, albedo, sun_elev_deg):
-        if isinstance(v, (bool, np.bool_)) or not math.isfinite(float(v)):
-            raise FarFieldError("hw_params")
-    if not (1.0 <= turbidity <= 10.0 and 0.0 <= albedo <= 1.0 and -90.0 <= sun_elev_deg <= 90.0):
-        raise FarFieldError("hw_params range")
-    T = round(float(turbidity), 3)
-    e = round(float(min(max(sun_elev_deg, 0.0), 90.0)), 2)
-    cs, z = _fit(T, e)
-    z = z * (1 + 0.1 * float(albedo))
-    if sun_elev_deg < 0:
-        z = z * math.exp(sun_elev_deg / 2.5)
+    t = _num("turbidity", turbidity, TURBIDITY_RANGE[0], TURBIDITY_RANGE[1])
+    a = _num("albedo", albedo, 0.0, 1.0)
+    e = _num("sun_elev_deg", sun_elev_deg, -90.0, 90.0)
+    cs, z = _hw_params_cached(t, a, e)
     return cs.copy(), z.copy()
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# 스펙
+# ---------------------------------------------------------------------------------------------------------------
+_META_KEYS = ("version", "up", "north", "sun_elev_deg", "sun_azim_deg", "turbidity", "albedo", "exposure",
+              "camera_height_m", "horizon_blend_deg", "ground_albedo_rgb", "size", "include_sun")
 
 
 @dataclass(frozen=True, kw_only=True)
 class FarFieldSpec:
-    up: tuple = (0.0, 0.0, 1.0)
-    north: tuple | None = None
+    up: tuple
+    north: Optional[tuple] = None
     sun_elev_deg: float = DEFAULT_SUN_ELEV_DEG
     sun_azim_deg: float = DEFAULT_SUN_AZIM_DEG
     turbidity: float = 2.5
@@ -213,183 +289,250 @@ class FarFieldSpec:
     exposure: float = 1.0
     camera_height_m: float = 1.6
     horizon_blend_deg: float = 1.5
-    ground_albedo_rgb: tuple | None = None
+    ground_albedo_rgb: Optional[tuple] = None
     size: int = DEFAULT_SIZE
     include_sun: bool = False
 
     def __post_init__(self):
-        def fin(name, lo=None, hi=None, strict_lo=False):
-            v = getattr(self, name)
-            if isinstance(v, (bool, np.bool_)) or not isinstance(v, (int, float, np.integer, np.floating)) or not math.isfinite(float(v)):
-                raise FarFieldError(f"{name}")
-            v = float(v)
-            if lo is not None and (v < lo or (strict_lo and v == lo)):
-                raise FarFieldError(f"{name}")
-            if hi is not None and v > hi:
-                raise FarFieldError(f"{name}")
-            object.__setattr__(self, name, v)
-        fin("sun_elev_deg", -90, 90)
-        fin("sun_azim_deg")
-        object.__setattr__(self, "sun_azim_deg", self.sun_azim_deg % 360.0)
-        fin("turbidity", *TURBIDITY_RANGE)
-        fin("albedo", 0, 1)
-        fin("exposure", 0, None, True)
-        fin("camera_height_m", 0, None, True)
-        fin("horizon_blend_deg", 0, None, True)
-        s = self.size
-        if isinstance(s, (bool, np.bool_)) or not isinstance(s, (int, np.integer)) or not (MIN_SIZE <= s <= MAX_SIZE):
-            raise FarFieldError("size")
-        object.__setattr__(self, "size", int(s))
-        if not isinstance(self.include_sun, (bool, np.bool_)):
-            raise FarFieldError("include_sun")
-        up = np.asarray(self.up, dtype=np.float64)
-        if up.shape != (3,) or not np.isfinite(up).all() or np.linalg.norm(up) <= 0:
-            raise FarFieldError("up")
-        up = up / np.linalg.norm(up)
+        sv = object.__setattr__
+        up = _vec3("up", self.up)
+        n = float(np.linalg.norm(up))
+        if n <= 0.0:
+            raise FarFieldError("up: 영벡터")
+        up = _normalize_fixed(up)
         if self.north is None:
             k = int(np.argmin(np.abs(up)))
-            e = np.zeros(3)
-            e[k] = 1.0
-            n = e - up * (e @ up)
+            nv = np.zeros(3)
+            nv[k] = 1.0
         else:
-            n = np.asarray(self.north, dtype=np.float64)
-            if n.shape != (3,) or not np.isfinite(n).all():
-                raise FarFieldError("north")
-            n = n - up * (n @ up)
-        if np.linalg.norm(n) < 1e-6:
-            raise FarFieldError("north parallel to up")
-        n = n / np.linalg.norm(n)
-        object.__setattr__(self, "up", tuple(float(x) for x in up))
-        object.__setattr__(self, "north", tuple(float(x) for x in n))
+            nv = _vec3("north", self.north)
+        nv = nv - float(nv @ up) * up
+        nn = float(np.linalg.norm(nv))
+        if nn <= 1e-9 * max(1.0, float(np.linalg.norm(_vec3("north", self.north)) if self.north is not None else 1.0)):
+            raise FarFieldError("north: up 과 평행하거나 영벡터")
+        nv = _normalize_fixed(nv)
+        sv(self, "up", tuple(float(x) for x in up))
+        sv(self, "north", tuple(float(x) for x in nv))
+        sv(self, "sun_elev_deg", _num("sun_elev_deg", self.sun_elev_deg, -90.0, 90.0))
+        az = math.fmod(_num("sun_azim_deg", self.sun_azim_deg), 360.0)
+        if az < 0.0:
+            az += 360.0
+        if az >= 360.0:
+            az = 0.0
+        sv(self, "sun_azim_deg", az)
+        sv(self, "turbidity", _num("turbidity", self.turbidity, TURBIDITY_RANGE[0], TURBIDITY_RANGE[1]))
+        sv(self, "albedo", _num("albedo", self.albedo, 0.0, 1.0))
+        sv(self, "exposure", _num("exposure", self.exposure, 0.0, None, lo_open=True))
+        sv(self, "camera_height_m", _num("camera_height_m", self.camera_height_m, 0.0, None, lo_open=True))
+        sv(self, "horizon_blend_deg", _num("horizon_blend_deg", self.horizon_blend_deg, 0.0, None, lo_open=True))
         if self.ground_albedo_rgb is not None:
-            g = np.asarray(self.ground_albedo_rgb, dtype=np.float64)
-            if g.shape != (3,) or not np.isfinite(g).all() or g.min() < 0 or g.max() > 1:
-                raise FarFieldError("ground_albedo_rgb")
-            object.__setattr__(self, "ground_albedo_rgb", tuple(float(x) for x in g))
+            g = _vec3("ground_albedo_rgb", self.ground_albedo_rgb)
+            if (g < 0.0).any() or (g > 1.0).any():
+                raise FarFieldError("ground_albedo_rgb: [0,1] 밖")
+            sv(self, "ground_albedo_rgb", tuple(float(x) for x in g))
+        sv(self, "size", _check_size(self.size))
+        if not isinstance(self.include_sun, (bool, np.bool_)):
+            raise FarFieldError("include_sun: bool 이어야 한다")
+        sv(self, "include_sun", bool(self.include_sun))
 
-    def basis(self):
+    # -- 기하 ------------------------------------------------------------------------------------------------
+    def _basis(self):
         up = np.array(self.up)
-        n = np.array(self.north)
-        east = np.cross(n, up)
-        return n, east, up
+        north = np.array(self.north)
+        return north, np.cross(north, up), up
 
     def sun_dir(self):
-        n, e, u = self.basis()
-        el, az = math.radians(self.sun_elev_deg), math.radians(self.sun_azim_deg)
-        return math.cos(el) * (math.cos(az) * n + math.sin(az) * e) + math.sin(el) * u
+        north, east, up = self._basis()
+        e, a = math.radians(self.sun_elev_deg), math.radians(self.sun_azim_deg)
+        return math.cos(e) * (math.cos(a) * north + math.sin(a) * east) + math.sin(e) * up
 
+    # -- 직렬화 ----------------------------------------------------------------------------------------------
     def to_meta(self):
-        return {"version": FARFIELD_VERSION, "up": list(self.up), "north": list(self.north), "sun_elev_deg": self.sun_elev_deg,
-                "sun_azim_deg": self.sun_azim_deg, "turbidity": self.turbidity, "albedo": self.albedo, "exposure": self.exposure,
-                "camera_height_m": self.camera_height_m, "horizon_blend_deg": self.horizon_blend_deg,
-                "ground_albedo_rgb": None if self.ground_albedo_rgb is None else list(self.ground_albedo_rgb),
-                "size": self.size, "include_sun": self.include_sun}
+        return {
+            "version": FARFIELD_VERSION,
+            "up": list(self.up),
+            "north": list(self.north),
+            "sun_elev_deg": self.sun_elev_deg,
+            "sun_azim_deg": self.sun_azim_deg,
+            "turbidity": self.turbidity,
+            "albedo": self.albedo,
+            "exposure": self.exposure,
+            "camera_height_m": self.camera_height_m,
+            "horizon_blend_deg": self.horizon_blend_deg,
+            "ground_albedo_rgb": None if self.ground_albedo_rgb is None else list(self.ground_albedo_rgb),
+            "size": self.size,
+            "include_sun": self.include_sun,
+        }
 
     @classmethod
     def from_meta(cls, m):
-        m = dict(m)
-        if m.pop("version", None) != FARFIELD_VERSION:
-            raise FarFieldError("version")
-        try:
-            return cls(**m)
-        except TypeError as e:
-            raise FarFieldError(str(e))
+        if not isinstance(m, dict):
+            raise FarFieldError("meta: dict 여야 한다")
+        keys = set(m)
+        if keys != set(_META_KEYS):
+            raise FarFieldError(f"meta 키 불일치: 누락 {sorted(set(_META_KEYS) - keys)}, 모르는 키 {sorted(keys - set(_META_KEYS))}")
+        if m["version"] != FARFIELD_VERSION:
+            raise FarFieldError(f"meta version {m['version']!r} != {FARFIELD_VERSION!r}")
+        kw = {k: m[k] for k in _META_KEYS if k != "version"}
+        for k in ("up", "north", "ground_albedo_rgb"):
+            if kw[k] is not None:
+                if not isinstance(kw[k], (list, tuple)):
+                    raise FarFieldError(f"meta {k}: 리스트여야 한다")
+                kw[k] = tuple(kw[k])
+        if kw["north"] is None:
+            raise FarFieldError("meta north: 필요")
+        s = cls(**kw)
+        # 저장된 up/north 를 비트 그대로 복원한다(재정규화의 1ulp 차이 방지). 값이 거의 같을 때만.
+        if (np.allclose(s.up, kw["up"], atol=1e-12) and np.allclose(s.north, kw["north"], atol=1e-12)):
+            fixed = object.__new__(cls)
+            for f in cls.__dataclass_fields__:
+                object.__setattr__(fixed, f, getattr(s, f))
+            object.__setattr__(fixed, "up", tuple(float(x) for x in kw["up"]))
+            object.__setattr__(fixed, "north", tuple(float(x) for x in kw["north"]))
+            return fixed
+        return s
 
+    # -- 빌드 ------------------------------------------------------------------------------------------------
     def build(self):
         d = texel_dirs(self.size)
         rgb = environment_radiance(self, d)
-        if self.include_sun and self.sun_elev_deg > 0:
-            om = texel_solid_angle(self.size)
-            sd = self.sun_dir()
-            ang = np.arccos(np.clip(d @ sd, -1, 1))
-            sig = 1.5 * math.sqrt(4 * math.pi / self.size ** 2)
-            k = np.exp(-0.5 * (ang / sig) ** 2)
-            k = k / (k * om).sum()
-            rgb = rgb + k[..., None] * sun_irradiance(self)[None, None, :]
-        return C.FarField(rgb=rgb.astype(np.float32))
+        if self.include_sun and self.sun_elev_deg > 0.0:
+            rgb = rgb + _sun_disk_delta(self, d)
+        out = np.ascontiguousarray(np.maximum(rgb, 0.0).astype(np.float32))
+        return C.FarField(rgb=out)
 
 
-def sky_radiance(spec, d):
-    d = _unit(d, "d")
-    n, e, u = spec.basis()
+def _sun_disk_delta(spec, d):
+    s = spec.size
+    om = texel_solid_angle(s)
     sd = spec.sun_dir()
-    ct = np.clip(d @ u, 0.0, 1.0)
-    g = np.arccos(np.clip(d @ sd, -1, 1))
-    cs, z = hw_params(spec.turbidity, spec.albedo, spec.sun_elev_deg)
-    out = np.stack([hw_shape(cs[c], ct, g) * z[c] for c in range(3)], -1)
-    return np.maximum(out, 0.0) * spec.exposure
+    chord = np.linalg.norm(d - sd, axis=-1)
+    ang = 2.0 * np.arcsin(np.clip(chord / 2.0, 0.0, 1.0))
+    sigma = max(1.5 * math.sqrt(float(om.max())), math.radians(SUN_ANGULAR_RADIUS_DEG))
+    k = np.exp(-0.5 * (ang / sigma) ** 2)
+    k = k / float((k * om).sum())
+    return sun_irradiance(spec)[None, None, :] * k[..., None]
 
 
-def _quad_dirs(spec, nt=64, nph=128):
-    n, e, u = spec.basis()
-    th = (np.arange(nt) + 0.5) / nt * (np.pi / 2)
-    ph = (np.arange(nph) + 0.5) / nph * 2 * np.pi
-    TH, PH = np.meshgrid(th, ph, indexing="ij")
-    d = (np.sin(TH)[..., None] * (np.cos(PH)[..., None] * n + np.sin(PH)[..., None] * e) + np.cos(TH)[..., None] * u)
-    w = np.sin(TH) * np.cos(TH) * (np.pi / 2 / nt) * (2 * np.pi / nph)
-    return d, w
+# ---------------------------------------------------------------------------------------------------------------
+# 하늘·조도·지면·환경
+# ---------------------------------------------------------------------------------------------------------------
+def sky_radiance(spec, d):
+    du = _unit_dirs(d)
+    cs, z = _hw_params_cached(spec.turbidity, spec.albedo, spec.sun_elev_deg)
+    up = np.array(spec.up)
+    ct = du @ up
+    gam = np.arccos(np.clip(du @ spec.sun_dir(), -1.0, 1.0))
+    out = np.stack([hw_shape(cs[k], ct, gam) * z[k] for k in range(3)], axis=-1) * spec.exposure
+    return np.maximum(out, 0.0)
 
 
-def sky_irradiance(spec):
-    d, w = _quad_dirs(spec)
-    return (sky_radiance(spec, d) * w[..., None]).sum((0, 1))
+_E0_KLUX = 128.0
+_SUN_LAMBDA_UM = (0.60, 0.55, 0.465)
 
 
 def sun_irradiance(spec):
-    el = spec.sun_elev_deg
-    if el <= 0:
+    e = spec.sun_elev_deg
+    if e <= 0.0:
         return np.zeros(3)
-    m = 1.0 / (math.sin(math.radians(el)) + 0.15 * (el + 3.885) ** -1.253)
-    tau = np.array([0.07, 0.10, 0.15]) * (0.5 + 0.2 * spec.turbidity)
-    rgb = np.exp(-tau * m)
-    lum = rgb @ _LUM
-    En = 100.0 * math.exp(-0.1 * (0.5 + 0.2 * spec.turbidity) * m) * rgb / lum
-    return En * spec.exposure
+    se = math.sin(math.radians(e))
+    m = 1.0 / (se + 0.15 * (e + 3.885) ** -1.253)  # Kasten-Young
+    beta = max(0.04608 * spec.turbidity - 0.04586, 0.0)
+    out = np.empty(3)
+    for k, lam in enumerate(_SUN_LAMBDA_UM):
+        tau = 0.008735 * lam ** -4.08 + beta * lam ** -1.3
+        out[k] = _E0_KLUX * math.exp(-tau * m)
+    return out * spec.exposure
+
+
+@functools.lru_cache(maxsize=64)
+def _sky_irr_cached(spec):
+    nt, nph = 256, 512
+    north, east, up = spec._basis()
+    th = (np.arange(nt) + 0.5) / nt * (math.pi / 2)
+    ph = (np.arange(nph) + 0.5) / nph * 2 * math.pi
+    TH, PH = np.meshgrid(th, ph, indexing="ij")
+    d = (np.sin(TH)[..., None] * (np.cos(PH)[..., None] * north + np.sin(PH)[..., None] * east) + np.cos(TH)[..., None] * up)
+    w = np.sin(TH) * np.cos(TH) * (math.pi / 2 / nt) * (2 * math.pi / nph)
+    v = (sky_radiance(spec, d) * w[..., None]).sum((0, 1))
+    v.setflags(write=False)
+    return v
+
+
+def sky_irradiance(spec):
+    return _sky_irr_cached(spec).copy()
 
 
 def ground_lit(spec):
-    alb = np.full(3, spec.albedo) if spec.ground_albedo_rgb is None else np.array(spec.ground_albedo_rgb)
+    alb = np.array(spec.ground_albedo_rgb) if spec.ground_albedo_rgb is not None else np.full(3, spec.albedo)
     es = math.sin(math.radians(max(spec.sun_elev_deg, 0.0)))
     return alb / math.pi * (sky_irradiance(spec) + sun_irradiance(spec) * es)
 
 
-def ground_distance(spec, d):
-    d = _unit(d, "d")
-    s = -(d @ np.array(spec.up))
-    with np.errstate(divide="ignore"):
-        return np.where(s > 1e-12, spec.camera_height_m / np.maximum(s, 1e-300), np.inf)
-
-
 def environment_radiance(spec, d):
-    d = _unit(d, "d")
-    n, e, u = spec.basis()
-    el = d @ u
-    sky = sky_radiance(spec, d)
-    dh = d - el[..., None] * u
-    nh = np.linalg.norm(dh, axis=-1, keepdims=True)
-    dh = np.where(nh > 1e-9, dh / np.maximum(nh, 1e-300), n)
-    hor = sky_radiance(spec, dh)
-    delta = np.degrees(np.arcsin(np.clip(-el, 0, 1)))
-    w = np.exp(-delta / spec.horizon_blend_deg)[..., None]
-    gnd = w * hor + (1 - w) * ground_lit(spec)
-    return np.where((el >= 0)[..., None], sky, gnd)
+    du = _unit_dirs(d)
+    lead = du.shape[:-1]
+    flat = du.reshape(-1, 3)
+    up = np.array(spec.up)
+    e = flat @ up
+    below = e < 0.0
+    dh = flat - e[:, None] * up
+    hn = np.linalg.norm(dh, axis=-1, keepdims=True)
+    degenerate = hn[:, 0] < 1e-12
+    dh = np.where(degenerate[:, None], np.array(spec.north)[None, :], dh / np.where(hn > 0, hn, 1.0))
+    eff = np.where(below[:, None], dh, flat)
+    sky = sky_radiance(spec, eff)
+    g = ground_lit(spec)
+    delta = np.degrees(np.arcsin(np.clip(-e, 0.0, 1.0)))
+    w = np.exp(-delta / spec.horizon_blend_deg)[:, None]
+    out = np.where(below[:, None], w * sky + (1.0 - w) * g[None, :], sky)
+    return out.reshape(lead + (3,))
 
 
+def ground_distance(spec, d):
+    du = _unit_dirs(d)
+    e = du @ np.array(spec.up)
+    down = e < -1e-12
+    with np.errstate(divide="ignore"):
+        return np.where(down, spec.camera_height_m / np.where(down, -e, 1.0), np.inf)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# 세계(Obs) 이음매
+# ---------------------------------------------------------------------------------------------------------------
 def up_world_from_obs(obs, up_cam):
-    return _unit(np.asarray(obs.R, dtype=np.float64).T @ np.asarray(up_cam, dtype=np.float64), "up_cam")
+    u = _vec3("up_cam", up_cam)
+    v = np.asarray(obs.R, dtype=np.float64).T @ u
+    n = float(np.linalg.norm(v))
+    if not math.isfinite(n) or n <= 0.0:
+        raise FarFieldError("up_cam: 영벡터")
+    return v / n
+
+
+def _horizontal(v, up):
+    h = v - float(v @ up) * up
+    n = float(np.linalg.norm(h))
+    return (h / n, True) if n > 1e-6 else (h, False)
 
 
 def spec_for_world(obs, up_cam, theta_in, **overrides):
+    if "up" in overrides or "north" in overrides:
+        raise FarFieldError("overrides: up·north 는 지정할 수 없다")
     up = up_world_from_obs(obs, up_cam)
-    R = np.asarray(obs.R, dtype=np.float64)
-    f = R.T @ np.array([0.0, 0.0, 1.0])
-    fh = f - up * (f @ up)
-    if np.linalg.norm(fh) < 1e-3:
-        fh = R.T @ np.array([1.0, 0.0, 0.0])
-        fh = fh - up * (fh @ up)
-    kw = dict(up=tuple(up), north=tuple(fh / np.linalg.norm(fh)))
-    if theta_in.sun_elev_deg is not None:
-        kw["sun_elev_deg"] = theta_in.sun_elev_deg
-        kw["sun_azim_deg"] = theta_in.sun_azim_deg
+    Rt = np.asarray(obs.R, dtype=np.float64).T
+    north, ok = _horizontal(Rt @ np.array([0.0, 0.0, 1.0]), up)
+    if not ok:
+        north, ok = _horizontal(Rt @ np.array([1.0, 0.0, 0.0]), up)
+        if not ok:
+            north = None
+    kw = dict(up=tuple(float(x) for x in up),
+              north=None if north is None else tuple(float(x) for x in north),
+              sun_elev_deg=DEFAULT_SUN_ELEV_DEG, sun_azim_deg=DEFAULT_SUN_AZIM_DEG)
+    el = getattr(theta_in, "sun_elev_deg", None)
+    az = getattr(theta_in, "sun_azim_deg", None)
+    if el is not None:
+        kw["sun_elev_deg"] = el
+    if az is not None:
+        kw["sun_azim_deg"] = az
     kw.update(overrides)
     return FarFieldSpec(**kw)
