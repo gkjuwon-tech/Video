@@ -43,4 +43,26 @@ b = base64.b64encode(buf.getvalue()).decode()
 for i in range(0, len(b), 1500): print(f"E0_IMG {i // 1500:03d} {b[i:i + 1500]}", flush=True)
 PY
 echo "E0_DONE $(date -u +%FT%TZ)"
-sleep infinity
+# ---- 상주 루프: 러너 갱신 + 데드맨 스위치 ----
+# 1) 레포에 ops/gpu/runner.sh 가 생기면 내려받아 실행한다(배포 = 깃허브 푸시).
+# 2) 오케스트레이터 하트비트(ops/gpu/heartbeat.json)가 IDLE_MAX초 넘게 갱신되지 않고 실행 중인 잡이 없으면 스스로 정지한다.
+python -m pip install -q --no-cache-dir vastai >/dev/null 2>&1 || true
+echo "E0_ENV_KEYS has_container_key=$([ -n "${CONTAINER_API_KEY:-}" ] && echo yes || echo no) has_container_id=$([ -n "${CONTAINER_ID:-}" ] && echo yes || echo no)"
+BASE='https://raw.githubusercontent.com/gkjuwon-tech/Video/refs/heads/claude/video-generation-new-paradigm-qriszj'
+IDLE_MAX=${IDLE_MAX:-9000}
+fetch() { python -c "import urllib.request,sys; sys.stdout.write(urllib.request.urlopen(sys.argv[1]+'?t='+sys.argv[2], timeout=30).read().decode())" "$BASE/$1" "$(date +%s)"; }
+self_stop() {
+  echo "WATCHDOG_STOP $(date -u +%FT%TZ) reason=$1"
+  [ -n "${CONTAINER_API_KEY:-}" ] && [ -n "${CONTAINER_ID:-}" ] && vastai stop instance "$CONTAINER_ID" --api-key "$CONTAINER_API_KEY" || true
+  sleep 30; exit 0
+}
+while true; do
+  if fetch ops/gpu/runner.sh > /tmp/runner.sh 2>/dev/null && [ -s /tmp/runner.sh ]; then
+    echo "RUNNER_FOUND $(date -u +%FT%TZ)"; exec bash /tmp/runner.sh
+  fi
+  hb=$(fetch ops/gpu/heartbeat.json 2>/dev/null | python -c "import json,sys; print(int(json.load(sys.stdin).get('epoch',0)))" 2>/dev/null || echo 0)
+  now=$(date +%s); age=$(( now - hb ))
+  echo "HEARTBEAT age=${age}s"
+  [ "$age" -gt "$IDLE_MAX" ] && self_stop "heartbeat_stale_${age}s"
+  sleep 300
+done
