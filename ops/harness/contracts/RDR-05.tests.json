@@ -1,0 +1,8 @@
+{
+ "tests/rdr_05/rdr05_helpers.py": "8d3ce33bdb56db0240e780874fe05c62957d5ebc60250b74441893334ad98bc2",
+ "tests/rdr_05/test_rdr05_atoms.py": "80bb6ea0c8e88ba2851a6989e6539e720cbb195d8f9302cd82162d84745d3c9e",
+ "tests/rdr_05/test_rdr05_bitset.py": "30b418f0d77d38f9b81c71a524c249da17f211acefb7844b38e6c1c047d39033",
+ "tests/rdr_05/test_rdr05_normal_flow.py": "7dc363839d60bd1a242c56466789e021a5cf31836c85fbccbaec01a632cf8da1",
+ "tests/rdr_05/test_rdr05_order.py": "26cd36dd88fd321e73c58e355f35a48788a329408376b0ff3499afd176427de0",
+ "tests/rdr_05/test_rdr05_shot_api.py": "7de4fcc2b18346b9c2d35088a7567fa0cb3968508f8940af0b34b3b730d5c10e"
+}
