@@ -1877,12 +1877,18 @@
    "slice": true,
    "rank": 57,
    "why": "MRH 연결부. 타일 경계 혼합만 주의",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791662508,
      "event": "claimed"
+    },
+    {
+     "ts": 1791663778,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ]
   },
@@ -4340,12 +4346,18 @@
    "slice": true,
    "rank": 143,
    "why": "R-EVAL 격리가 핵심",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791662508,
      "event": "claimed"
+    },
+    {
+     "ts": 1791663778,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: FND 단위: pyproject.toml 에 선택 extra `eval` = lpips 추가(진짜 LPIPS 워커용). GPU 러너: tests/evl_04 의 @pytest.mark.gpu 테스트(test_real_lpips_worker_isolated_from_parent)를 lpips 설치 환경에서 실행 필요."
     }
    ]
   },
