@@ -59,9 +59,14 @@
    "slice": true,
    "rank": 1,
    "why": "모든 이음매의 원천. 틀리면 전 레인 재작업이라 동결 검토만 Fable",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791642997,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "FND-03",
@@ -85,9 +90,14 @@
    "slice": true,
    "rank": 2,
    "why": "수식이 명세에 완결돼 있고 테스트로 판정됨",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791642997,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "FND-04",

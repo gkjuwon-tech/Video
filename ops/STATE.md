@@ -1,5 +1,11 @@
 # 운영 상태
 
+## 🏭 15일 스프린트 가동 중 (D0 = 2026-10-10)
+- **하네스 v1 가동:** 헌법 `ops/harness/README.md`, 백로그 `ops/harness/backlog.json`(167단위, 수직 슬라이스 45개 우선), 선택기 `pick.py`, 기계 게이트 `gate.py`(동결 테스트 해시·compile·ruff·pytest), 상태 갱신 `update.py`, 장부 `ledger.jsonl`. 교대조 워크플로 `ops/workflows/buc-shift.js`(args batches 4, k 2). 교대조가 끝나면 오케스트레이터가 바로 다음 교대조를 띄운다.
+- 모델 배정: 선택·게이트·커밋 Haiku, 계약서+테스트 Sonnet(난이도·위험 ≥4는 Opus medium), 구현은 백로그 impl_model, 수리 Sonnet→Opus, 위험 ≥4 검토 Opus low. Fable은 교대조에서 쓰지 않음.
+- 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
+- 하네스 설계 워크플로(buc-harness-design)는 창업자 지시로 폐기. 조사 산출물(work/wf5/r-*.md, units.json)은 백로그 원천으로 사용.
+
 ## ▶️ 재개 (창업자 복귀, 결제 예정)
 - 지금 단계: **15일 스프린트용 에이전트 하네스 설계** (워크플로 `buc-harness-design`, 스크립트 `ops/workflows/buc-harness-design.js`). 산출물: `work/wf5/r-models.md`, `r-practice.md`, `r-inventory.md`, `design-cost.md`(Opus), `design-quality.md`(Fable), `harness-spec.v1.md`, `redteam.md`, **`harness-spec.md`(최종)**.
 - 창업자 원칙: 구현은 하위 모델(Sonnet 5.5, Haiku 5.5), 설계와 검사는 상위 모델(Opus 5.5, Fable 5.1). 비용·시간 때문에 전부 Opus로 하지 않는다.
