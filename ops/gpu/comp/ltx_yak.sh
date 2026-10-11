@@ -13,6 +13,30 @@ command -v git >/dev/null || { apt-get update -qq >/dev/null && apt-get install 
 # Triton이 커널을 컴파일하려면 C 컴파일러가 필요하다(pytorch runtime 이미지에는 gcc가 없다).
 command -v gcc >/dev/null || { apt-get update -qq >/dev/null; DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential >/dev/null; }
 export CC="$(command -v gcc)"; echo "C_CC ${CC:-missing}"
+
+# (부가) 창업자가 보낸 LTX 소개 영상 자막을 받아 금고에 올린다. 우리 컨테이너 IP는 유튜브가 막는다. 실패해도 넘어간다.
+if [ ! -f "$W/.yt_done" ]; then
+  python -m pip install -q --no-cache-dir youtube-transcript-api >/dev/null 2>&1
+  python - <<'PY' && touch "$W/.yt_done" || echo "C_YT fail"
+import os
+from youtube_transcript_api import YouTubeTranscriptApi
+from huggingface_hub import HfApi
+tl = YouTubeTranscriptApi().list("6LKj486mutk")
+t = None
+for codes in (["ko"], ["en"]):
+    try:
+        t = tl.find_transcript(codes); break
+    except Exception:
+        pass
+t = t or next(iter(tl))
+lines = [f"[{int(s.start)//60:02d}:{int(s.start)%60:02d}] {s.text}" for s in t.fetch()]
+p = "/workspace/comp/yt_6LKj486mutk.txt"
+open(p, "w").write("\n".join(lines))
+HfApi(token=os.environ.get("HF_TOKEN")).upload_file(path_or_fileobj=p, path_in_repo="comp/ltx25/yt_6LKj486mutk.txt",
+    repo_id="sdsdsdsdsdsdsd123/buc-artifacts", repo_type="model")
+print("C_YT ok", t.language_code, len(lines), flush=True)
+PY
+fi
 python -m pip install -q --no-cache-dir uv huggingface_hub hf_transfer vastai >/dev/null 2>&1
 export HF_HUB_ENABLE_HF_TRANSFER=1 PATH="$HOME/.local/bin:$PATH"
 
