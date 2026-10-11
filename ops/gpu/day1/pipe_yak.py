@@ -82,9 +82,14 @@ S5_F_STOP = 2.0
 S5_LENS_DEPTH_SCALE = 0.15           # lens sees the scene shrunk by this factor so the rack is visible (logged)
 S5_MAX_COC_PX = 48.0
 
+# S1: the people sit at y=640..840 of 861, far below the frame centre.  A push along the optical axis (CAM-02 default
+# m=1.5) would throw them off the bottom edge, so the push runs along the ray through the people-box centre and m is
+# 1.25 (box centre keeps its pixel, the box grows 1.25x about it; frame 0 is still the observed pose).
+PUSH_IN_M = 1.25
+
 # name -> (move, seconds, kwargs).  docs/DEMO-D15.md section 3; amplitudes follow the "safe first" rule.
 SHOT_DEFS: Dict[str, Dict[str, Any]] = {
-    "S1": {"move": "push_in", "dur": 8.0, "kw": {"m": 1.5}, "doc": "push-in (dolly in)"},
+    "S1": {"move": "push_in", "dur": 8.0, "kw": {"m": PUSH_IN_M}, "doc": "push-in (dolly in) toward the two people"},
     "S2": {"move": "slider", "dur": 8.0, "kw": {"slide_zs": 0.12}, "doc": "slider (left to right truck)"},
     "S3": {"move": "orbit", "dur": 10.0, "kw": {"orbit_deg": 12.0}, "doc": "arc around the two people"},
     "S4": {"move": "crane", "dur": 8.0, "kw": {"elev_deg": 8.0}, "doc": "crane up"},
@@ -102,6 +107,7 @@ U_POLISH = "S8.5 polish"
 U_RENDER = "S9-10 RDR-02 render_ldi"
 U_DOF = "LNS-02 dof (S5)"
 U_ENC = "RDR-06 video encode"
+S1_UNITS = (U_R0, U_R1, U_R5, U_R6)
 UNITS_EXPECTED_REAL = [U_R0, U_R1, U_R5, U_R6, U_MATTE, U_W3, U_W8, U_CAM, U_RENDER, U_DOF, U_ENC]
 
 
@@ -641,8 +647,12 @@ def _unmix_job(image_lin, depth):
 # memoised stage functions (a real impl that fails must not be retried for every shot)
 # ---------------------------------------------------------------------------------------------------------------
 class Memo:
-    def __init__(self, fn: Callable) -> None:
+    """Memoise a stage fn (successes and failures).  ``on_error(exc, tb_text)`` runs once, at the first real failure,
+    so the exception's message (which the spine's StageIO.fallback deliberately omits) reaches the report."""
+
+    def __init__(self, fn: Callable, on_error: Optional[Callable[[BaseException, str], None]] = None) -> None:
         self.fn = fn
+        self.on_error = on_error
         self.store: Dict[str, Tuple[bool, Any]] = {}
 
     def __call__(self, inputs: dict, ctx) -> dict:
@@ -659,6 +669,9 @@ class Memo:
             out = self.fn(inputs, ctx)
         except Exception as e:  # noqa: BLE001
             self.store[key] = (False, e)
+            if self.on_error is not None:
+                with contextlib.suppress(Exception):
+                    self.on_error(e, scrub(traceback.format_exc()))
             raise
         self.store[key] = (True, out)
         return dict(out)
@@ -707,11 +720,26 @@ def record_read_ledger(ledger: Ledger, summary: dict, shot: Optional[str]) -> No
             ledger.add(unit, "unavailable", f"no status for {sid}", shot=shot)
 
 
+TB_TAIL = 1200
+
+
+def record_stage_error(trace: dict, ledger: Optional[Ledger], stage: str, units: Sequence[str], e: BaseException,
+                       tb_text: str, shot: Optional[str] = None) -> dict:
+    """A real stage raised: keep the exception text + traceback tail in ``trace["errors"][stage]`` and one ledger
+    'fallback' event per unit carrying the message (the spine itself only records the exception type)."""
+    rec = {"error": err_text(e, 400), "tb": scrub(tb_text)[-TB_TAIL:], "units": list(units), "shot": shot}
+    trace.setdefault("errors", {})[stage] = rec
+    if ledger is not None:
+        for u in units:
+            ledger.add(u, "fallback", f"{stage} raised {err_text(e, 240)}", shot)
+    return rec
+
+
 def make_s1_impl(reader, size_obs_fn, trace: dict, ledger: Ledger):
     from buc.pipeline import spine as S
     from buc.read import pipeline as RP
     base = RP.make_read_impl(steps=build_read_steps(reader, size_obs_fn))
-    memo = Memo(base.fn)
+    memo = Memo(base.fn, on_error=lambda e, tb: record_stage_error(trace, ledger, "S-1", S1_UNITS, e, tb))
 
     def fn(inputs, ctx):
         out = memo(inputs, ctx)
@@ -748,10 +776,15 @@ def build_world_chain(read, *, teacher: Optional[TeacherHandle], cfg: dict, trac
         dw = build_depth_world(read, matte=matte)
     except Exception as e:  # noqa: BLE001
         if matte is None:
+            trace.append({"unit": U_W3, "status": "failed", "detail": err_text(e, 400)})
             raise
         trace.append({"unit": U_W3, "status": "fallback", "detail": "with matte: " + err_text(e)})
         matte = None
-        dw = build_depth_world(read)
+        try:
+            dw = build_depth_world(read)
+        except Exception as e2:  # noqa: BLE001
+            trace.append({"unit": U_W3, "status": "failed", "detail": "without matte: " + err_text(e2, 400)})
+            raise
     ledger.add(U_W3, "real", f"matte={'yes' if matte is not None else 'no'}")
     trace.append({"unit": U_W3, "status": "real", "detail": dw.meta()})
     world = dw.world
@@ -782,8 +815,8 @@ def make_s2_impl(teacher: Optional[TeacherHandle], cfg: dict, trace: dict, ledge
         tr: list = trace.setdefault("S2", [])
         return {"world": build_world_chain(inputs["read"], teacher=teacher, cfg=cfg, trace=tr, ledger=ledger)}
 
-    return S.Impl(stage="S2", kind="real", name="world_chain", version="0.1.0+wld03-wld08-rd18",
-                  fn=Memo(inner))
+    memo = Memo(inner, on_error=lambda e, tb: record_stage_error(trace, ledger, "S2", (U_W3,), e, tb))
+    return S.Impl(stage="S2", kind="real", name="world_chain", version="0.1.0+wld03-wld08-rd18", fn=memo)
 
 
 def _c0_of(read):
@@ -795,6 +828,52 @@ def _shot_from_poses(read, c2w, t, focus_m, K, move, rig, seed, theta=None):
     obs = read.obs
     return C.Shot(c2w=c2w, t=t, K=K, focus_m=focus_m, width=int(obs.width), height=int(obs.height), fps=float(FPS),
                   theta=read.theta_in if theta is None else theta, move=move, rig=rig, seed=int(seed))
+
+
+def people_ray(read, box_ref=PERSON_BOX, ref_size=REF_SIZE) -> dict:
+    """The people-box centre as a ray in the observed camera frame: pixel (u, v) and (dx, dy) = (u-cx)/fx, (v-cy)/fy,
+    so the 3D point at depth ``z`` is ``z * (dx, dy, 1)``."""
+    obs = read.obs
+    W, H = int(obs.width), int(obs.height)
+    x0, y0, x1, y1 = scale_box(box_ref, ref_size, (W, H))
+    K = np.asarray(obs.K, dtype=np.float64)
+    u, v = 0.5 * (x0 + x1), 0.5 * (y0 + y1)
+    return {"box": (x0, y0, x1, y1), "uv": (u, v), "dx": (u - K[0, 2]) / K[0, 0], "dy": (v - K[1, 2]) / K[1, 1],
+            "W": W, "H": H, "K": K}
+
+
+def aim_push_at_people(read, c0: np.ndarray, c2w: np.ndarray, z: float, m: float, info: dict):
+    """CAM-02 push_in moves along the optical axis; here the same advance (``adv_k`` along the camera's forward axis)
+    is taken along the ray through the people-box centre instead: the camera translates by adv_k * (dx, dy, 1) in
+    its own observed frame, rotation unchanged.  Frame 0 stays the observed pose (adv_0 = 0), the people-box centre
+    keeps its pixel, and the box grows ~m about it.  -> (c2w', focus_m' = distance to the people point)."""
+    ray = people_ray(read)
+    R0, fwd = c0[:3, :3], c0[:3, 2]
+    out = np.array(c2w, dtype=np.float64, copy=True)
+    adv = (out[:, :3, 3] - c0[:3, 3][None, :]) @ fwd
+    local = adv[:, None] * np.array([ray["dx"], ray["dy"], 0.0])[None, :]
+    out[:, :3, 3] += local @ R0.T
+    target = (c0 @ np.array([z * ray["dx"], z * ray["dy"], z, 1.0]))[:3]
+    focus = np.linalg.norm(out[:, :3, 3] - target[None, :], axis=1)
+    # where the people box ends up in the last frame (box grows ~m about its fixed centre)
+    x0, y0, x1, y1 = ray["box"]
+    u, v = ray["uv"]
+    ex = (u + (x0 - u) * m, v + (y0 - v) * m, u + (x1 - u) * m, v + (y1 - v) * m)
+    W, H = ray["W"], ray["H"]
+    vis = (min(ex[2], W) - max(ex[0], 0.0)) * (min(ex[3], H) - max(ex[1], 0.0))
+    info["push_target"] = {"what": "people-box centre (ray, not optical axis)", "px": [round(u, 1), round(v, 1)],
+                           "offset_from_centre_px": [round(u - W / 2.0, 1), round(v - H / 2.0, 1)],
+                           "m": m, "people_box_end_px": [round(c, 1) for c in ex],
+                           "people_box_visible_frac_end": round(max(0.0, vis) / max(1e-9, (ex[2] - ex[0]) * (ex[3] - ex[1])), 3)}
+    return out, focus
+
+
+def orbit_pivot_note(read, z: float) -> dict:
+    """S3 arc: CAM-02 pivots about the optical-axis point at the people's depth (not about the people).  Logged."""
+    ray = people_ray(read)
+    return {"where": "optical axis at the people depth (CAM-02 orbit pivot), NOT the people point",
+            "people_lateral_offset_px": round(ray["uv"][0] - ray["W"] / 2.0, 1),
+            "people_lateral_offset_m": round(ray["dx"] * z, 4)}
 
 
 def build_shot(read, name: str, dur_s: float, seed: int, info: dict):
@@ -817,15 +896,19 @@ def build_shot(read, name: str, dur_s: float, seed: int, info: dict):
             path = moves.ideal_path(spec, c0)
             info["rig"] = "ideal"
         n = path.n_frames
+        c2w, focus = path.c2w, path.focus_m
+        if spec.name == "push_in":
+            c2w, focus = aim_push_at_people(read, c0, c2w, z, spec.m, info)
         K = np.broadcast_to(K0, (n, 3, 3)).copy()
-        return _shot_from_poses(read, path.c2w, path.t, path.focus_m, K, spec.name, path.rig, seed)
+        return _shot_from_poses(read, c2w, path.t, focus, K, spec.name, path.rig, seed)
 
     if mv in ("push_in", "slider", "orbit"):
         spec = moves.recipe(mv, z, duration_s=dur_s, fps=float(FPS), **kw)
-        info["source"] = "CAM-02"
+        info["source"] = "CAM-02" + (" + dolly aimed along the ray through the people box" if mv == "push_in" else "")
         info["used"] = mv
         if mv == "orbit":
             info["note"] = "arc runs 0 -> +%.0f deg: S8 contract needs frame 0 at the observed pose (docs: +-12)" % kw["orbit_deg"]
+            info["pivot"] = orbit_pivot_note(read, z)
         return finish_cam02(spec)
 
     if mv == "rack_focus":
@@ -882,14 +965,23 @@ def build_shot(read, name: str, dur_s: float, seed: int, info: dict):
     raise ValueError(f"unknown move {mv!r}")
 
 
-def make_s8_impl(shot_name: str, dur_s: float, seed: int, trace: dict):
+def make_s8_impl(shot_name: str, dur_s: float, seed: int, trace: dict, ledger: Optional[Ledger] = None):
     from buc.pipeline import spine as S
     tr = trace.setdefault("S8", {})
 
     def inner(inputs, ctx):
         info: dict = {}
         tr[shot_name] = info
-        shot = build_shot(inputs["read"], shot_name, dur_s, seed, info)
+        try:
+            shot = build_shot(inputs["read"], shot_name, dur_s, seed, info)
+        except Exception as e:  # noqa: BLE001
+            info["error"] = err_text(e, 400)
+            info["tb"] = scrub(traceback.format_exc())[-TB_TAIL:]
+            trace.setdefault("errors", {})[f"S8:{shot_name}"] = {"error": info["error"], "tb": info["tb"],
+                                                                 "units": [U_CAM], "shot": shot_name}
+            if ledger is not None:
+                ledger.add(U_CAM, "fallback", f"S8 raised {err_text(e, 240)}", shot_name)
+            raise
         return {"shot": shot}
 
     version = "0.1.0+" + hashlib.sha1(json.dumps([shot_name, dur_s, SHOT_DEFS[shot_name]], default=str,
@@ -1330,8 +1422,9 @@ def upload_outputs(paths: Sequence[Path], token: Optional[str], api=None, repo_i
             api = HfApi(token=token)
         except Exception as e:  # noqa: BLE001
             log({"warn": "hf api unavailable", "err": err_text(e, 200)})
-            return {"ok": 0, "failed": len(paths), "skipped": False}
+            return {"ok": 0, "failed": len(paths), "skipped": False, "uploaded": []}
     ok = failed = 0
+    uploaded: List[str] = []
     for p in paths:
         p = Path(p)
         if not p.exists():
@@ -1340,11 +1433,49 @@ def upload_outputs(paths: Sequence[Path], token: Optional[str], api=None, repo_i
             api.upload_file(path_or_fileobj=str(p), path_in_repo=f"{prefix}/{p.name}", repo_id=repo_id,
                             repo_type=HF_REPO_TYPE)
             ok += 1
+            uploaded.append(p.name)
             log({"uploaded": p.name})
         except Exception as e:  # noqa: BLE001
             failed += 1
             log({"warn": "upload failed", "file": p.name, "err": err_text(e, 200)})
-    return {"ok": ok, "failed": failed, "skipped": False}
+    return {"ok": ok, "failed": failed, "skipped": False, "uploaded": uploaded}
+
+
+class Uploader:
+    """Incremental vault upload: every finished mp4 goes up right away together with a fresh stages_report.json, so a
+    killed run (OOM, runner restart, hard stop) still leaves the finished videos and the report in the vault.
+    Cumulative ok / failed counts end up in ``report["upload"]``."""
+
+    def __init__(self, token: Optional[str], api=None, enabled: bool = True) -> None:
+        self.token, self.api, self.enabled = token, api, enabled
+        self.ok = self.failed = 0
+        self.done: List[str] = []
+        self.skipped = False
+        self._tried = False
+
+    def _api(self):
+        if self.api is None and not self._tried and self.token:
+            self._tried = True
+            try:
+                from huggingface_hub import HfApi
+                self.api = HfApi(token=self.token)
+            except Exception as e:  # noqa: BLE001
+                log({"warn": "hf api unavailable", "err": err_text(e, 200)})
+        return self.api
+
+    def push(self, paths: Sequence[Path]) -> dict:
+        if not self.enabled:
+            return {"ok": 0, "failed": 0, "skipped": True, "uploaded": []}
+        r = upload_outputs(paths, self.token, api=self._api())
+        self.skipped = bool(r.get("skipped"))
+        self.ok += r["ok"]
+        self.failed += r["failed"]
+        self.done += r.get("uploaded", [])
+        return r
+
+    def stats(self) -> dict:
+        return {"ok": self.ok, "failed": self.failed, "skipped": self.skipped or not self.enabled,
+                "files": sorted(set(self.done))}
 
 
 def safe_out_dir(root: Path) -> Path:
@@ -1403,6 +1534,15 @@ def run_skeleton(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
 # ---------------------------------------------------------------------------------------------------------------
 # mode B: scaffold
 # ---------------------------------------------------------------------------------------------------------------
+def copy_trace(rec: dict, trace: dict) -> None:
+    """Copy what the real stages said into the report - also when they fell back (message + traceback tail)."""
+    rec["world_build"] = list(trace.get("S2", []))
+    if trace.get("errors"):
+        rec["stage_errors"] = {k: dict(v) for k, v in trace["errors"].items()}
+    if "S-1" in trace:
+        rec.setdefault("read_summary", trace["S-1"])
+
+
 def build_scaffold_registry(image_hw, *, disparity_fn, teacher: Optional[TeacherHandle], cfg: dict, trace: dict,
                             ledger: Ledger):
     from buc.pipeline import spine as S
@@ -1417,7 +1557,9 @@ def build_scaffold_registry(image_hw, *, disparity_fn, teacher: Optional[Teacher
 
 def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledger, deadline: Deadline,
                  thumbs: Dict[str, list], *, shots: Sequence[str], workers: int, dur_scale: float,
-                 disparity_fn: Callable, teacher: Optional[TeacherHandle], cfg: dict) -> List[Path]:
+                 disparity_fn: Callable, teacher: Optional[TeacherHandle], cfg: dict,
+                 on_output: Optional[Callable[[Path], None]] = None) -> List[Path]:
+    """``on_output(path)`` runs right after each shot's mp4 is finished and the report refreshed (incremental upload)."""
     from buc.pipeline import spine as S
     rec = report["scaffold"]
     rec["status"] = "running"
@@ -1450,7 +1592,7 @@ def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
         dur = max(4.0 / FPS, round(d["dur"] * dur_scale * FPS) / FPS)
         srec.update({"status": "running", "doc": d["doc"], "move_requested": d["move"], "dur_s": dur})
         try:
-            reg.register(make_s8_impl(name, dur, 0, trace), replace=True)
+            reg.register(make_s8_impl(name, dur, 0, trace, ledger), replace=True)
             n = int(round(dur * FPS)) + 1
             res = spine.run(img, seed=0, until="S8.5", params={"S8": {"n_frames": n, "fps": float(FPS)}})
             stages = stage_rows(res, first_run)
@@ -1460,13 +1602,13 @@ def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
             srec["stages"] = stages
             srec["spine_root"] = res.root
             s8 = stages.get("S8", {})
-            ledger.add(U_CAM, "real" if s8.get("kind") == "real" else "fallback", s8.get("fallback") or "", name)
+            if not (s8.get("kind") != "real" and f"S8:{name}" in trace.get("errors", {})):     # impl already ledgered it
+                ledger.add(U_CAM, "real" if s8.get("kind") == "real" else "fallback", s8.get("fallback") or "", name)
             ledger.add(U_POLISH, "stub_only", "identity_polish (PRD-03 stub; no real S8.5 exists)", name)
             srec["camera"] = dict(trace.get("S8", {}).get(name, {}))
             read, world, shot = res.artifacts["read"], res.artifacts["world"], res.artifacts["shot"]
             if "read_summary" not in rec:
                 rec["read_summary"] = trace.get("S-1") or summarize_read(read)
-                rec["world_build"] = trace.get("S2", [])
             depth_ok = rec["read_summary"].get("depth_source") == "mrh"
             label = SCAFFOLD_LABEL if depth_ok else SCAFFOLD_LABEL_NODEPTH
             lens = None
@@ -1486,8 +1628,13 @@ def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
                 row = stages.get(stg, {})
                 if row.get("kind") == "stub" and stg not in first_run_ledgered:
                     first_run_ledgered.add(stg)
+                    err = trace.get("errors", {}).get(stg)
+                    done_units = set(err["units"]) if err else set()          # the impl wrapper ledgered these
                     for u in units:
-                        ledger.add(u, "fallback", f"whole {stg} fell back to the PRD-03 stub: {row.get('fallback')}", name)
+                        if u in done_units:
+                            continue
+                        why = f"; {err['error']}" if err else ""
+                        ledger.add(u, "fallback", f"whole {stg} fell back to the PRD-03 stub: {row.get('fallback')}{why}", name)
             ledger.add(U_ENC, "real" if st["encoder"] == "rdr06" else "fallback", st["encoder"], name)
             if lens is not None:
                 dof_err = [x for x in st["notes"] if x.startswith(("dof fallback", "base render"))]
@@ -1509,8 +1656,12 @@ def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
             log({"ev": "shot_failed", "shot": name, "err": err_text(e, 180)})
         finally:
             gc.collect()
+        copy_trace(rec, trace)
         report["units"] = ledger.summary()
         atomic_write_json(out_dir / "stages_report.json", report)
+        if on_output is not None and produced and srec.get("status") == "ok" and produced[-1].name == f"scaffold_{name}.mp4":
+            with contextlib.suppress(Exception):
+                on_output(produced[-1])
     ok = [n for n, s in rec["shots"].items() if s.get("status") == "ok"]
     rec["status"] = "ok" if len(ok) == len(shots) else ("partial" if ok else "failed")
     rec["temp_depth_reader_calls"] = reader.calls
