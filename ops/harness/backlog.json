@@ -2347,9 +2347,14 @@
    "slice": false,
    "rank": 61,
    "why": "파라미터 0 잔차 합. 메뉴 등급의 근거",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791688368,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RD-12",
@@ -2467,9 +2472,14 @@
    "slice": false,
    "rank": 65,
    "why": "실제 얼굴 재현율 미측정(F-M8)",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791688368,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RD-16",
