@@ -576,7 +576,7 @@ def test_losses_and_rank_loss():
     assert float(ok) == 0.0 and float(bad) > 0.5
     out = {"d": dt.clone().requires_grad_(True), "map": torch.rand(4, 4, 4)}
     l = M.compute_loss(out, dt, torch.rand(4, 4, 4), 0.5, 0.1)
-    assert all(torch.isfinite(v) for v in l.values()) and float(l["l_mse"]) < 1e-9
+    assert all(torch.isfinite(v) for v in l.values()) and float(l["l_mse"].detach()) < 1e-9
     l["loss"].backward()
     assert M.lr_at(0, 1e-3, 500) < M.lr_at(499, 1e-3, 500) <= 1e-3
     assert M.lr_at(20000, 1e-3, 500, 20000) < 2e-5
@@ -684,7 +684,7 @@ def test_train_loss_decreases_on_learnable_labels(tmp_path):
 
     def spy(*a, **k):
         r = orig(*a, **k)
-        losses.append(float(r["loss"]))
+        losses.append(float(r["loss"].detach()))
         return r
 
     M.compute_loss = spy
@@ -702,9 +702,11 @@ def test_calibrate_scale_matches_teacher_level():
     st = M.TLPIPSStudent()
     x, y = torch.randn(6, 3, CROP, CROP), torch.randn(6, 3, CROP, CROP) * 0.5
     d_t = torch.full((6,), 0.37)
-    before = float(torch.log(st(x, y)["d"] + M.LOG_EPS).mean())
+    with torch.no_grad():
+        before = float(torch.log(st(x, y)["d"] + M.LOG_EPS).mean())
     k = M.calibrate_scale(st, [(x, y, d_t)])
-    after = st(x, y)["d"]
+    with torch.no_grad():
+        after = st(x, y)["d"]
     assert k > 1.0                                                       # fresh weights start far below the teacher
     assert float(torch.log(after + M.LOG_EPS).mean()) == pytest.approx(float(torch.log(d_t[0] + M.LOG_EPS)), abs=0.1)
     assert float(torch.log(after + M.LOG_EPS).mean()) > before
