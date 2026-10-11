@@ -36,7 +36,9 @@ if [ -n "$WANT" ] && [ -n "${CONTAINER_ID:-}" ] && [ "$WANT" != "$CONTAINER_ID" 
 fi
 ( while true; do [ "$(date +%s)" -gt "$HARD_STOP" ] && self_stop hard_deadline; sleep 120; done ) &
 
-pip install -q --no-cache-dir opencv-python-headless imageio imageio-ffmpeg 2>&1 | tail -1
+# scipy: buc.camera.rigs(CAM-01)가 쓴다. 없으면 M13 데이터 생성이 전부 실패한다(D1 01:25Z 실제 발생).
+pip install -q --no-cache-dir opencv-python-headless imageio imageio-ffmpeg scipy 2>&1 | tail -1
+python -c "import scipy, cv2, imageio; print('D1_DEPS ok scipy', scipy.__version__)" || echo "D1_DEPS fail"
 # 레포 코드(buc.camera.* 등): 브랜치 tarball을 repo/ 에 푼다.
 python - "$BRANCH" "$N1_ROOT/repo" <<'PY' && echo "D1_REPO ok" || echo "D1_REPO fail"
 import io, sys, tarfile, urllib.request, shutil, os
@@ -54,13 +56,14 @@ for f in day1/m13_rigid.py day1/m2_latent_lift.py night1/tae_train.py; do
   fetch "ops/gpu/$f" > "code/$(basename "$f")" && [ -s "code/$(basename "$f")" ] && echo "D1_FETCH ok $f" || echo "D1_FETCH_FAIL $f"
 done
 
-keep() {  # keep NAME CMD... : 마감 5분 전까지 죽으면 다시 띄운다(최대 15회).
+keep() {  # keep NAME CMD... : 마감 5분 전까지 죽으면 다시 띄운다(최대 15회). 성공 판정은 이번 실행의 로그만 본다.
   local name=$1; shift; local n=0
   while [ "$(date +%s)" -lt $((N1_DEADLINE - 300)) ] && [ $n -lt 15 ]; do
-    "$@" 2>&1 | tee -a "logs/$name.log" | marks
+    "$@" 2>&1 | tee "logs/$name.run.log" | marks
+    cat "logs/$name.run.log" >> "logs/$name.log"
     [ -f "$N1_ROOT/day1/$name/DONE.json" ] && break
-    grep -q "D1_M13_DONE" "logs/$name.log" 2>/dev/null && [ "$name" = m13 ] && break
-    n=$((n + 1)); echo "D1_RESTART $name n=$n $(date -u +%FT%TZ)"; sleep 30
+    if grep -qE "_DONE" "logs/$name.run.log" && ! grep -qE '"fatal"' "logs/$name.run.log"; then break; fi
+    n=$((n + 1)); echo "D1_RESTART $name n=$n $(date -u +%FT%TZ)"; sleep 60
   done
 }
 keep m13 python -u code/m13_rigid.py --root "$N1_ROOT" --procs 8 &
@@ -80,7 +83,22 @@ P2=$!
   done
 ) &
 P6=$!
+
+# 원격 잡 슬롯: 레포의 ops/gpu/day1/extra.sh 가 바뀌면 받아서 실행한다(재부팅 없이 잡 추가·수리). 본 잡이 다 끝나면 멈춘다.
+(
+  LAST=""
+  while [ "$(date +%s)" -lt $((N1_DEADLINE - 300)) ]; do
+    if fetch ops/gpu/day1/extra.sh > /tmp/extra.sh 2>/dev/null && [ -s /tmp/extra.sh ] && ! grep -q "404: Not Found" /tmp/extra.sh; then
+      H=$(md5sum /tmp/extra.sh | cut -d' ' -f1)
+      if [ "$H" != "$LAST" ]; then LAST=$H; echo "D1_EXTRA_RUN $H"; bash /tmp/extra.sh 2>&1 | tee -a logs/extra.log | marks; echo "D1_EXTRA_END $H"; fi
+    fi
+    [ -f "$N1_ROOT/.main_done" ] && break
+    sleep 180
+  done
+) &
+PX=$!
 wait $P13; wait $P2; wait $P6
+touch "$N1_ROOT/.main_done"; wait $PX
 
 python - <<'PY' 2>&1 | marks
 import os, glob
