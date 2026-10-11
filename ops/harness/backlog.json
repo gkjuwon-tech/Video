@@ -2034,9 +2034,14 @@
    "slice": false,
    "rank": 53,
    "why": "비네팅·그레인 문신의 해독제(레버 4)",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": [],
+   "log": [
+    {
+     "ts": 1791682815,
+     "event": "claimed"
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -2129,9 +2134,14 @@
    "slice": false,
    "rank": 56,
    "why": "명제 L2(선형 오귀속 상쇄)에 의존",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791682815,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "RD-07",
