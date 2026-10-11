@@ -1560,12 +1560,18 @@
    "slice": false,
    "rank": 40,
    "why": "근사식으로 충분",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791676993,
      "event": "claimed"
+    },
+    {
+     "ts": 1791678460,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: 계약서의 요청 1, 2는 범위 밖이라 그대로 남긴다. 요청 1은 apply_catseye(단일 층)를 깊이 층 DOF와 합치는 방식을 LNS-06/08 이 정하는 것이다. 요청 2는 apply_optics_frames 의 고스트·별이 표시값 Frames 에서는 약하므로 선형 float AOV 가 필요하다는 것이다. 이번 구현에서 새로 요청할 것은 없다. 의존성 추가도 없다(numpy, scipy, 기존 buc.core, buc.lens.dof, buc.lens.theta 만 사용)."
     }
    ]
   },
@@ -2762,12 +2768,18 @@
    "slice": true,
    "rank": 79,
    "why": "예측상 실제 출하 경로. 먼저 만들고 나머지가 이것을 이긴다",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791676993,
      "event": "claimed"
+    },
+    {
+     "ts": 1791678460,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": ""
     }
    ],
    "demo": "d15-yak"

@@ -1,0 +1,8 @@
+{
+ "tests/wld_08/test_wld08_api.py": "404f0d9c8ace7b19c1c152efe7d29dc207c727e35f63227e6e13aa44d099f626",
+ "tests/wld_08/test_wld08_fill.py": "fab0cc85b46c302c72aba11e0769269def1765fc4bb1acf8ee583b5bffb21493",
+ "tests/wld_08/test_wld08_gpu.py": "d6ba8a5818a5534eafcfe3f674bc2d21945272effcb6b40af09a4e3649ac2a13",
+ "tests/wld_08/test_wld08_sampler.py": "b724ddad9502f62435aa5e14f8d0bb8b6b1cd1805d48f547e5aa641f2550738d",
+ "tests/wld_08/test_wld08_seam.py": "fdc574d73e4010a418ad7bd269802545ec416ae6c3ebb5905b7f23b5fa3c1092",
+ "tests/wld_08/wld08_helpers.py": "e37040bc0e2d72636825e7f2c9ac34e38f93fa184ecf5d1af3864eb0253b0e59"
+}
