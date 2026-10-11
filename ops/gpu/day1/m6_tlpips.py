@@ -55,6 +55,7 @@ MARKER_LIMIT = 400
 REPO_ID = "sdsdsdsdsdsdsd123/buc-artifacts"
 REPO_TYPE = "model"
 REMOTE_DIR = "ckpt/day1/m6"
+DONE_FLAG = "DONE"            # written by the trainer once total_steps is reached and the final upload succeeded
 TAE_REMOTE = "ckpt/night1/tae_t/ckpt_best.pt"
 CORPUS_PREFIX = "corpus/night1/"
 ZIMAGE_ID = "Tongyi-MAI/Z-Image-Turbo"
@@ -176,12 +177,34 @@ def free_cuda_cache() -> None:
 
 
 def vram_gb() -> float:
+    """PEAK allocated GB (max_memory_allocated); see vram_reserved_gb() for what is held right now."""
     try:
         if torch.cuda.is_available():
             return round(torch.cuda.max_memory_allocated() / 2**30, 2)
     except Exception:  # noqa: BLE001
         pass
     return 0.0
+
+
+def vram_reserved_gb() -> float:
+    """CURRENT GB held by this process's caching allocator (what nvidia-smi shows, minus the context)."""
+    try:
+        if torch.cuda.is_available():
+            return round(torch.cuda.memory_reserved() / 2**30, 2)
+    except Exception:  # noqa: BLE001
+        pass
+    return 0.0
+
+
+def release_cuda() -> None:
+    """gc, hand cached blocks back to the driver and restart peak tracking (so later peaks are honest)."""
+    gc.collect()
+    free_cuda_cache()
+    try:
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def free_disk_gb(path: str) -> float:
@@ -869,6 +892,13 @@ class LabelJob:
             total = n_for(split, a.n_train, a.n_val, a.n_trip)
             out += [(split, c) for c in range(n_chunks(total, a.chunk))]
         return out
+
+    def pending(self) -> List[Tuple[str, int]]:
+        """Chunks whose label file is missing or invalid (empty = labelling is finished)."""
+        a = self.a
+        return [(split, c) for split, c in self.tasks()
+                if not labels_valid(labels_path(self.out, split, c), self.h,
+                                    len(chunk_ids(split, c, a.chunk, n_for(split, a.n_train, a.n_val, a.n_trip))))]
 
     def _stop_reason(self) -> Optional[str]:
         if self.stop.is_set():
@@ -1656,6 +1686,7 @@ class Trainer:
         self.upload_thread: Optional[threading.Thread] = None
         self.baselines: Optional[dict] = None
         self.last_loss = float("nan")
+        self.last_upload_ok: Optional[bool] = None
 
     def _stop_reason(self) -> Optional[str]:
         if self.stop.is_set():
@@ -1738,7 +1769,9 @@ class Trainer:
         return metrics
 
     def _upload_job(self, stage: str) -> None:
-        if upload_with_retry(self.uploader, stage, REMOTE_DIR, sleep=self.sleep):
+        ok = upload_with_retry(self.uploader, stage, REMOTE_DIR, sleep=self.sleep)
+        self.last_upload_ok = ok
+        if ok:
             log({"uploaded": REMOTE_DIR, "step": self.step})
 
     def _start_upload(self, final: bool) -> None:
@@ -1750,6 +1783,7 @@ class Trainer:
                 warn("upload_still_running_skip")
                 return
             th.join(timeout=self.a.final_upload_timeout_s)
+        self.last_upload_ok = None
         try:
             stage, _ = stage_upload(self.out)
         except Exception as e:  # noqa: BLE001
@@ -1764,6 +1798,31 @@ class Trainer:
             th.join(timeout=self.a.final_upload_timeout_s)
             if th.is_alive():
                 warn("final_upload_timeout")
+
+    def _done_path(self) -> str:
+        return os.path.join(self.out, DONE_FLAG)
+
+    def _already_done(self) -> Optional[dict]:
+        """Checkpoint at total_steps AND a DONE flag from the same config: nothing left to do on a restart."""
+        try:
+            with open(self._done_path(), "r", encoding="utf-8") as f:
+                flag = json.load(f)
+            if int(flag.get("cfg_hash", -1)) != self.h or int(flag.get("step", -1)) < self.a.total_steps:
+                return None
+            ck = load_ckpt(os.path.join(self.out, "ckpt_last.pt"))
+            if ck is None or int(ck["step"]) < self.a.total_steps or ck.get("cfg_hash") != self.h:
+                return None
+            return {"status": "already_done", "step": int(ck["step"])}
+        except (OSError, ValueError, TypeError, KeyError):
+            return None
+
+    def _write_done(self) -> None:
+        try:
+            body = json.dumps({"step": self.step, "cfg_hash": self.h, "total_steps": self.a.total_steps,
+                               "best_spearman": None if self.best == -math.inf else round(self.best, 5)})
+            _atomic(self._done_path(), lambda f: f.write(body.encode()))
+        except Exception as e:  # noqa: BLE001
+            warn("done_flag_failed", err=err_str(e))
 
     def _calibrate(self, loader, n: int = 8) -> float:
         batches = []
@@ -1843,6 +1902,10 @@ class Trainer:
 
     def run(self) -> dict:
         a = self.a
+        done = self._already_done()
+        if done is not None:
+            log(done, marker=MARK + "_DONE")
+            return done
         train = SplitData(self.out, "train", self.h, a.crop)
         val = SplitData(self.out, "val", self.h, a.crop)
         trip = SplitData(self.out, "trip", self.h, a.crop)
@@ -1924,6 +1987,10 @@ class Trainer:
             self._log_progress(self.now())
         self.checkpoint_and_eval(val, trip, final=True)
         self._finish_upload()
+        upload_done = self.uploader is None or (self.last_upload_ok is True and
+                                                not (self.upload_thread is not None and self.upload_thread.is_alive()))
+        if reason == "total_steps" and upload_done:
+            self._write_done()
         summary = {"status": reason, "start_step": start_step, "step": self.step,
                    "best_spearman": None if self.best == -math.inf else round(self.best, 4),
                    "params": n_params, "skipped": self.skipped}
@@ -2042,6 +2109,7 @@ def main(argv: Optional[Sequence[str]] = None, deps: Optional[dict] = None) -> i
         if rc:
             return rc
     if args.phase in ("all", "train") and not stop.is_set():
+        release_cuda()                                    # nothing of step B may linger into step C
         if args.mem_gb > 0 and torch.cuda.is_available():
             try:
                 frac = min(1.0, args.mem_gb * 2**30 / torch.cuda.get_device_properties(0).total_memory)
@@ -2087,6 +2155,13 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
     else:
         write_manifest(out, man)
 
+    probe = LabelJob(args, out, root, train_pool, val_pool, None)
+    pending = probe.pending()
+    del probe
+    if not pending:                                   # restart after a finished run: no teacher, no pool, no upload
+        log({"phase": "label_done", "reason": "complete", "pending": 0, "teacher": "not_loaded"})
+        return 0
+
     label_deadline = None
     if deadline is not None:
         label_deadline = deadline - args.finish_margin_s
@@ -2101,6 +2176,8 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
         pool = make_pool(args.workers, args.mp_context)
         own_pool = pool is not None
     labeler = None
+    job = None
+    gpu_fns: Dict[str, Callable] = {}
     try:
         labeler = deps.get("labeler")
         gpu_fns = dict(deps.get("gpu_fns") or {})
@@ -2133,15 +2210,25 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
                 pool.terminate()
             except Exception:  # noqa: BLE001
                 pass
-        if labeler is not None:                      # Z-Image comes down before the training phase starts
+        # Z-Image really comes down here: every reference (job.labeler, the bound vae_roundtrip in gpu_fns,
+        # the TAE closure, the labeler's own transformer/vae) is dropped BEFORE gc + empty_cache.
+        job = None
+        gpu_fns.clear()
+        had_teacher = labeler is not None
+        if had_teacher:
             try:
                 labeler.close()
             except Exception:  # noqa: BLE001
                 pass
+            for attr in ("transformer", "vae", "cap"):
+                try:
+                    setattr(labeler, attr, None)
+                except Exception:  # noqa: BLE001
+                    pass
             labeler = None
-            gc.collect()
-            free_cuda_cache()
-            log({"teacher": "released", "vram_GB": vram_gb()})
+        release_cuda()
+        if had_teacher:
+            log({"teacher": "released", "vram_GB": vram_gb(), "reserved_GB": vram_reserved_gb()})
 
 
 if __name__ == "__main__":

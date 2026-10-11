@@ -10,6 +10,9 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 # 1) 도구
 command -v git >/dev/null || { apt-get update -qq >/dev/null && apt-get install -y -qq git >/dev/null; }
+# Triton이 커널을 컴파일하려면 C 컴파일러가 필요하다(pytorch runtime 이미지에는 gcc가 없다).
+command -v gcc >/dev/null || { apt-get update -qq >/dev/null; DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential >/dev/null; }
+export CC="$(command -v gcc)"; echo "C_CC ${CC:-missing}"
 python -m pip install -q --no-cache-dir uv huggingface_hub hf_transfer vastai >/dev/null 2>&1
 export HF_HUB_ENABLE_HF_TRANSFER=1 PATH="$HOME/.local/bin:$PATH"
 

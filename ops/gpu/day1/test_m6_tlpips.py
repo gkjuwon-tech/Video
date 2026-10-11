@@ -903,6 +903,118 @@ def test_main_teacher_load_failure_reported(tmp_path, monkeypatch):
     assert rc == 2 and "teacher_load_failed" in text and SECRET not in text
 
 
+class _Weight:
+    """Stands in for the big GPU modules: only used to see whether anything still references them."""
+
+
+class HeavyFakeLabeler(FakeLabeler):
+    def __init__(self):
+        super().__init__()
+        self.transformer, self.vae = _Weight(), _Weight()
+
+
+def test_teacher_is_really_released_before_training(tmp_path, monkeypatch):
+    import gc
+    import weakref
+    make_corpus(str(tmp_path), n=12)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    lab = HeavyFakeLabeler()
+    refs = [weakref.ref(lab.transformer), weakref.ref(lab.vae)]
+    tae_refs = []
+
+    def fake_load_tae(path, device):
+        m = _Weight()
+        tae_refs.append(weakref.ref(m))
+        return m
+
+    monkeypatch.setattr(M, "load_tae", fake_load_tae)
+    monkeypatch.setattr(M, "make_tae_roundtrip", lambda tae, dev, **k: (lambda x, _m=tae: 255 - x))
+    seen = {}
+    real_release = M.release_cuda
+
+    def spy():
+        real_release()
+        seen.setdefault("n", 0)
+        seen["n"] += 1
+        if "at_first" not in seen:
+            gc.collect()
+            seen["at_first"] = [r() is None for r in refs] + [r() is None for r in tae_refs]
+
+    monkeypatch.setattr(M, "release_cuda", spy)
+    rc, text, _ = run_main(tmp_path, deps={"labeler": lab})
+    assert rc == 0, text
+    assert len(tae_refs) == 1
+    assert seen["at_first"] == [True, True, True]                  # dead at the first release (inside the finally)
+    assert seen["n"] >= 2                                          # and once more right before the Trainer
+    assert lab.transformer is None and lab.vae is None and lab.closed
+    assert '"reserved_GB"' in text and '"teacher":"released"' in text
+    assert all(len(l) <= 400 for l in text.splitlines())
+
+
+def test_rerun_with_complete_labels_loads_nothing_and_uploads_no_labels(tmp_path, monkeypatch):
+    make_corpus(str(tmp_path), n=12)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    uploads = []
+
+    def uploader(folder, remote, allow=None):
+        uploads.append(remote)
+
+    rc, text, out = run_main(tmp_path, ["--phase", "label"], deps={"labeler": FakeLabeler(), "uploader": uploader,
+                                                                     "gpu_fns": {"tae": lambda x: x}})
+    assert rc == 0 and uploads == [M.REMOTE_DIR + "/labels"]
+    uploads.clear()
+    loads = []
+    monkeypatch.setattr(M, "load_teacher", lambda *a, **k: loads.append(1) or FakeLabeler())
+    made_pool = []
+    monkeypatch.setattr(M, "make_pool", lambda *a, **k: made_pool.append(1))
+    rc, text, _ = run_main(tmp_path, ["--phase", "label"], deps={"uploader": uploader})
+    assert rc == 0 and not loads and not made_pool and not uploads
+    assert '"reason":"complete"' in text and "teacher\":\"released" not in text and '"teacher":"released"' not in text
+    # one damaged label file brings the teacher (and the upload) back
+    victim = os.path.join(out, "labels_val_00000.npz")
+    os.remove(victim)
+    rc, text, _ = run_main(tmp_path, ["--phase", "label"],
+                           deps={"labeler": FakeLabeler(), "uploader": uploader, "gpu_fns": {"tae": lambda x: x}})
+    assert rc == 0 and os.path.exists(victim) and uploads == [M.REMOTE_DIR + "/labels"]
+
+
+def test_finished_training_restart_returns_immediately(tmp_path, monkeypatch):
+    make_corpus(str(tmp_path), n=12)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    extra = ["--total-steps", "4", "--max-steps", "100"]
+    rc, text, out = run_main(tmp_path, extra, deps={"labeler": FakeLabeler(), "gpu_fns": {"tae": lambda x: x}})
+    assert rc == 0 and M.load_ckpt(os.path.join(out, "ckpt_last.pt"))["step"] == 4
+    assert os.path.exists(os.path.join(out, M.DONE_FLAG))
+    ck_t = os.path.getmtime(os.path.join(out, "ckpt_last.pt"))
+    n_metrics = len(open(os.path.join(out, "metrics.jsonl")).read().splitlines())
+    loads = []
+    monkeypatch.setattr(M, "load_teacher", lambda *a, **k: loads.append(1))
+    uploads = []
+    rc, text2, _ = run_main(tmp_path, extra, deps={"uploader": lambda *a, **k: uploads.append(a)})
+    assert rc == 0 and not loads and not uploads and "already_done" in text2 and '"phase":"train_data"' not in text2
+    assert os.path.getmtime(os.path.join(out, "ckpt_last.pt")) == ck_t
+    assert len(open(os.path.join(out, "metrics.jsonl")).read().splitlines()) == n_metrics
+    # a larger step budget (or another config) is NOT treated as done
+    rc, text3, _ = run_main(tmp_path, ["--total-steps", "6", "--max-steps", "100"], deps={})
+    assert rc == 0 and "already_done" not in text3 and M.load_ckpt(os.path.join(out, "ckpt_last.pt"))["step"] == 6
+
+
+def test_done_flag_needs_a_successful_final_upload(tmp_path, monkeypatch):
+    make_corpus(str(tmp_path), n=12)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setattr(M.time, "sleep", lambda s: None)
+
+    def bad_uploader(folder, remote, allow=None):
+        if remote == M.REMOTE_DIR:
+            raise OSError("network down")
+
+    extra = ["--total-steps", "3", "--max-steps", "100"]
+    rc, text, out = run_main(tmp_path, extra, deps={"labeler": FakeLabeler(), "uploader": bad_uploader,
+                                                    "sleep": lambda s: None, "gpu_fns": {"tae": lambda x: x}})
+    assert rc == 0 and "upload_failed" in text
+    assert not os.path.exists(os.path.join(out, M.DONE_FLAG))      # a restart gets to retry the upload
+
+
 # ---------------------------------------------------------------- misc helpers
 
 def test_markers_are_short_and_scrubbed(monkeypatch):
