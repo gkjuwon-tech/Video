@@ -22,6 +22,7 @@ python -c "import transformers; print('transformers', transformers.__version__)"
 # 2차 진단(02:10Z): WLD-08 교사 NaN 문맥, pipe 진행, M6 시작 여부
 grep -nE 'NaN|TeacherNumeric|WLD-08|load_teacher|te_device|caption' logs/pipe.log 2>/dev/null | tail -n 25 | x pipenan
 tail -n 6 logs/pipe.log 2>/dev/null | x pipetail
+tail -n 4 logs/pipe2.log 2>/dev/null | x pipe2tail
 tail -n 5 logs/m6.run.log 2>/dev/null | x m6tail
 
 # --- 파이프라인 첫 야크 ---
@@ -53,5 +54,20 @@ PY
     sleep 2; tail -n +1 -F "$1/logs/pipe.log" 2>/dev/null | grep --line-buffered -E "^D1_PIPE|Traceback" | awk "{ print substr(\$0, 1, 400); fflush() }" > "$2"
   ' _ "$R" "$OUT" </dev/null >/dev/null 2>&1 &
   echo "D1_X pipe launched out=$OUT"
+fi
+# --- 02:12Z: M6가 GPU 메모리 부족(파이프가 실패한 Z-Image 19.8GB를 계속 쥐고 있음) → 파이프를 멈추고 남은 S5·S6만 교사 없이 다시 ---
+PIPE_RUN2=2
+if [ ! -f "$R/.pipe_launched_$PIPE_RUN2" ]; then
+  touch "$R/.pipe_launched_$PIPE_RUN2"
+  for p in $(ps -eo pid,args | grep -E '[p]ython -u .*repo_pipe/ops/gpu/day1/pipe_yak.py' | awk '{print $1}'); do kill -TERM "$p" 2>/dev/null; done
+  sleep 20
+  for p in $(ps -eo pid,args | grep -E '[p]ython -u .*repo_pipe/ops/gpu/day1/pipe_yak.py' | awk '{print $1}'); do kill -KILL "$p" 2>/dev/null; done
+  sleep 5
+  nvidia-smi --query-gpu=memory.used --format=csv,noheader | x gpu_after_kill
+  setsid nohup bash -c '
+    cd "$1" && PYTHONPATH="$1/repo_pipe:$1/code" python -u "$1/repo_pipe/ops/gpu/day1/pipe_yak.py" --root "$1" --modes scaffold --shots S5,S6 --no-teacher > "$1/logs/pipe2.log" 2>&1
+    echo "D1_PIPE_EXIT rc=$? $(date -u +%FT%TZ)" >> "$1/logs/pipe2.log"
+  ' _ "$R" </dev/null >/dev/null 2>&1 &
+  echo "D1_X pipe2 launched S5,S6 --no-teacher"
 fi
 echo "D1_X end $(date -u +%FT%TZ)"
