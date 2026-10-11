@@ -74,6 +74,7 @@ FINISH_MARGIN_S = 600.0           # spec: final save/eval/upload 600 s before th
 TRAIN_RESERVE_S = 5400.0          # labelling stops this long before the deadline so C always gets time
 LOG_EPS = 1e-4
 MAX_DEADLINE_AHEAD = 48 * 3600.0
+WORKERS_CAP = 8                   # M13 (Pool cores-2), M2 and a render job share the 16 vCPUs
 ID_OFFSET = {"train": 0, "val": 10_000_000, "trip": 20_000_000}
 GPU_OPS = ("tae", "vae")
 CPU_OPS = ("jpeg", "blur", "noise", "resample", "unsharp", "color", "geom")
@@ -1102,8 +1103,15 @@ def calibrate_scale(model: TLPIPSStudent, batches: Sequence[Tuple[torch.Tensor, 
     k = math.exp(max(-12.0, min(12.0, shift)))
     if not math.isfinite(k):
         return 1.0
-    for p in model.lin:
-        p.copy_(torch.log(torch.expm1(F.softplus(p) * k)))
+    new = []
+    for p in model.lin:                      # stable softplus^-1: log(expm1(v)) overflows once v > ~88 (fp32)
+        v = (F.softplus(p) * k).clamp_min(1e-30)
+        new.append(torch.where(v > 20.0, v, torch.log(torch.expm1(v.clamp(max=20.0)))))
+    if not all(bool(torch.isfinite(t).all()) for t in new):
+        warn("calibrate_nonfinite", k=round(k, 3))
+        return 1.0                           # leave the weights untouched
+    for p, t in zip(model.lin, new):
+        p.copy_(t)
     return k
 
 
@@ -2002,6 +2010,16 @@ class Trainer:
 # CLI
 # ---------------------------------------------------------------------------
 
+def default_workers(cap: int = WORKERS_CAP) -> int:
+    """Pool size for a shared container: the cores this process may really use (``os.cpu_count()`` reports the
+    HOST on vast.ai), minus two for the loader / main thread, capped so M13 + M2 + a render job still fit."""
+    try:
+        n = len(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        n = os.cpu_count() or 4
+    return max(1, min(int(cap), n - 2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Day1 job 3: M6 T-LPIPS-S")
     ap.add_argument("--root", default=os.environ.get("N1_ROOT", "/workspace/night1"))
@@ -2018,7 +2036,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--n-val", type=int, default=N_VAL)
     ap.add_argument("--n-trip", type=int, default=N_TRIP)
     ap.add_argument("--gpu-ops", default=",".join(GPU_OPS), help="GPU round-trip distortions to include (tae,vae)")
-    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    ap.add_argument("--workers", type=int, default=default_workers(),
+                    help="CPU pool size (default: min(8, usable cores - 2); M13, M2 and a render job share the box)")
     ap.add_argument("--mp-context", choices=["forkserver", "spawn", "fork"], default="forkserver")
     ap.add_argument("--sigma", type=float, default=SIGMA)
     ap.add_argument("--blocks", default=",".join(str(b) for b in BLOCKS))
