@@ -590,7 +590,7 @@ def test_spearman_afc_and_mapcorr():
     dt = np.array([[0.1, 0.5], [0.4, 0.2], [0.30, 0.31]])
     ds = np.array([[0.2, 0.9], [0.3, 0.4], [0.9, 0.1]])
     agree, clear = M.afc_agreement(ds, dt)
-    assert agree == pytest.approx(2 / 3) and clear == pytest.approx(0.5)
+    assert agree == pytest.approx(1 / 3) and clear == pytest.approx(0.5)
     m = rs.rand(5, 4, 4)
     assert M.map_corr(m, m) == pytest.approx(1.0)
 

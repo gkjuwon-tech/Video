@@ -51,6 +51,7 @@ import torch.nn.functional as F
 from PIL import Image, ImageDraw
 
 MARK = "D1_M2"
+DONE_FILE = "DONE.json"
 MARKER_LIMIT = 400
 REPO_ID = "sdsdsdsdsdsdsd123/buc-artifacts"
 REPO_TYPE = "model"
@@ -458,8 +459,39 @@ def encode_normalized(vae, x: torch.Tensor) -> torch.Tensor:
         return ((z.float() - shift) * scale).clone()
 
 
+TILE_SAMPLE_PX = 512      # diffusers' default tile is 1024 px (128 latent): a 128x128 latent never tiles
+TILE_LATENT = 64          # so tile at 64 latent / 512 px; 128x128 latents then really split into tiles
+
+
+def vae_tiled(vae) -> bool:
+    """True once this module switched the teacher VAE to (small-tile) tiled decoding."""
+    return bool(getattr(vae, "_m2_tiled", False))
+
+
+def enable_small_tiles(vae) -> bool:
+    """Tiled decode with 64-latent tiles (idempotent). False when the VAE cannot tile.
+
+    The Z-Image VAE has ``sample_size=1024`` -> ``tile_latent_min_size=128`` and diffusers only tiles a
+    latent whose side is *greater* than that, so the stock ``enable_tiling()`` leaves every 1024 px image
+    (128x128 latent) untiled and saves no memory. Shrinking the tile makes the retry actually help.
+    """
+    if vae_tiled(vae):
+        return True
+    enable = getattr(vae, "enable_tiling", None)
+    if enable is None:
+        return False
+    for name, val in (("tile_sample_min_size", TILE_SAMPLE_PX), ("tile_latent_min_size", TILE_LATENT),
+                      ("tile_sample_min_height", TILE_SAMPLE_PX), ("tile_sample_min_width", TILE_SAMPLE_PX),
+                      ("tile_latent_min_height", TILE_LATENT), ("tile_latent_min_width", TILE_LATENT)):
+        if hasattr(vae, name):
+            setattr(vae, name, val)
+    enable()
+    setattr(vae, "_m2_tiled", True)
+    return True
+
+
 def decode_latents(vae, z_norm: torch.Tensor) -> torch.Tensor:
-    """Normalised latent (B,C,h,w) -> image (B,3,8h,8w) float32 in [-1,1]; tiled retry on OOM."""
+    """Normalised latent (B,C,h,w) -> image (B,3,8h,8w) float32 in [-1,1]; small-tile retry on OOM."""
     scale, shift = vae_consts(vae)
     device, dtype = _vae_place(vae)
 
@@ -476,11 +508,22 @@ def decode_latents(vae, z_norm: torch.Tensor) -> torch.Tensor:
         if not is_oom(e):
             raise
         free_cuda_cache()
-        enable = getattr(vae, "enable_tiling", None)
-        if enable is None:
+        if not enable_small_tiles(vae):
             raise
-        enable()
         return run()
+
+
+class VaeDecode:
+    """``decode_fn`` for :func:`evaluate`; exposes whether the VAE is tiled so an item is decoded uniformly."""
+
+    def __init__(self, vae):
+        self.vae = vae
+
+    def __call__(self, z: torch.Tensor) -> torch.Tensor:
+        return decode_latents(self.vae, z)
+
+    def tiled(self) -> bool:
+        return vae_tiled(self.vae)
 
 
 def load_u8(root: str, i: int) -> np.ndarray:
@@ -812,6 +855,19 @@ def summarize_side(acc: dict) -> Optional[dict]:
     return out
 
 
+def _decode_item(decode_fn, tgt, pred, base1, base2):
+    """Decode (truth, prediction, baseline 1, baseline 2) the same way. If an OOM flips the VAE to tiled
+    decoding part-way through, all four are redone tiled so the PSNR compares like with like."""
+    tiled = getattr(decode_fn, "tiled", None)
+    was = bool(tiled()) if callable(tiled) else None
+    ys = tuple(decode_fn(t) for t in (tgt, pred, base1, base2))
+    if was is False and tiled():
+        del ys
+        free_cuda_cache()
+        ys = tuple(decode_fn(t) for t in (tgt, pred, base1, base2))
+    return ys
+
+
 @torch.no_grad()
 def evaluate(down: nn.Module, up: nn.Module, evalset: EvalSet, device,
              decode_fn: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
@@ -852,8 +908,7 @@ def evaluate(down: nn.Module, up: nn.Module, evalset: EvalSet, device,
                     a["b1"].append(float(F.mse_loss(bases[0], tgt)))
                     a["b2"].append(float(F.mse_loss(bases[1], tgt)))
                     if k in dec_pos and now() - t0 <= budget_s:
-                        g = decode_fn(tgt)
-                        yo, yb1, yb2 = decode_fn(pred), decode_fn(bases[0]), decode_fn(bases[1])
+                        g, yo, yb1, yb2 = _decode_item(decode_fn, tgt, pred, bases[0], bases[1])
                         a["psnr"].append(psnr(yo, g))
                         a["psnr_b1"].append(psnr(yb1, g))
                         a["psnr_b2"].append(psnr(yb2, g))
@@ -1336,22 +1391,28 @@ class Trainer:
                 self.best[s] = min(self.best[s], float(ck[s].get("lat_mse", math.inf)))
 
     # -- checkpoint + eval + upload ------------------------------------------
-    def _evaluate(self):
+    def _evaluate(self, decode: bool = True):
         decode_fn = None
-        if self.vae is not None and self.a.decode_n > 0:
-            vae = self.vae
-            decode_fn = lambda z: decode_latents(vae, z)       # noqa: E731
+        if decode and self.vae is not None and self.a.decode_n > 0:
+            decode_fn = VaeDecode(self.vae)
         try:
             return evaluate(self.down, self.up, self.evalset, self.device, decode_fn, self.amp,
                             self.a.decode_n, 4, self.a.eval_budget_s, self.now)
         finally:
             free_cuda_cache()
 
-    def checkpoint_and_eval(self, final: bool = False) -> Optional[dict]:
+    def _save_last(self) -> None:
+        try:
+            save_atomic(self._ckpt_obj(), os.path.join(self.out, "ckpt_last.pt"))
+        except Exception as e:  # noqa: BLE001
+            warn("ckpt_save_failed", err=err_str(e, 300))
+
+    def checkpoint_and_eval(self, final: bool = False, reason: Optional[str] = None) -> Optional[dict]:
         metrics = None
         improved = {s: False for s in SIDES}
+        self._save_last()          # before the eval: a kill or CUDA fault during the eval must not lose the steps
         try:
-            metrics, samples = self._evaluate()
+            metrics, samples = self._evaluate(decode=reason != "signal")   # SIGTERM: no slow decodes
             if metrics is not None:
                 for s in SIDES:
                     m = metrics.get(s)
@@ -1565,9 +1626,73 @@ class Trainer:
                     warn("vae_unavailable", err=err_str(e, 300))
         self.vae = vae
 
+    def _target_step(self) -> int:
+        t = self.a.total_steps
+        return t if self.a.max_steps is None else min(t, self.a.max_steps)
+
+    def _already_done(self) -> Optional[int]:
+        """Step of a finished run (DONE.json + ckpt_last.pt at/after the target), else None."""
+        try:
+            if not os.path.isfile(os.path.join(self.out, DONE_FILE)):
+                return None
+            ck = load_ckpt(os.path.join(self.out, "ckpt_last.pt"), need=("step", "config"))
+            if ck is None or int(ck["step"]) < self._target_step():
+                return None
+            cfg = ck["config"]
+            if int(cfg.get("width", -1)) != self.a.width:
+                return None                    # other model size: a fresh run, not a relaunch
+            if self.a.latent_channels and int(cfg.get("latent_channels", -1)) != self.a.latent_channels:
+                return None
+            return int(ck["step"])
+        except Exception as e:  # noqa: BLE001
+            warn("done_check_failed", err=err_str(e))
+        return None
+
+    def _final_row_exists(self, step: int) -> bool:
+        try:
+            with open(os.path.join(self.out, "metrics.jsonl"), encoding="utf-8") as f:
+                for line in f:
+                    try:
+                        r = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(r, dict) and r.get("final") and r.get("step") == step:
+                        return True
+        except OSError:
+            pass
+        return False
+
+    def _write_done(self, summary: dict) -> None:
+        path = os.path.join(self.out, DONE_FILE)
+        try:
+            with open(path + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(summary, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(path + ".tmp", path)
+        except Exception as e:  # noqa: BLE001
+            warn("done_write_failed", err=err_str(e))
+
+    def _probe_vae_tiling(self) -> Optional[bool]:
+        """Decide tiled vs untiled decoding once, before any eval: trial-decode one 128x128 latent
+        (every 1024 px image). An OOM switches the VAE to small tiles for the whole run."""
+        if self.vae is None or self.a.decode_n <= 0 or self.C <= 0:
+            return None
+        try:
+            decode_latents(self.vae, torch.zeros(1, self.C, 128, 128))
+        except Exception as e:  # noqa: BLE001
+            warn("vae_probe_failed", err=err_str(e, 300))
+        finally:
+            free_cuda_cache()
+        return vae_tiled(self.vae)
+
     def run(self) -> dict:
         a = self.a
         os.makedirs(self.samples_dir, exist_ok=True)
+        done_step = self._already_done()
+        if done_step is not None:      # relaunched by a keep-alive loop after a normal finish: do nothing
+            log({"status": "already_done", "step": done_step}, marker=MARK + "_DONE")
+            return {"status": "already_done", "step": done_step}
         os.makedirs(os.path.join(self.out, "zd"), exist_ok=True)
         clean_tmp(self.out)
         token = os.environ.get("HF_TOKEN")
@@ -1595,6 +1720,7 @@ class Trainer:
         have_zd = list_zd(self.out)
         need_vae = any(not zd_valid(self.root, self.out, i) for i in pairs) or a.decode_n > 0
         self._load_teachers(need_vae)
+        vae_tiled_at_load = self._probe_vae_tiling()
 
         # 1) zd cache: evaluation items first, then the rest
         order = eval_idx + [i for i in pairs if i not in eval_set]
@@ -1622,7 +1748,7 @@ class Trainer:
         start_step = self.step
         self.evalset = EvalSet(self.root, self.out, eval_idx, self.C)
         src = BatchSource(self.root, self.out, train_idx, self.C, a.crop, a.batch, a.seed)
-        log({"params_down": n_d, "params_up": n_u,
+        log({"vae_tiled": vae_tiled_at_load, "params_down": n_d, "params_up": n_u,
              "in_range": PARAM_MIN <= n_d <= PARAM_MAX and PARAM_MIN <= n_u <= PARAM_MAX,
              "C": self.C, "width": a.width, "dev": str(self.device), "amp": self.amp,
              "resumed": bool(resumed), "step": self.step, "img_loss": self.decoder is not None,
@@ -1694,11 +1820,16 @@ class Trainer:
 
         if self.acc_n:
             self._log_progress(self.now())
-        self.checkpoint_and_eval(final=True)          # last save + eval + upload, also after a fatal stop
-        self._finish_upload()
+        if self.step == start_step and self._final_row_exists(self.step):
+            log({"final_skipped": "no_progress", "step": self.step})      # relaunch that trained nothing
+        else:
+            self.checkpoint_and_eval(final=True, reason=reason)    # last save + eval + upload, also after a fatal stop
+            self._finish_upload()
         summary = {"status": reason, "start_step": start_step, "step": self.step,
                    "best": {s: (None if math.isinf(v) else round(v, 6)) for s, v in self.best.items()},
                    "params": [n_d, n_u], "skipped": self.skipped, **status_extra}
+        if reason in ("total_steps", "max_steps"):
+            self._write_done(summary)      # a relaunch (keep loop) then exits at once, see _already_done
         log(summary, marker=MARK + "_DONE")
         return summary
 

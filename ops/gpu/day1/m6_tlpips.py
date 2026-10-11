@@ -399,9 +399,9 @@ def load_crop(root: str, spec: dict, crop: int = CROP) -> Optional[np.ndarray]:
 
 
 def _w_init() -> None:
+    """Pool worker setup. No torch calls here: the workers only use numpy / cv2 / PIL."""
     try:
         cv2.setNumThreads(1)
-        torch.set_num_threads(1)
     except Exception:  # noqa: BLE001
         pass
 

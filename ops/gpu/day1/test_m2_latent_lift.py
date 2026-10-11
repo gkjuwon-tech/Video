@@ -263,6 +263,59 @@ def test_decode_retries_with_tiling_after_oom():
     assert vae.tiling and out.shape == (1, 3, 16, 16)
 
 
+def test_small_tiles_make_the_oom_retry_effective():
+    """diffusers only tiles latents larger than tile_latent_min_size (128 for Z-Image): shrink it."""
+    class TileVAE(FakeVAE):
+        def __init__(self):
+            super().__init__()
+            self.tile_sample_min_size, self.tile_latent_min_size = 1024, 128
+            self.use_tiling = False
+
+        def enable_tiling(self):
+            self.use_tiling = True
+
+        def decode(self, z):
+            tiles = self.use_tiling and z.shape[-1] > self.tile_latent_min_size
+            if z.shape[-1] > 64 and not tiles:
+                raise torch.OutOfMemoryError("CUDA out of memory (fake)")
+            return super().decode(z)
+
+    vae = TileVAE()
+    out = M.decode_latents(vae, torch.zeros(1, C, 128, 128))          # 1024 px image, untiled -> OOM -> tiled
+    assert out.shape == (1, 3, 1024, 1024) and M.vae_tiled(vae)
+    assert vae.tile_sample_min_size == 512 and vae.tile_latent_min_size == 64
+    assert M.enable_small_tiles(vae)                                  # idempotent
+    assert not M.enable_small_tiles(SimpleNamespace())                # nothing to enable
+
+
+def test_evaluate_decodes_all_four_the_same_way_after_a_mid_item_oom():
+    class Dec:
+        def __init__(self):
+            self.is_tiled, self.calls, self.n = False, [], 0
+
+        def tiled(self):
+            return self.is_tiled
+
+        def __call__(self, z):
+            self.n += 1
+            if self.n == 2 and not self.is_tiled:                     # yo OOMs after g decoded untiled
+                self.is_tiled = True
+            self.calls.append((self.is_tiled, self.n))
+            return torch.zeros(1, 3, 8, 8)
+
+    dec = Dec()
+    ys = M._decode_item(dec, *(torch.zeros(1, C, 1, 1) for _ in range(4)))
+    assert len(ys) == 4 and len(dec.calls) == 8
+    assert all(t for t, _ in dec.calls[4:])                           # the redo is all-tiled
+    dec2 = Dec()
+    dec2.is_tiled = True
+    M._decode_item(dec2, *(torch.zeros(1, C, 1, 1) for _ in range(4)))
+    assert len(dec2.calls) == 4                                       # already tiled: no redo
+    plain = []
+    M._decode_item(lambda z: plain.append(1) or z, *(torch.zeros(1) for _ in range(4)))
+    assert len(plain) == 4                                            # plain callables untouched
+
+
 # ---------------------------------------------------------------- zd cache
 
 def test_zd_cache_values_resume_and_bad_items(tmp_path):
@@ -769,3 +822,114 @@ def test_progress_marker_and_vram_fields(corpus, capsys):
     prog = [m for m in markers(out) if "ld_lat" in m]
     assert prog and all(k in prog[0] for k in ("step", "ld", "lu", "ips", "lr", "vram_GB", "mb"))
     assert all(len(ln) <= 400 for ln in all_marker_lines(out))
+
+
+# ---------------------------------------------------------------- review fixes
+
+def test_vae_tiling_decided_once_at_load_and_logged(corpus, capsys):
+    rc, out = run(corpus, ["--max-steps", 1], deps_for(vae=FakeVAE(fail_first_decode_oom=True)), capsys)
+    start = [m for m in markers(out) if "params_down" in m][0]
+    assert rc == 0 and start["vae_tiled"] is True
+    assert all(len(ln) <= 400 for ln in all_marker_lines(out))
+
+
+def test_vae_untiled_when_probe_decode_fits(tmp_path, capsys):
+    root = str(tmp_path / "n2")
+    make_corpus(root, 12)
+    vae = FakeVAE()
+    rc, out = run(root, ["--max-steps", 1], deps_for(vae=vae), capsys)
+    start = [m for m in markers(out) if "params_down" in m][0]
+    assert start["vae_tiled"] is False and not vae.tiling
+
+
+def test_finished_run_is_not_redone_by_a_relaunch_loop(corpus, capsys):
+    uploads = []
+
+    def uploader(folder, remote):
+        uploads.append(remote)
+
+    od = out_dir(corpus)
+    rc, out1 = run(corpus, ["--max-steps", 3], deps_for(uploader=uploader), capsys)
+    assert rc == 0 and os.path.isfile(os.path.join(od, "DONE.json"))
+    assert json.load(open(os.path.join(od, "DONE.json")))["step"] == 3
+    n_rows = len(open(os.path.join(od, "metrics.jsonl")).read().splitlines())
+    n_up = len(uploads)
+    vae = FakeVAE()
+    for _ in range(3):
+        rc, out2 = run(corpus, ["--max-steps", 3], deps_for(uploader=uploader, vae=vae), capsys)
+        assert rc == 0
+        done = markers(out2, "D1_M2_DONE")
+        assert done[-1]["status"] == "already_done" and done[-1]["step"] == 3
+        assert not [m for m in markers(out2) if "params_down" in m]          # nothing loaded
+    assert len(open(os.path.join(od, "metrics.jsonl")).read().splitlines()) == n_rows
+    assert len(uploads) == n_up and not vae.dec_inputs and not vae.enc_inputs
+    # a larger target is not blocked by the old DONE.json
+    rc, out3 = run(corpus, ["--max-steps", 5], deps_for(), capsys)
+    assert markers(out3, "D1_M2_DONE")[-1]["step"] == 5
+
+
+def test_relaunch_without_progress_skips_final_eval_and_upload(corpus, capsys):
+    uploads = []
+
+    def uploader(folder, remote):
+        uploads.append(remote)
+
+    od = out_dir(corpus)
+    clock = Clock(step=1.0, t=5000.0)
+    rc, out = run(corpus, ["--deadline", 5000.0 + 600 + 40, "--finish-margin-s", 600],
+                  deps_for(now=clock, uploader=uploader), capsys)
+    assert markers(out, "D1_M2_DONE")[-1]["status"] == "deadline"
+    assert not os.path.isfile(os.path.join(od, "DONE.json"))              # a deadline stop is not "done"
+    rows = open(os.path.join(od, "metrics.jsonl")).read().splitlines()
+    n_up = len(uploads)
+    rc, out = run(corpus, ["--deadline", 1.0, "--finish-margin-s", 600], deps_for(now=Clock(t=5000.0),
+                  uploader=uploader), capsys)
+    assert rc == 0 and markers(out, "D1_M2_DONE")[-1]["status"] == "deadline"
+    assert open(os.path.join(od, "metrics.jsonl")).read().splitlines() == rows and len(uploads) == n_up
+
+
+def test_checkpoint_is_saved_before_the_eval_runs(corpus, monkeypatch):
+    args = M.build_parser().parse_args(base_argv(corpus, "--max-steps", 2))
+    tr = M.Trainer(args, uploader=None, deps=deps_for(), sleep=lambda s: None)
+    seen = {}
+    real = M.evaluate
+
+    def spying(*a, **k):
+        p = os.path.join(out_dir(corpus), "ckpt_last.pt")
+        seen["step_on_disk"] = torch.load(p, weights_only=True)["step"] if os.path.isfile(p) else None
+        seen["decode_fn"] = a[4]
+        raise RuntimeError("CUDA error inside decode")                    # eval blows up: ckpt must survive
+
+    monkeypatch.setattr(M, "evaluate", spying)
+    tr.run()
+    assert seen["step_on_disk"] == 2                                      # saved before the eval started
+    assert torch.load(os.path.join(out_dir(corpus), "ckpt_last.pt"), weights_only=True)["step"] == 2
+    monkeypatch.setattr(M, "evaluate", real)
+
+
+def test_signal_final_eval_skips_the_decodes(corpus, monkeypatch):
+    args = M.build_parser().parse_args(base_argv(corpus, "--max-steps", 2))
+    stop = threading.Event()
+    tr = M.Trainer(args, uploader=None, deps=deps_for(), sleep=lambda s: None, stop_event=stop)
+    calls = []
+    real = M.evaluate
+
+    def spying(*a, **k):
+        calls.append(a[4])
+        return real(*a, **k)
+
+    monkeypatch.setattr(M, "evaluate", spying)
+    real_final = tr.checkpoint_and_eval
+
+    def final(final=False, reason=None):
+        return real_final(final=final, reason=reason)
+
+    stop.set()
+    res = tr.run()
+    assert res["status"] == "signal"
+    assert calls and calls[-1] is None                                    # no decode_fn on SIGTERM
+    calls.clear()
+    tr2 = M.Trainer(M.build_parser().parse_args(base_argv(corpus, "--max-steps", 4)), uploader=None,
+                    deps=deps_for(), sleep=lambda s: None)
+    tr2.run()
+    assert calls and calls[-1] is not None                                # normal finish still decodes
