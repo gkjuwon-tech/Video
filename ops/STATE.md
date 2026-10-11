@@ -6,6 +6,7 @@
 - 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
 - **공장장 세션:** `session_01XA9TirqQtqJiYRyewCK8uv`(Sonnet 5.5, 태그 buc-foreman)이 교대조를 상시 가동한다(지침 `ops/harness/FOREMAN.md`). 이유: 오케스트레이터 세션에서 창업자가 실행을 중단하면 백그라운드 워크플로가 같이 죽는다(2회 발생). 공장장은 GPU·키를 다루지 않는다. 진행 신호는 `ops/harness/foreman.json`.
 - **상시 승인 A-001 (2026-10-10T14:51:47Z):** 창업자가 BUC 세션들끼리 세션 생성과 Workflow 실행을 매번 묻지 않고 하도록 승인했다. 원문·해시·서버 이벤트 ID는 `ops/harness/AUTHORIZATION.md`. GPU·결제·키는 여전히 오케스트레이터만.
+- **중간보스 LTX-2.5 비교 (D1, COMP 평가 전용·학습 금지):** 창업자 지시로 야크 6샷을 LTX-2.5(22B distilled, bf16, 1920×832, 24fps, 시드 42)로 생성. 별도 인스턴스 **55306560**(A100 PCIe 80GB, 일본, $1.05/h, 디스크 220GB, 라벨 buc-comp-ltx25). 부트 루프 `ops/gpu/comp/boot.sh`가 `ops/gpu/comp/ltx_yak.sh`를 받아 실행(푸시하면 원격 수정), 끝나면 또는 5시간 뒤 스스로 정지. 결과 HF `comp/ltx25/`. 라이선스 LTX-2.x Community License(연매출 $10M 미만 무료). 보스 순서: 바닥선(깊이 워프) → 중간보스 LTX-2.5 → 최종보스 Seedance.
 - **승리 조건 (창업자, D1):** "일관성만으로 이기면 패배, **순수 화질로 이긴다**." 블라인드 패널 질문은 화질 하나뿐. 매일 A/B도 화질 지표(선명도·미세 질감·결함) 중심. `docs/DEMO-D15.md` §5 갱신.
 - **D15 데모 지정 (창업자, 2026-10-10T15:00Z):** 초원의 하얀 거대 야크 이미지 한 장으로 멈춘 세계 + 다양한 카메라 무브. 사양 `docs/DEMO-D15.md`, 원본은 HF 금고 `demo/d15_hero_yak.webp`(공개 레포에 넣지 않음). RDR-01·RDR-08·RD-18·RD-05를 수직 슬라이스로 승격, 관련 단위에 `demo: d15-yak` 태그.
 - **공장장 체크인:** 공장장은 send_later 권한이 막혀 있어 오케스트레이터가 매시간 :03에 공장장 세션을 깨우는 트리거 `trig_01GL7Ww48KbFj51yDHhG5EQW`를 걸었다. 창업자가 공장장 세션에서 직접 교대조 상시 가동을 지시했다(14:57Z).
