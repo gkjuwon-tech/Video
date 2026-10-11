@@ -70,4 +70,26 @@ if [ ! -f "$R/.pipe_launched_$PIPE_RUN2" ]; then
   ' _ "$R" </dev/null >/dev/null 2>&1 &
   echo "D1_X pipe2 launched S5,S6 --no-teacher"
 fi
+# --- 02:50Z: 상태 비콘. 컨테이너 로그가 몰아서(버퍼) 나오므로 10분마다 요약 + 4KB 채움으로 밀어낸다 ---
+BEACON_RUN=1
+if [ ! -f "$R/.beacon_$BEACON_RUN" ]; then
+  touch "$R/.beacon_$BEACON_RUN"
+  BOUT=/proc/$PPID/fd/1; [ -w "$BOUT" ] || BOUT=/dev/null
+  setsid nohup bash -c '
+    R=$1; OUT=$2
+    while [ "$(date +%s)" -lt $(( ${N1_DEADLINE:-1791723600} + 1500 )) ]; do
+      {
+        echo "D1_B t=$(date -u +%FT%TZ) gpu=$(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader | tr -d " ") disk=$(df -h / | tail -1 | awk "{print \$4}")"
+        ps -eo etime,pcpu,rss,args | grep -E "[m]2_latent|[m]6_tlpips|[m]3_mrh|[p]ipe_yak" | awk "{printf \"D1_B ps %s cpu=%s rss=%dM %s\n\", \$1, \$2, \$3/1024, \$5}" | head -6
+        grep -h "^D1_M2_EVAL" "$R/logs/m2.run.log" 2>/dev/null | tail -1 | cut -c1-380
+        grep -h "^D1_M6" "$R/logs/m6.run.log" 2>/dev/null | tail -2 | cut -c1-380
+        for f in "$R"/logs/m3*.log; do [ -f "$f" ] && grep -h "^D1_M3" "$f" | tail -2 | cut -c1-380; done
+        grep -h "^D1_PIPE" "$R/logs/pipe2.log" 2>/dev/null | tail -1 | cut -c1-200
+        for i in $(seq 1 42); do echo "D1_PAD ................................................................................................"; done
+      } > "$OUT" 2>/dev/null || true
+      sleep 600
+    done
+  ' _ "$R" "$BOUT" </dev/null >/dev/null 2>&1 &
+  echo "D1_X beacon launched out=$BOUT"
+fi
 echo "D1_X end $(date -u +%FT%TZ)"
