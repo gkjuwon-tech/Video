@@ -805,7 +805,7 @@ def run_main(tmp_path, argv_extra=(), deps=None, env=None, deadline_ahead=4 * 36
     argv = ["--root", str(tmp_path), "--crop", str(CROP), "--chunk", "32", "--n-train", "64", "--n-val", "32",
             "--n-trip", "16", "--label-batch", "16", "--workers", "1", "--device", "cpu", "--amp", "off",
             "--batch", "8", "--warmup", "1", "--total-steps", "20", "--first-eval-s", "3600", "--eval-every-s", "3600",
-            "--min-free-gb", "0", "--progress-every-s", "0", "--max-steps", "3", "--deadline",
+            "--min-free-gb", "0", "--progress-every-s", "0", "--corpus-quiet-s", "0", "--max-steps", "3", "--deadline",
             str(time.time() + deadline_ahead)] + list(argv_extra)
     buf = io.StringIO()
     with redirect_stdout(buf):

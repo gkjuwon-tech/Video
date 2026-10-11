@@ -58,6 +58,8 @@ REMOTE_DIR = "ckpt/day1/m6"
 DONE_FLAG = "DONE"            # written by the trainer once total_steps is reached and the final upload succeeded
 TAE_REMOTE = "ckpt/night1/tae_t/ckpt_best.pt"
 CORPUS_PREFIX = "corpus/night1/"
+HF_DL_DIR = "_hf_dl_m6"
+CORPUS_QUIET_S = 20.0             # the corpus is "settled" when no file in img/ is younger than this
 ZIMAGE_ID = "Tongyi-MAI/Z-Image-Turbo"
 
 CROP = 256
@@ -1573,15 +1575,17 @@ def extract_shard(tar_path: str, root: str) -> int:
             src = t.extractfile(m)
             if src is None:
                 continue
-            tmp = dst + ".tmp"
+            tmp = f"{dst}.{os.getpid()}.tmp"           # M2 may unpack the same shard: never share a temp name
             try:
                 with open(tmp, "wb") as f:
                     shutil.copyfileobj(src, f)
                 os.replace(tmp, dst)
                 n += 1
             finally:
-                if os.path.exists(tmp):
+                try:
                     os.remove(tmp)
+                except OSError:
+                    pass
     return n
 
 
@@ -1595,24 +1599,66 @@ def make_hf_fetchers(token: Optional[str], root: str, repo_id: str = REPO_ID):
 
     def fetcher(remote: str) -> str:
         from huggingface_hub import hf_hub_download
+        # a download dir of our own: M2 uses _hf_dl, and each of us deletes its tar after unpacking it
         return hf_hub_download(repo_id, remote, repo_type=REPO_TYPE, token=token,
-                               local_dir=os.path.join(root, "_hf_dl"))
+                               local_dir=os.path.join(root, HF_DL_DIR))
 
     return lister, fetcher
 
 
-def ensure_assets(root: str, tae_path: str, min_images: int, lister, fetcher, need_tae: bool = True) -> dict:
+def newest_corpus_mtime(root: str) -> float:
+    """mtime of the youngest file (temp files included) in ``root/img``; 0.0 when there is none."""
+    newest = 0.0
+    try:
+        with os.scandir(os.path.join(root, "img")) as it:
+            for e in it:
+                try:
+                    newest = max(newest, e.stat().st_mtime)
+                except OSError:                       # renamed / removed while we looked
+                    continue
+    except OSError:
+        pass
+    return newest
+
+
+def wait_until_quiet(root: str, quiet_s: float, max_wait_s: float = 900.0,
+                     sleep: Callable[[float], None] = time.sleep, clock: Callable[[], float] = time.time) -> float:
+    """Wait while another job (M2) is still unpacking corpus files into ``root/img``, so the train / val pools are
+    not locked onto a half-extracted corpus. Returns the seconds waited (0 when the corpus was already quiet)."""
+    waited = 0.0
+    while quiet_s > 0:
+        newest = newest_corpus_mtime(root)
+        age = clock() - newest if newest else float("inf")
+        if age >= quiet_s:
+            break
+        if waited >= max_wait_s:
+            warn("corpus_still_growing", age_s=round(age, 1), waited_s=round(waited))
+            break
+        step = min(max(quiet_s - age, 1.0), 15.0)
+        sleep(step)
+        waited += step
+    return waited
+
+
+def ensure_assets(root: str, tae_path: str, min_images: int, lister, fetcher, need_tae: bool = True,
+                  quiet_s: float = 0.0, sleep: Callable[[float], None] = time.sleep) -> dict:
     """Fetch the M1 checkpoint and the corpus shards from the vault when the box does not have them."""
     res = {"tae": os.path.isfile(tae_path), "images": len(list_corpus(root)), "shards": 0}
     if need_tae and not res["tae"] and fetcher is not None:
+        part = f"{tae_path}.{os.getpid()}.part"
         try:
             src = fetcher(TAE_REMOTE)
             os.makedirs(os.path.dirname(tae_path), exist_ok=True)
-            shutil.copyfile(src, tae_path + ".part")
-            os.replace(tae_path + ".part", tae_path)
+            shutil.copyfile(src, part)
+            os.replace(part, tae_path)
             res["tae"] = True
         except Exception as e:  # noqa: BLE001
             warn("tae_fetch_failed", err=err_str(e, 300))
+        finally:
+            try:
+                os.remove(part)
+            except OSError:
+                pass
     if res["images"] < min_images and lister is not None and fetcher is not None:
         try:
             names = sorted(n for n in lister(CORPUS_PREFIX)
@@ -1627,11 +1673,15 @@ def ensure_assets(root: str, tae_path: str, min_images: int, lister, fetcher, ne
                 res["shards"] += 1
                 log({"shard": os.path.basename(name), "new_files": added})
                 try:
-                    os.remove(p)
+                    os.remove(p)                      # our own download dir (HF_DL_DIR): nobody else reads this tar
                 except OSError:
                     pass
             except Exception as e:  # noqa: BLE001
                 warn("shard_fetch_failed", name=os.path.basename(name), err=err_str(e, 300))
+        res["images"] = len(list_corpus(root))
+    waited = wait_until_quiet(root, quiet_s, sleep=sleep)
+    if waited:
+        res["quiet_wait_s"] = round(waited)
         res["images"] = len(list_corpus(root))
     return res
 
@@ -2125,6 +2175,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--loader-timeout-s", type=float, default=120.0)
     ap.add_argument("--final-upload-timeout-s", type=float, default=300.0)
     ap.add_argument("--min-images", type=int, default=1000, help="fetch corpus shards when fewer images exist")
+    ap.add_argument("--corpus-quiet-s", type=float, default=CORPUS_QUIET_S,
+                    help="wait until no corpus file is younger than this (another job may still be unpacking shards)")
     ap.add_argument("--repo-id", default=REPO_ID)
     ap.add_argument("--no-upload", action="store_true")
     return ap
@@ -2219,14 +2271,6 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
     """Steps A+B. Returns a process exit code (0 = continue)."""
     tae_path = os.path.join(root, "tae", "ckpt_best.pt")
     gpu_ops = tuple(g for g in args.gpu_ops.split(",") if g)
-    lister, fetcher = make_hf_fetchers(token, root, args.repo_id)
-    assets = ensure_assets(root, tae_path, args.min_images, lister, fetcher, need_tae="tae" in gpu_ops)
-    corpus = list_corpus(root)
-    log({"assets": assets, "corpus": len(corpus)})
-    if not corpus:
-        return _fatal("no corpus images under " + root)
-    train_pool, val_pool = split_corpus(corpus)
-
     old = load_manifest(out)
     if old is not None and old.get("degraded") and isinstance(old.get("gpu_ops"), list):
         # an earlier run lost a GPU distortion (the TAE) and re-sampled without it: keep that op set so every
@@ -2235,9 +2279,20 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
         args.gpu_ops = ",".join(gpu_ops)
         log({"gpu_ops": list(gpu_ops), "from": "manifest", "degraded": old["degraded"]})
 
+    lister, fetcher = make_hf_fetchers(token, root, args.repo_id)
+    assets = ensure_assets(root, tae_path, args.min_images, lister, fetcher, need_tae="tae" in gpu_ops,
+                           quiet_s=args.corpus_quiet_s, sleep=sleep)
+    corpus = list_corpus(root)
+    log({"assets": assets, "corpus": len(corpus)})
+    if not corpus:
+        return _fatal("no corpus images under " + root)
+    train_pool, val_pool = split_corpus(corpus)
+
     man = {"version": 1, "seed": args.seed, "crop": args.crop, "chunk": args.chunk, "n_train": args.n_train,
            "n_val": args.n_val, "n_trip": args.n_trip, "gpu_ops": list(gpu_ops), "sigma": args.sigma,
            "blocks": list(args.blocks)}
+    if old is not None and old.get("degraded"):
+        man["degraded"] = old["degraded"]
     if old is not None:
         bad = manifest_mismatch(old, man)
         if bad:
