@@ -756,3 +756,141 @@ def test_width_candidates_never_exceed_request(tmp_path):
     dl = P.Deadline(time.time() + 10_000.0)
     rc, out, rep = run_main(tmp_path, modes="skeleton", deadline=dl, extra=["--width", "96"])
     assert rep["config"]["width"] <= 96 and rep["config"]["requested_width"] == 96
+
+
+# ---------------------------------------------------------------- review fixes
+def test_real_stage_exception_text_reaches_the_report(tmp_path, monkeypatch):
+    """S-1, S2 (WLD-03) and S8 failures: the message + traceback tail land in stages_report.json (the spine itself
+    only keeps the exception type)."""
+    import buc.world.depth_world as dw
+    from buc.read import pipeline as RP
+
+    def boom_world(*a, **k):
+        raise RuntimeError("SPECIFIC_REASON_S2")
+
+    real_build = P.build_shot
+
+    def flaky(read, name, dur_s, seed, info):
+        if name == "S2":
+            raise RuntimeError("SPECIFIC_REASON_S8")
+        return real_build(read, name, dur_s, seed, info)
+
+    monkeypatch.setattr(dw, "build_depth_world", boom_world)
+    monkeypatch.setattr(P, "build_shot", flaky)
+    rc, out, rep = run_main(tmp_path, modes="scaffold", extra=["--shots", "S1,S2"])
+    raw = open(os.path.join(out, "stages_report.json")).read()
+    assert "SPECIFIC_REASON_S2" in raw and "SPECIFIC_REASON_S8" in raw
+    errs = rep["scaffold"]["stage_errors"]
+    assert "SPECIFIC_REASON_S2" in errs["S2"]["error"] and "boom_world" in errs["S2"]["tb"]
+    assert "SPECIFIC_REASON_S8" in errs["S8:S2"]["error"] and "flaky" in errs["S8:S2"]["tb"]
+    # WLD-03 trace entry exists even though the stage fell back, and the ledger event carries the text
+    assert any(e["unit"] == P.U_W3 and e["status"] == "failed" and "SPECIFIC_REASON_S2" in e["detail"]
+               for e in rep["scaffold"]["world_build"])
+    ev = rep["units"][P.U_W3]["events"]
+    assert any("SPECIFIC_REASON_S2" in e["detail"] for e in ev) and rep["units"][P.U_W3]["counts"]["fallback"] == 1
+    assert any("SPECIFIC_REASON_S8" in e["detail"] for e in rep["units"][P.U_CAM]["events"])
+    assert rep["scaffold"]["shots"]["S2"]["camera"]["error"].endswith("SPECIFIC_REASON_S8")
+    # the generic stage row stays type-only (PRD-01)
+    assert "SPECIFIC_REASON" not in rep["scaffold"]["shots"]["S2"]["stages"]["S8"]["fallback"]
+
+
+def test_real_s1_exception_text_reaches_the_report(tmp_path, monkeypatch):
+    from buc.read import pipeline as RP
+
+    def boom(*a, **k):
+        raise RuntimeError("SPECIFIC_REASON_S1")
+
+    monkeypatch.setattr(RP, "run_read", boom)
+    rc, out, rep = run_main(tmp_path, modes="scaffold", extra=["--shots", "S1"])
+    assert "SPECIFIC_REASON_S1" in open(os.path.join(out, "stages_report.json")).read()
+    assert "SPECIFIC_REASON_S1" in rep["scaffold"]["stage_errors"]["S-1"]["error"]
+    assert all(any("SPECIFIC_REASON_S1" in e["detail"] for e in rep["units"][u]["events"]) for u in P.S1_UNITS)
+    assert all(rep["units"][u]["counts"]["fallback"] == 1 for u in P.S1_UNITS)
+
+
+def test_videos_and_report_are_uploaded_incrementally(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("HF_TOKEN", SECRET)
+    snaps = []
+
+    class SnapApi(FakeApi):
+        def upload_file(self, path_or_fileobj, path_in_repo, repo_id, repo_type):
+            name = os.path.basename(path_in_repo)
+            snaps.append((name, sorted(os.listdir(os.path.dirname(path_or_fileobj)))))
+            super().upload_file(path_or_fileobj, path_in_repo, repo_id, repo_type)
+
+    api = SnapApi()
+    rc, out, rep = run_main(tmp_path, modes="skeleton,scaffold", extra=["--shots", "S1,S2"], api=api, no_upload=False)
+    names = [c[0] for c in api.calls]
+    assert rc == 0
+    # skeleton and its report first, then each shot with a fresh report, contact sheet and final report last
+    assert names[:2] == ["skeleton_S1.mp4", "stages_report.json"]
+    assert names[2:4] == ["scaffold_S1.mp4", "stages_report.json"]
+    assert names[4:6] == ["scaffold_S2.mp4", "stages_report.json"]
+    assert names[-2:] == ["contact_sheet.jpg", "stages_report.json"]
+    assert snaps[0][0] == "skeleton_S1.mp4" and "scaffold_S1.mp4" not in snaps[0][1]       # uploaded before S1 existed
+    marks = [l for l in capsys.readouterr().out.splitlines() if '"video_uploaded"' in l]
+    assert any("skeleton_S1.mp4" in l and f"{P.HF_REPO_ID}/{P.HF_UPLOAD_PREFIX}/skeleton_S1.mp4" in l and
+               l.startswith("D1_PIPE ") and len(l) <= 400 for l in marks)
+    assert rep["upload"]["failed"] == 0 and rep["upload"]["ok"] >= 8
+
+
+def test_a_killed_run_still_leaves_finished_videos_in_the_vault(tmp_path, monkeypatch):
+    real = P.render_shot_video
+
+    def die_on_s2(world, read, shot, out_path, **kw):
+        if "scaffold_S2" in str(out_path):
+            raise KeyboardInterrupt("runner killed")
+        return real(world, read, shot, out_path, **kw)
+
+    monkeypatch.setattr(P, "render_shot_video", die_on_s2)
+    api = FakeApi()
+    with pytest.raises(KeyboardInterrupt):
+        run_main(tmp_path, modes="skeleton,scaffold", extra=["--shots", "S1,S2"], api=api, no_upload=False)
+    names = [c[0] for c in api.calls]
+    assert "skeleton_S1.mp4" in names and "scaffold_S1.mp4" in names and "stages_report.json" in names
+
+
+def test_push_in_stays_on_the_people(tmp_path):
+    """S1 push runs along the ray through the people box: its pixel never moves, the box stays in frame."""
+    from buc.read import pipeline as RP
+    img = P.make_input_image(P.resize_rgb(synth_image(), (192, 82)), "t")
+    read = RP.run_read(img, steps=P.build_read_steps(P.TempDepthReader(fake_disp), P.make_size_obs_fn())).packet
+    info = {}
+    sh = P.build_shot(read, "S1", 12 / 24.0, 0, info)
+    obs = read.obs
+    assert sh.first_pose_matches(obs)
+    ray = P.people_ray(read)
+    z = P.subject_depth(read)
+    c0 = np.asarray(obs.c2w(), dtype=np.float64)
+    target = (c0 @ np.array([z * ray["dx"], z * ray["dy"], z, 1.0]))[:3]
+    K = np.asarray(obs.K, dtype=np.float64)
+    for k in range(sh.n_frames):
+        pc = np.linalg.inv(sh.c2w[k]) @ np.append(target, 1.0)
+        u, v = K[0, 0] * pc[0] / pc[2] + K[0, 2], K[1, 1] * pc[1] / pc[2] + K[1, 2]
+        assert abs(u - ray["uv"][0]) < 0.5 and abs(v - ray["uv"][1]) < 0.5, k
+        assert abs(sh.focus_m[k] - np.linalg.norm(sh.c2w[k][:3, 3] - target)) < 1e-6
+    assert sh.c2w[-1][1, 3] > sh.c2w[0][1, 3] + 1e-3          # camera also moved toward the people (down), not only forward
+    pt = info["push_target"]
+    assert pt["m"] == P.PUSH_IN_M == 1.25 and pt["people_box_visible_frac_end"] >= 0.95
+    assert pt["offset_from_centre_px"][1] > 0 and "ray" in pt["what"]
+    assert info["source"].startswith("CAM-02")
+
+
+def test_orbit_pivot_is_logged(tmp_path):
+    from buc.read import pipeline as RP
+    img = P.make_input_image(P.resize_rgb(synth_image(), (192, 82)), "t")
+    read = RP.run_read(img, steps=P.build_read_steps(P.TempDepthReader(fake_disp), P.make_size_obs_fn())).packet
+    info = {}
+    P.build_shot(read, "S3", 10 / 24.0, 0, info)
+    assert "optical axis" in info["pivot"]["where"] and "people_lateral_offset_px" in info["pivot"]
+
+
+def test_report_host_records_which_repo_was_imported(tmp_path, monkeypatch):
+    monkeypatch.setenv("N1_REPO_SHA", "abc1234" + SECRET)
+    rc, out, rep = run_main(tmp_path, modes="skeleton")
+    r = rep["host"]["repo"]
+    assert r["buc"].endswith("buc") and set(r["stage_modules"]) == set(P.REAL_STAGE_MODULES)
+    assert r["stale_code_suspected"] is False and r["file_sha"]["buc/read/pipeline.py"]
+    assert r["n1_repo_sha"].startswith("abc1234") and SECRET not in json.dumps(rep)
+    monkeypatch.setattr(P, "REAL_STAGE_MODULES", P.REAL_STAGE_MODULES + ("buc.world.not_committed_yet",))
+    assert P.repo_info(str(tmp_path))["stale_code_suspected"] is True

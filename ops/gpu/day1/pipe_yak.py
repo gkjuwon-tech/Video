@@ -904,7 +904,9 @@ def build_shot(read, name: str, dur_s: float, seed: int, info: dict):
 
     if mv in ("push_in", "slider", "orbit"):
         spec = moves.recipe(mv, z, duration_s=dur_s, fps=float(FPS), **kw)
-        info["source"] = "CAM-02" + (" + dolly aimed along the ray through the people box" if mv == "push_in" else "")
+        info["source"] = "CAM-02"
+        if mv == "push_in":
+            info["aim"] = "dolly advance taken along the ray through the people-box centre (not the optical axis)"
         info["used"] = mv
         if mv == "orbit":
             info["note"] = "arc runs 0 -> +%.0f deg: S8 contract needs frame 0 at the observed pose (docs: +-12)" % kw["orbit_deg"]
@@ -1366,13 +1368,69 @@ def host_info() -> dict:
     return d
 
 
+REAL_STAGE_MODULES = ("buc.read.pipeline", "buc.world.depth_world", "buc.world.sdedit_avg", "buc.render.quads",
+                      "buc.camera.moves", "buc.lens.dof", "buc.read.edge_unmix", "buc.teacher.zimage")
+
+
+def _sha256_file(path: Path) -> Optional[str]:
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
+    except OSError:
+        return None
+
+
+def repo_info(root: Optional[str] = None) -> dict:
+    """Which copy of the repo this run really imported, so a stale-code fallback (stage module missing from an old
+    tarball) can be told apart from a real stage failure: buc location, git/tarball id when known, short content
+    hashes of the real-stage files, and whether each real-stage module is importable at all."""
+    import importlib.util
+    r = root or os.environ.get("N1_ROOT") or DEFAULT_ROOT
+    d: Dict[str, Any] = {"script": str(Path(__file__).resolve()), "script_sha256": _sha256_file(Path(__file__)),
+                         "n1_repo_dir": str(Path(r) / "repo")}
+    for k in ("N1_REPO_SHA", "N1_REPO_COMMIT", "N1_REPO_TARBALL_SHA"):
+        if os.environ.get(k):
+            d[k.lower()] = scrub(os.environ[k])[:80]
+    buc_dir = None
+    with contextlib.suppress(Exception):
+        spec = importlib.util.find_spec("buc")
+        if spec and spec.submodule_search_locations:
+            buc_dir = Path(list(spec.submodule_search_locations)[0])
+    if buc_dir is None:
+        d["buc"] = None
+        return d
+    d["buc"] = str(buc_dir)
+    repo_dir = buc_dir.parent
+    d["buc_in_n1_repo"] = str(repo_dir.resolve()) == str((Path(r) / "repo").resolve())
+    with contextlib.suppress(Exception):
+        import subprocess
+        out = subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            d["git_head"] = out.stdout.strip()[:40]
+    for name in (".repo_sha", "REPO_SHA", ".git_sha"):
+        t = repo_dir / name
+        if t.is_file():
+            with contextlib.suppress(OSError):
+                d["repo_sha_file"] = t.read_text().strip()[:80]
+    d["file_sha"] = {rel: _sha256_file(repo_dir / rel) for rel in (
+        "buc/read/pipeline.py", "buc/world/depth_world.py", "buc/world/sdedit_avg.py", "buc/camera/moves.py")}
+    mods: Dict[str, bool] = {}
+    for m in REAL_STAGE_MODULES:
+        try:
+            mods[m] = importlib.util.find_spec(m) is not None
+        except Exception:  # noqa: BLE001
+            mods[m] = False
+    d["stage_modules"] = mods
+    d["stale_code_suspected"] = not all(mods.values())
+    return d
+
+
 def new_report(args, size, image_info: dict, shim: bool) -> dict:
     return {
         "schema": REPORT_SCHEMA,
         "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "job": "pipe_yak (D15 hero yak through buc/ pipeline)",
         "lane": "R-EVAL (eval-only): temp depth, prov HOLDOUT:r_eval, nothing written to training-data paths",
-        "host": host_info(),
+        "host": {**host_info(), "repo": repo_info(getattr(args, "root", None))},
         "blake3_shim": bool(shim),
         "image": {k: v for k, v in image_info.items() if k != "array"},
         "config": {"width": size[0], "height": size[1], "fps": FPS, "modes": args.modes, "shots": args.shots,
@@ -1715,6 +1773,7 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
     Phase.t0 = time.time()
     hb = start_heartbeat()
     ledger = Ledger()
+    uploader = Uploader(token, api=upload_api, enabled=not args.no_upload)
     thumbs: Dict[str, list] = {}
     workers = args.workers or default_workers()
     log({"ev": "start", "hf_token": "yes" if token else "no", "modes": args.modes, "shots": args.shots,
@@ -1758,13 +1817,31 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
         atomic_write_json(report_path, report)
 
         outputs: List[Path] = []
+
+        def checkpoint(new_video: Optional[Path] = None) -> None:
+            """Fresh report on disk, then (right now, not at the end) the new mp4 + that report to the vault."""
+            report["units"] = ledger.summary()
+            report["real_vs_stub"] = real_vs_stub(report)
+            report["headline"] = headline(report)
+            report["outputs"] = [p.name for p in outputs] + ["stages_report.json"]
+            report["upload"] = uploader.stats()
+            atomic_write_json(report_path, report)
+            if not uploader.enabled:
+                return
+            r = uploader.push(([new_video] if new_video else []) + [report_path])
+            if new_video is not None and new_video.name in r.get("uploaded", []):
+                log({"ev": "video_uploaded", "file": new_video.name, "hf": f"{HF_REPO_ID}/{HF_UPLOAD_PREFIX}/{new_video.name}"})
+
         # ---- A
         if "skeleton" in args.modes:
             p = run_skeleton(arr, out_dir, report, ledger, deadline, thumbs, workers=workers, dur_scale=args.dur_scale)
             if p:
                 outputs.append(p)
-            report["units"] = ledger.summary()
-            atomic_write_json(report_path, report)
+            checkpoint(p)
+
+        def scaffold_output(path: Path) -> None:
+            outputs.append(path)
+            checkpoint(path)
         # ---- B
         if "scaffold" in args.modes:
             if disparity_fn is None:
@@ -1774,9 +1851,10 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
                 teacher = TeacherHandle()
             cfg = {"use_matte": not args.no_matte, "force_matte": args.force_matte, "matte_timeout_s": 240.0, "seed": 0}
             try:
-                outputs += run_scaffold(arr, out_dir, report, ledger, deadline, thumbs, shots=args.shots, workers=workers,
-                                        dur_scale=args.dur_scale, disparity_fn=disparity_fn,
-                                        teacher=None if args.no_teacher else teacher, cfg=cfg)
+                made = run_scaffold(arr, out_dir, report, ledger, deadline, thumbs, shots=args.shots, workers=workers,
+                                    dur_scale=args.dur_scale, disparity_fn=disparity_fn,
+                                    teacher=None if args.no_teacher else teacher, cfg=cfg, on_output=scaffold_output)
+                outputs += [p for p in made if p not in outputs]
             except Exception as e:  # noqa: BLE001
                 report["scaffold"].update({"status": "failed", "error": err_text(e, 400)})
                 report["errors"].append({"where": "scaffold", "error": err_text(e, 300)})
@@ -1794,11 +1872,13 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
         report["headline"] = headline(report)
         report["outputs"] = [p.name for p in outputs] + (["contact_sheet.jpg"] if sheet_ok else []) + ["stages_report.json"]
         atomic_write_json(report_path, report)
-        if not args.no_upload:
-            report["upload"] = upload_outputs(outputs + ([sheet] if sheet_ok else []), token, api=upload_api)
+        if uploader.enabled:
+            # the mp4s are already up (incremental); the final upload is the contact sheet and the final report
+            uploader.push([sheet] if sheet_ok else [])
+        report["upload"] = uploader.stats()
         atomic_write_json(report_path, report)
-        if not args.no_upload:
-            upload_outputs([report_path], token, api=upload_api)
+        if uploader.enabled:
+            uploader.push([report_path])
         n_ok = len([p for p in outputs])
         code = 0 if n_ok else 1
         log({"ev": "done", "videos": n_ok, "skeleton": report["skeleton"].get("status"),
