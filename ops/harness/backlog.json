@@ -1827,7 +1827,7 @@
    "cls": "M",
    "slice": false,
    "rank": 49,
-   "why": "창업자 촬영 데이터 도착 후 가동",
+   "why": "창업자 촬영 데이터 도착 후 가동 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -3391,7 +3391,7 @@
    "cls": "M",
    "slice": false,
    "rank": 101,
-   "why": "스크립트. 네트워크 허용 확인 필요",
+   "why": "스크립트. 네트워크 허용 확인 필요 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": [],
@@ -3573,7 +3573,7 @@
    "cls": "P",
    "slice": false,
    "rank": 107,
-   "why": "합성만으로는 일반화가 나쁨. 실사 차선 필수",
+   "why": "합성만으로는 일반화가 나쁨. 실사 차선 필수 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -3879,7 +3879,7 @@
    "cls": "M",
    "slice": false,
    "rank": 118,
-   "why": "손떨림이 \"진짜 카메라\" 느낌을 만듦(0.55). IMU 데이터 의존",
+   "why": "손떨림이 \"진짜 카메라\" 느낌을 만듦(0.55). IMU 데이터 의존 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -4145,7 +4145,7 @@
    "cls": "P",
    "slice": false,
    "rank": 127,
-   "why": "생성 없음, 탭만 추출",
+   "why": "생성 없음, 탭만 추출 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -4210,7 +4210,7 @@
    "cls": "M",
    "slice": false,
    "rank": 129,
-   "why": "다운샘플 스크립트",
+   "why": "다운샘플 스크립트 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": [],
@@ -4238,7 +4238,7 @@
    "cls": "M",
    "slice": false,
    "rank": 130,
-   "why": "창업자 촬영 의존. 예측상 계획의 1–10%만 모임",
+   "why": "창업자 촬영 의존. 예측상 계획의 1–10%만 모임 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -4265,7 +4265,7 @@
    "cls": "P",
    "slice": false,
    "rank": 131,
-   "why": "MRH 실사 차선의 유일한 씨앗. 빌드·옵션 시행착오",
+   "why": "MRH 실사 차선의 유일한 씨앗. 빌드·옵션 시행착오 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
@@ -4401,7 +4401,7 @@
    "cls": "N",
    "slice": false,
    "rank": 136,
-   "why": "CamFM-Intent용",
+   "why": "CamFM-Intent용 | D1 창업자 결정: 아이폰 촬영 대신 공개 데이터. 데이터 원천·라이선스 조건은 docs/DATA-PLAN.md를 따른다(R1 상업 학습 허용, R2 신경망 라벨 금지, CC-BY는 ATTRIBUTION.md).",
    "status": "todo",
    "attempts": 0,
    "log": []
