@@ -25,6 +25,12 @@ tail -n 6 logs/pipe.log 2>/dev/null | x pipetail
 tail -n 4 logs/pipe2.log 2>/dev/null | x pipe2tail
 tail -n 5 logs/m6.run.log 2>/dev/null | x m6tail
 
+# 3차 진단(03:25Z): 디스크 사용처(10분에 약 2GB씩 줄어듦)
+df -h / | tail -1 | x df
+du -sh "$R"/day1/* "$R"/img "$R"/lat "$R"/_hf_dl* "$R"/repo* "$R"/logs ~/.cache/huggingface 2>/dev/null | sort -h | tail -n 14 | x du
+du -sh "$R"/day1/m6/* 2>/dev/null | sort -h | tail -n 6 | x du_m6
+ls "$R"/day1/m6/ 2>/dev/null | grep -c '^labels_' | x m6_label_chunks
+
 # --- 파이프라인 첫 야크 ---
 PIPE_RUN=1
 if [ ! -f "$R/.pipe_launched_$PIPE_RUN" ]; then
