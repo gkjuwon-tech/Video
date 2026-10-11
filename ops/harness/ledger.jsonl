@@ -73,3 +73,5 @@
 {"id": "CAM-04", "ts": 1791681593, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "CAM-06", "ts": 1791682784, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
 {"id": "CAM-07", "ts": 1791682784, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "RD-03", "ts": 1791685204, "event": "done", "models": "contract:sonnet,build:sonnet,review:sonnet", "note": "요청: Out of scope per the contract: (1) confirm which unit owns the 8x8 screen low-frequency gain (RD-20 assumed); (2) register the R2 ReadStep in RD-21. No dependency changes needed."}
+{"id": "RD-06", "ts": 1791685204, "event": "done", "models": "contract:sonnet,build:sonnet", "note": "요청: LNS-04/08: let `look` accept an ndarray LUT instead of a `Theta.lut` name, so `bake_lut(params)` can be used directly as the look LUT. Also, `bake_lut` is exact only for x<=1 because the sensor clips at 1.0; the shoulder above that must come from `forward`."}

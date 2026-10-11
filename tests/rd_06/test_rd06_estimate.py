@@ -155,7 +155,6 @@ def warns_sorted(w):
 
 
 def test_clip_fraction_definitions_and_sampling():
-    rng = np.random.default_rng(2)
     base = H.scene(40, shape=(40, 50))
     img = np.clip(T.forward(base.astype(np.float32), T.ToneParams()), 0.02, 0.9).astype(np.float32)
     flat = img.reshape(-1, 3)

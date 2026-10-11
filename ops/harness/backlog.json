@@ -2034,12 +2034,18 @@
    "slice": false,
    "rank": 53,
    "why": "비네팅·그레인 문신의 해독제(레버 4)",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791682815,
      "event": "claimed"
+    },
+    {
+     "ts": 1791685204,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet,review:sonnet",
+     "note": "요청: Out of scope per the contract: (1) confirm which unit owns the 8x8 screen low-frequency gain (RD-20 assumed); (2) register the R2 ReadStep in RD-21. No dependency changes needed."
     }
    ],
    "demo": "d15-yak"
@@ -2134,12 +2140,18 @@
    "slice": false,
    "rank": 56,
    "why": "명제 L2(선형 오귀속 상쇄)에 의존",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791682815,
      "event": "claimed"
+    },
+    {
+     "ts": 1791685204,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet",
+     "note": "요청: LNS-04/08: let `look` accept an ndarray LUT instead of a `Theta.lut` name, so `bake_lut(params)` can be used directly as the look LUT. Also, `bake_lut` is exact only for x<=1 because the sensor clips at 1.0; the shoulder above that must come from `forward`."
     }
    ]
   },

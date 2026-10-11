@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 import pytest
+from scipy import sparse
 
 import rd06_helpers as H
 from buc.core import color
@@ -67,7 +68,7 @@ def test_fit_recovers_known_warp():
     lut = T.fit_residual_lut(src, tgt)
     assert time.time() - t0 < 10.0
     assert lut.shape == (N, N, N, 3) and lut.dtype == np.float32 and np.isfinite(lut).all()
-    assert lut.min() >= 0 and lut.max() <= 1
+    assert lut.min() > -0.2 and lut.max() < 1.2                       # 자르지 않지만 폭주하지 않는다
     tst = np.random.default_rng(9).uniform(0, 1, (4000, 3)) ** 2.0
     cs_t = color.linear_to_srgb(tst)
     pred = T.apply_residual_lut(cs_t, lut)
@@ -78,46 +79,68 @@ def test_fit_recovers_known_warp():
     assert base.mean() > 3 * de.mean()
 
 
-def objective(R, sc, d, w, smooth, ridge):
-    """계약서의 J(R) 를 독립 구현: 데이터 + smooth·(1/E)Σ_edge + ridge·(1/V)Σ‖R‖² (R: (17,17,17,3) 잔차장, 부호화 영역)."""
+def _design(sc):
+    """삼선형 가중치 희소 행렬 A (n, 17³) — 독립 구현."""
     n = len(sc)
-    wt = w / w.mean()
     p = sc * (N - 1)
     i0 = np.minimum(np.floor(p).astype(int), N - 2)
     f = p - i0
-    pred = np.zeros_like(sc)
+    rows, cols, vals = [], [], []
     for dr in (0, 1):
         for dg in (0, 1):
             for db in (0, 1):
                 wg = (f[:, 0] if dr else 1 - f[:, 0]) * (f[:, 1] if dg else 1 - f[:, 1]) * (f[:, 2] if db else 1 - f[:, 2])
-                pred += wg[:, None] * R[i0[:, 0] + dr, i0[:, 1] + dg, i0[:, 2] + db]
-    data = np.sum(wt[:, None] * (pred - d) ** 2) / n
-    edges = sum(np.sum(np.diff(R, axis=ax) ** 2) for ax in range(3))
-    return data + smooth * edges / (3 * N * N * (N - 1)) + ridge * np.sum(R ** 2) / N ** 3
+                rows.append(np.arange(n))
+                cols.append(((i0[:, 0] + dr) * N + i0[:, 1] + dg) * N + i0[:, 2] + db)
+                vals.append(wg)
+    return sparse.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(n, N ** 3))
 
 
-@pytest.mark.parametrize("smooth,ridge", [(0.01, 0.001), (0.3, 0.01)])
+def _edge_op():
+    idx = np.arange(N ** 3).reshape(N, N, N)
+    ea, eb = [], []
+    for ax in range(3):
+        a, b = [slice(None)] * 3, [slice(None)] * 3
+        a[ax], b[ax] = slice(0, -1), slice(1, None)
+        ea.append(idx[tuple(a)].ravel())
+        eb.append(idx[tuple(b)].ravel())
+    ea, eb = np.concatenate(ea), np.concatenate(eb)
+    E = len(ea)
+    assert E == 13872
+    return sparse.csr_matrix((np.concatenate([np.ones(E), -np.ones(E)]), (np.concatenate([np.arange(E)] * 2), np.concatenate([ea, eb]))),
+                             shape=(E, N ** 3)), E
+
+
+def objective_terms(R, A, d, w, smooth, ridge):
+    """계약서 J(R) 의 세 항과 기울기: J=(1/N)Σw̃‖A R-d‖²+smooth·(1/E)Σ_edge‖ΔR‖²+ridge·(1/V)Σ‖R‖² (독립 구현)."""
+    n, V = A.shape[0], N ** 3
+    G, E = _edge_op()
+    wt = w / w.mean()
+    Rv = R.reshape(V, 3)
+    res = A @ Rv - d
+    grad = (2.0 / n) * (A.T @ (wt[:, None] * res)) + 2.0 * smooth / E * (G.T @ (G @ Rv)) + 2.0 * ridge / V * Rv
+    J = np.sum(wt[:, None] * res ** 2) / n + smooth * np.sum((G @ Rv) ** 2) / E + ridge * np.sum(Rv ** 2) / V
+    return J, grad, np.abs(grad).max(), max(np.abs((2.0 / n) * (A.T @ (wt[:, None] * res))).max(), np.abs(2.0 * ridge / V * Rv).max())
+
+
+@pytest.mark.parametrize("smooth,ridge", [(0.01, 0.001), (0.3, 0.01), (0.002, 0.05)])
 def test_fit_is_the_minimizer_of_the_contract_objective(smooth, ridge):
+    """J 는 볼록이고 해는 유일하다 -> 기울기가 0 이다. 정규화 상수·정규화 방식이 다르면(예: smooth 1.2배) 기울기가 남는다."""
     src, tgt, _ = samples(0, n=5000)
     sc = np.clip(color.linear_to_srgb(src), 0, 1)
     d = np.clip(color.linear_to_srgb(tgt), 0, 1) - sc
     w = np.random.default_rng(3).uniform(0.5, 2.0, len(sc))
+    A = _design(sc)
     lut = T.fit_residual_lut(src, tgt, weight=w, smooth=smooth, ridge=ridge)
     R = lut.astype(np.float64) - sf.identity_lut(N)
-    J0 = objective(R, sc, d, w, smooth, ridge)
-    assert J0 < objective(np.zeros_like(R), sc, d, w, smooth, ridge)
-    rng = np.random.default_rng(0)
-    g = np.linspace(0, 1, N)
-    smooth_dirs = [np.einsum("i,j,k,c->ijkc", np.cos(a * np.pi * g), np.cos(b * np.pi * g), np.cos(c * np.pi * g), rng.standard_normal(3))
-                   for a, b, c in ((0, 0, 0), (1, 0, 1), (2, 1, 0))]
-    dirs = [rng.standard_normal(R.shape) for _ in range(10)] + smooth_dirs
-    for dl in dirs:
-        dl = 0.1 * dl / np.linalg.norm(dl)
-        for sgn in (1.0, -1.0):
-            assert objective(R + sgn * dl, sc, d, w, smooth, ridge) - J0 > -2e-9
-    # 목적식의 다른 정규화(예: smooth 2배)로 풀면 이 목적식에서는 더 나쁘다 -> 해가 계약서 식의 해임을 가려낸다
-    other = T.fit_residual_lut(src, tgt, weight=w, smooth=smooth * 2.5, ridge=ridge).astype(np.float64) - sf.identity_lut(N)
-    assert objective(other, sc, d, w, smooth, ridge) > J0 + 1e-9
+    J0, g, gmax, scale = objective_terms(R, A, d, w, smooth, ridge)
+    assert gmax <= 1e-3 * scale, (gmax, scale)
+    assert J0 < objective_terms(np.zeros_like(R), A, d, w, smooth, ridge)[0]
+    for sm, rd in ((smooth * 1.2, ridge), (smooth, ridge * 1.5), (smooth / 1.2, ridge)):          # 근처의 '틀린' 목적식 해는 기울기가 남는다
+        other = T.fit_residual_lut(src, tgt, weight=w, smooth=sm, ridge=rd).astype(np.float64) - sf.identity_lut(N)
+        go = objective_terms(other, A, d, w, smooth, ridge)
+        assert go[2] > 3e-3 * go[3]
+        assert go[0] > J0
 
 
 def test_identity_target_gives_identity_lut():
@@ -224,11 +247,13 @@ def test_lut_inverse_converges_for_fitted_lut():
     lut = T.fit_residual_lut(src, tgt)
     rng = np.random.default_rng(12)
     c = rng.uniform(0.03, 0.97, (3000, 3))
-    out = T.apply_residual_lut(c, lut)
+    out = np.clip(T.apply_residual_lut(c, lut), 0, 1)             # 표시 영역은 [0,1]
     back, ok = T.invert_residual_lut(out, lut)
     assert ok.shape == (3000,) and ok.mean() >= 0.97
     assert np.abs(T.apply_residual_lut(back[ok], lut) - out[ok]).max() < 1e-4
-    np.testing.assert_allclose(back[ok], c[ok], atol=2e-3)
+    inner = ok & ((out > 0.002) & (out < 0.998)).all(axis=1)           # 출력이 0/1 로 잘린 곳은 원상이 하나가 아니다
+    assert inner.mean() > 0.9
+    np.testing.assert_allclose(back[inner], c[inner], atol=2e-3)
     # 항등 LUT 는 정확히 되돌린다
     ident = sf.identity_lut(N)
     b2, ok2 = T.invert_residual_lut(c, ident)

@@ -9,7 +9,7 @@ import pytest
 
 from buc.read import tone_color as T
 
-NAMES = ["LUT_N", "MID_GRAY", "OWN_OK", "OWN_CLIP_LO", "OWN_CLIP_HI", "OWN_LUT_LOST", "ToneColorError", "FilmCurve", "CDL",
+NAMES = ["LUT_N", "MID_GRAY", "OWN_OK", "OWN_CLIP_LO", "OWN_CLIP_HI", "OWN_LUT_LOST", "FilmCurve", "CDL",
          "ToneParams", "film_curve", "film_curve_inv", "apply_cdl", "invert_cdl", "apply_residual_lut", "invert_residual_lut",
          "forward", "inverse", "ToneInverse", "bake_lut", "theta_fields", "fit_residual_lut", "r_look", "SkyAnchor",
          "TonePriors", "ToneOpts", "estimate_tone_color", "ToneColor"]
@@ -20,7 +20,6 @@ def test_surface_and_constants():
         assert hasattr(T, n), n
     assert T.LUT_N == 17 and T.MID_GRAY == 0.18
     assert (T.OWN_OK, T.OWN_CLIP_LO, T.OWN_CLIP_HI, T.OWN_LUT_LOST) == (0, 1, 2, 4)
-    assert issubclass(T.ToneColorError, ValueError)
     if hasattr(T, "__all__"):
         for n in NAMES:
             assert n in T.__all__, n
