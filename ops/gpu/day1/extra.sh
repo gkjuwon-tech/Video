@@ -1,101 +1,35 @@
 #!/usr/bin/env bash
-# day1 원격 잡 슬롯(runner.sh가 md5가 바뀌면 받아 실행). 출력은 marks 필터를 거치므로 진단 줄은 D1_X 로 시작한다.
-# 1) M2 진단: 마커가 한 줄도 없다(01:27Z 이후). 프로세스·로그·스택을 본다.
-# 2) 파이프라인 첫 야크(pipe_yak.py)를 백그라운드로 띄운다(한 번만, PIPE_RUN 이 바뀌면 다시).
+# 03:45Z 창업자 지시: 전부 정지(사용량 99%, 월요일 21:00 KST 재개), 돈 안 나가게.
+# M6 라벨(작음)·manifest·체크포인트·로그를 HF 금고에 백업한 뒤 인스턴스를 스스로 정지한다. 오케스트레이터가 확인 후 파기한다.
 set -u
 R=${N1_ROOT:-/workspace/night1}; cd "$R" || exit 0
 x() { while IFS= read -r l; do echo "D1_X $1 ${l:0:360}"; done; }
-
-echo "D1_X diag $(date -u +%FT%TZ)"
-ps -eo pid,ppid,etime,stat,pcpu,rss,args | grep -E '[m]2_latent|[m]13_rigid|[m]6_tlpips|[p]ipe_yak' | x ps
-nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader | x gpu
-ls -la day1/m2 2>&1 | head -12 | x m2dir
-echo "lines=$(wc -l < logs/m2.run.log 2>/dev/null)" | x m2log
-tail -n 12 logs/m2.run.log 2>/dev/null | x m2tail
-P=$(ps -eo pid,args | grep -E '[p]ython -u code/m2_latent_lift' | awk '{print $1}' | head -1)
-if [ -n "$P" ]; then
-  pip install -q --no-cache-dir py-spy >/dev/null 2>&1
-  timeout 60 py-spy dump --pid "$P" 2>&1 | grep -vE '^\s*$' | head -40 | x m2stack
-fi
-python -c "import transformers; print('transformers', transformers.__version__)" 2>&1 | tail -1 | x deps
-
-# 2차 진단(02:10Z): WLD-08 교사 NaN 문맥, pipe 진행, M6 시작 여부
-grep -nE 'NaN|TeacherNumeric|WLD-08|load_teacher|te_device|caption' logs/pipe.log 2>/dev/null | tail -n 25 | x pipenan
-tail -n 6 logs/pipe.log 2>/dev/null | x pipetail
-tail -n 4 logs/pipe2.log 2>/dev/null | x pipe2tail
-tail -n 5 logs/m6.run.log 2>/dev/null | x m6tail
-
-# 3차 진단(03:25Z): 디스크 사용처(10분에 약 2GB씩 줄어듦)
-df -h / | tail -1 | x df
-du -sh "$R"/day1/* "$R"/img "$R"/lat "$R"/_hf_dl* "$R"/repo* "$R"/logs ~/.cache/huggingface 2>/dev/null | sort -h | tail -n 14 | x du
-du -sh "$R"/day1/m6/* 2>/dev/null | sort -h | tail -n 6 | x du_m6
-ls "$R"/day1/m6/ 2>/dev/null | grep -c '^labels_' | x m6_label_chunks
-
-# --- 파이프라인 첫 야크 ---
-PIPE_RUN=1
-if [ ! -f "$R/.pipe_launched_$PIPE_RUN" ]; then
-  touch "$R/.pipe_launched_$PIPE_RUN"
-  python -c "import transformers" 2>/dev/null || pip install -q --no-cache-dir transformers 2>&1 | tail -1 | x pip
-  python - "$R/repo_pipe" <<'PY' 2>&1 | x repo
-import io, sys, tarfile, urllib.request, shutil, os
-url = "https://codeload.github.com/gkjuwon-tech/Video/tar.gz/refs/heads/claude/video-generation-new-paradigm-qriszj"
-data = urllib.request.urlopen(url, timeout=120).read()
-dst = sys.argv[1]; shutil.rmtree(dst, ignore_errors=True); os.makedirs(dst)
-with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as t:
-    top = t.getmembers()[0].name.split("/")[0]
-    for m in t.getmembers():
-        if not m.name.startswith(top + "/") or m.name == top: continue
-        m.name = m.name[len(top) + 1:]
-        t.extract(m, dst, filter="data")
-print("ok", os.path.isfile(os.path.join(dst, "ops/gpu/day1/pipe_yak.py")))
+[ -f "$R/.final_stop_1" ] && exit 0
+touch "$R/.final_stop_1"
+echo "D1_X final_stop begin $(date -u +%FT%TZ)"
+for p in $(ps -eo pid,args | grep -E '[p]ython -u (code/m6_tlpips|code/m3_mrh|.*m14_glyph)' | awk '{print $1}'); do kill -TERM "$p" 2>/dev/null; done
+sleep 30
+python - "$R" <<'PY' 2>&1 | x backup
+import os, sys, glob
+from huggingface_hub import HfApi
+R = sys.argv[1]; tok = os.environ.get("HF_TOKEN")
+api = HfApi(token=tok)
+m6 = os.path.join(R, "day1", "m6")
+files = sorted(glob.glob(os.path.join(m6, "labels_*.npz")) + glob.glob(os.path.join(m6, "*.json")) + glob.glob(os.path.join(m6, "*.jsonl")) + glob.glob(os.path.join(m6, "ckpt_*.pt")))
+files += sorted(glob.glob(os.path.join(R, "logs", "*.log")))
+n = 0
+for i in range(0, len(files), 50):
+    from huggingface_hub import CommitOperationAdd
+    ops = []
+    for p in files[i:i + 50]:
+        rel = os.path.relpath(p, R)
+        ops.append(CommitOperationAdd(path_in_repo="backup/day1_stop/" + rel, path_or_fileobj=p))
+    try:
+        api.create_commit(repo_id="sdsdsdsdsdsdsd123/buc-artifacts", repo_type="model", operations=ops, commit_message="day1 stop backup")
+        n += len(ops)
+    except Exception as e:
+        print("fail", type(e).__name__, str(e)[:200])
+print("ok files", n, "of", len(files))
 PY
-  # 로그 출구: 이 스크립트를 띄운 슬롯 서브셸의 표준출력(= 컨테이너 로그). 슬롯이 막히지 않게 모든 fd를 떼고 띄운다.
-  OUT=/proc/$PPID/fd/1
-  [ -w "$OUT" ] || OUT=/dev/null
-  setsid nohup bash -c '
-    cd "$1" && PYTHONPATH="$1/repo_pipe:$1/code" python -u "$1/repo_pipe/ops/gpu/day1/pipe_yak.py" --root "$1" > "$1/logs/pipe.log" 2>&1
-    echo "D1_PIPE_EXIT rc=$? $(date -u +%FT%TZ)" >> "$1/logs/pipe.log"
-  ' _ "$R" </dev/null >/dev/null 2>&1 &
-  setsid nohup bash -c '
-    sleep 2; tail -n +1 -F "$1/logs/pipe.log" 2>/dev/null | grep --line-buffered -E "^D1_PIPE|Traceback" | awk "{ print substr(\$0, 1, 400); fflush() }" > "$2"
-  ' _ "$R" "$OUT" </dev/null >/dev/null 2>&1 &
-  echo "D1_X pipe launched out=$OUT"
-fi
-# --- 02:12Z: M6가 GPU 메모리 부족(파이프가 실패한 Z-Image 19.8GB를 계속 쥐고 있음) → 파이프를 멈추고 남은 S5·S6만 교사 없이 다시 ---
-PIPE_RUN2=2
-if [ ! -f "$R/.pipe_launched_$PIPE_RUN2" ]; then
-  touch "$R/.pipe_launched_$PIPE_RUN2"
-  for p in $(ps -eo pid,args | grep -E '[p]ython -u .*repo_pipe/ops/gpu/day1/pipe_yak.py' | awk '{print $1}'); do kill -TERM "$p" 2>/dev/null; done
-  sleep 20
-  for p in $(ps -eo pid,args | grep -E '[p]ython -u .*repo_pipe/ops/gpu/day1/pipe_yak.py' | awk '{print $1}'); do kill -KILL "$p" 2>/dev/null; done
-  sleep 5
-  nvidia-smi --query-gpu=memory.used --format=csv,noheader | x gpu_after_kill
-  setsid nohup bash -c '
-    cd "$1" && PYTHONPATH="$1/repo_pipe:$1/code" python -u "$1/repo_pipe/ops/gpu/day1/pipe_yak.py" --root "$1" --modes scaffold --shots S5,S6 --no-teacher > "$1/logs/pipe2.log" 2>&1
-    echo "D1_PIPE_EXIT rc=$? $(date -u +%FT%TZ)" >> "$1/logs/pipe2.log"
-  ' _ "$R" </dev/null >/dev/null 2>&1 &
-  echo "D1_X pipe2 launched S5,S6 --no-teacher"
-fi
-# --- 02:50Z: 상태 비콘. 컨테이너 로그가 몰아서(버퍼) 나오므로 10분마다 요약 + 4KB 채움으로 밀어낸다 ---
-BEACON_RUN=1
-if [ ! -f "$R/.beacon_$BEACON_RUN" ]; then
-  touch "$R/.beacon_$BEACON_RUN"
-  BOUT=/proc/$PPID/fd/1; [ -w "$BOUT" ] || BOUT=/dev/null
-  setsid nohup bash -c '
-    R=$1; OUT=$2
-    while [ "$(date +%s)" -lt $(( ${N1_DEADLINE:-1791723600} + 1500 )) ]; do
-      {
-        echo "D1_B t=$(date -u +%FT%TZ) gpu=$(nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader | tr -d " ") disk=$(df -h / | tail -1 | awk "{print \$4}")"
-        ps -eo etime,pcpu,rss,args | grep -E "[m]2_latent|[m]6_tlpips|[m]3_mrh|[p]ipe_yak" | awk "{printf \"D1_B ps %s cpu=%s rss=%dM %s\n\", \$1, \$2, \$3/1024, \$5}" | head -6
-        grep -h "^D1_M2_EVAL" "$R/logs/m2.run.log" 2>/dev/null | tail -1 | cut -c1-380
-        grep -h "^D1_M6" "$R/logs/m6.run.log" 2>/dev/null | tail -2 | cut -c1-380
-        for f in "$R"/logs/m3*.log; do [ -f "$f" ] && grep -h "^D1_M3" "$f" | tail -2 | cut -c1-380; done
-        grep -h "^D1_PIPE" "$R/logs/pipe2.log" 2>/dev/null | tail -1 | cut -c1-200
-        for i in $(seq 1 42); do echo "D1_PAD ................................................................................................"; done
-      } > "$OUT" 2>/dev/null || true
-      sleep 600
-    done
-  ' _ "$R" "$BOUT" </dev/null >/dev/null 2>&1 &
-  echo "D1_X beacon launched out=$BOUT"
-fi
-echo "D1_X end $(date -u +%FT%TZ)"
+echo "D1_X final_stop backup_done $(date -u +%FT%TZ)"
+[ -n "${CONTAINER_API_KEY:-}" ] && [ -n "${CONTAINER_ID:-}" ] && vastai stop instance "$CONTAINER_ID" --api-key "$CONTAINER_API_KEY" 2>&1 | tail -1 | x stop
