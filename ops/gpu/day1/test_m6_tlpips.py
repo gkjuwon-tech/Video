@@ -5,6 +5,7 @@ import json
 import multiprocessing as mp
 import os
 import random
+import shutil
 import sys
 import tarfile
 import threading
@@ -138,8 +139,8 @@ def small_args(tmp, **over):
     ap = M.build_parser()
     argv = ["--root", str(tmp), "--crop", str(CROP), "--chunk", "32", "--n-train", "64", "--n-val", "32",
             "--n-trip", "16", "--label-batch", "16", "--workers", "1", "--device", "cpu", "--amp", "off",
-            "--batch", "8", "--no-upload", "--warmup", "1", "--total-steps", "20", "--first-eval-s", "0",
-            "--eval-every-s", "0", "--min-free-gb", "0", "--progress-every-s", "0"]
+            "--batch", "8", "--no-upload", "--warmup", "1", "--total-steps", "20", "--first-eval-s", "3600",
+            "--eval-every-s", "3600", "--min-free-gb", "0", "--progress-every-s", "0"]
     for k, v in over.items():
         argv += [f"--{k.replace('_', '-')}", str(v)]
     a = ap.parse_args(argv)
@@ -280,7 +281,8 @@ def test_pool_matches_serial(tmp_path):
     make_corpus(str(tmp_path), n=6)
     specs = [M.make_spec(1, "train", k, list(range(6)), gpu_ops=()) for k in range(12)]
     serial, _ = M.build_chunk(specs, str(tmp_path), CROP)
-    pool = mp.get_context("fork").Pool(2, initializer=M._w_init)
+    pool = M.make_pool(2, "forkserver")      # the production start method (clean child processes)
+    assert pool is not None
     try:
         par, ok = M.build_chunk(specs, str(tmp_path), CROP, pool, timeout=60)
     finally:
@@ -653,7 +655,7 @@ def test_train_one_step_finite_checkpoint_and_resume(tmp_path):
     buf = io.StringIO()
     with redirect_stdout(buf):
         res = tr.run()
-    assert res["status"] == "max_steps" and res["step"] == 2 and np.isfinite(tr.last_loss) or True
+    assert res["status"] == "max_steps" and res["step"] == 2
     assert res["params"] == M.count_params(tr.model)
     for n in ("ckpt_last.pt", "ckpt_best.pt", "metrics.jsonl", "scatter.png"):
         assert os.path.exists(os.path.join(out, n)), n
@@ -674,33 +676,52 @@ def test_train_one_step_finite_checkpoint_and_resume(tmp_path):
 
 
 def test_train_loss_decreases_on_learnable_labels(tmp_path):
-    """The student can actually fit the (fake, pixel-difference) teacher: loss goes down over a few dozen steps."""
+    """The student can fit the (fake, pixel-difference) teacher: per-step loss goes down over a few dozen steps."""
     job, out = labelled_fixture(tmp_path)
-    tr, args = make_trainer(tmp_path, job, out, max_steps=40, lr=3e-3)
+    tr, args = make_trainer(tmp_path, job, out, max_steps=30, lr=3e-3, batch=4, total_steps=200)
     losses = []
-    orig = tr._train_step
+    orig = M.compute_loss
 
-    def spy(batch):
-        ok = orig(batch)
-        losses.append(float(tr.acc[0]) / max(1, tr.acc_n))
-        return ok
+    def spy(*a, **k):
+        r = orig(*a, **k)
+        losses.append(float(r["loss"]))
+        return r
 
-    tr._train_step = spy
-    with redirect_stdout(io.StringIO()):
-        tr.run()
-    assert np.mean(losses[-5:]) < np.mean(losses[:5])
+    M.compute_loss = spy
+    try:
+        with redirect_stdout(io.StringIO()):
+            res = tr.run()
+    finally:
+        M.compute_loss = orig
+    assert res["step"] == 30 and len(losses) >= 30
+    assert np.mean(losses[-8:]) < 0.8 * np.mean(losses[:8]), (losses[:8], losses[-8:])
+
+
+def test_calibrate_scale_matches_teacher_level():
+    torch.manual_seed(0)
+    st = M.TLPIPSStudent()
+    x, y = torch.randn(6, 3, CROP, CROP), torch.randn(6, 3, CROP, CROP) * 0.5
+    d_t = torch.full((6,), 0.37)
+    before = float(torch.log(st(x, y)["d"] + M.LOG_EPS).mean())
+    k = M.calibrate_scale(st, [(x, y, d_t)])
+    after = st(x, y)["d"]
+    assert k > 1.0                                                       # fresh weights start far below the teacher
+    assert float(torch.log(after + M.LOG_EPS).mean()) == pytest.approx(float(torch.log(d_t[0] + M.LOG_EPS)), abs=0.1)
+    assert float(torch.log(after + M.LOG_EPS).mean()) > before
+    assert all((F.softplus(l) > 0).all() for l in st.lin)
+    assert M.calibrate_scale(st, []) == 1.0
 
 
 def test_train_deadline_stops_with_final_checkpoint(tmp_path):
     job, out = labelled_fixture(tmp_path)
-    args = small_args(tmp_path)
+    args = small_args(tmp_path, total_steps=10000)
     clock = {"t": 0.0}
 
     def now():
         clock["t"] += 1.0
         return clock["t"]
 
-    tr = M.Trainer(args, out, job.h, now=now, deadline=100.0 + args.finish_margin_s, device=torch.device("cpu"))
+    tr = M.Trainer(args, out, job.h, now=now, deadline=30.0 + args.finish_margin_s, device=torch.device("cpu"))
     buf = io.StringIO()
     with redirect_stdout(buf):
         res = tr.run()
@@ -709,7 +730,7 @@ def test_train_deadline_stops_with_final_checkpoint(tmp_path):
     assert "D1_M6_DONE" in buf.getvalue()
     # a deadline already inside the margin: no training at all, but a clean exit with a checkpoint
     out2 = os.path.join(str(tmp_path), "o2")
-    shutil_copy = __import__("shutil").copytree(out, out2, ignore=lambda d, n: ["ckpt_last.pt", "ckpt_best.pt", "metrics.jsonl"])
+    shutil.copytree(out, out2, ignore=lambda d, n: ["ckpt_last.pt", "ckpt_best.pt", "metrics.jsonl"])
     tr2 = M.Trainer(args, out2, job.h, now=lambda: 1000.0, deadline=1000.0 + 10, device=torch.device("cpu"))
     with redirect_stdout(io.StringIO()):
         res2 = tr2.run()
@@ -763,9 +784,8 @@ def test_step_exceptions_are_survived_until_100(tmp_path):
     tr._train_step = boom
     with redirect_stdout(io.StringIO()):
         assert tr.run()["step"] == 2
-    tr2, _ = make_trainer(tmp_path, job, str(tmp_path / "x"), max_steps=2) if False else (None, None)
     out2 = str(tmp_path / "o3")
-    __import__("shutil").copytree(out, out2, ignore=lambda d, nn_: ["ckpt_last.pt", "ckpt_best.pt", "metrics.jsonl"])
+    shutil.copytree(out, out2, ignore=lambda d, nn_: ["ckpt_last.pt", "ckpt_best.pt", "metrics.jsonl"])
     t3 = M.Trainer(small_args(tmp_path, max_steps=5), out2, job.h, device=torch.device("cpu"), deadline=None)
     t3.sleep = lambda s: None
     t3._train_step = lambda b: (_ for _ in ()).throw(RuntimeError("always"))
@@ -782,7 +802,7 @@ def run_main(tmp_path, argv_extra=(), deps=None, env=None, deadline_ahead=4 * 36
     out = os.path.join(str(tmp_path), "day1", "m6")
     argv = ["--root", str(tmp_path), "--crop", str(CROP), "--chunk", "32", "--n-train", "64", "--n-val", "32",
             "--n-trip", "16", "--label-batch", "16", "--workers", "1", "--device", "cpu", "--amp", "off",
-            "--batch", "8", "--warmup", "1", "--total-steps", "20", "--first-eval-s", "0", "--eval-every-s", "0",
+            "--batch", "8", "--warmup", "1", "--total-steps", "20", "--first-eval-s", "3600", "--eval-every-s", "3600",
             "--min-free-gb", "0", "--progress-every-s", "0", "--max-steps", "3", "--deadline",
             str(time.time() + deadline_ahead)] + list(argv_extra)
     buf = io.StringIO()
@@ -856,12 +876,11 @@ def test_main_deadline_validation_and_phases(tmp_path, monkeypatch):
     rc, text, out = run_main(tmp_path, ["--phase", "train"], deps={})
     assert rc == 0 and os.path.exists(os.path.join(out, "ckpt_best.pt"))
     # label budget: with the training reserve larger than the time left, labelling stops at once but C still runs
-    shutil_rm = __import__("shutil").rmtree
-    shutil_rm(out)
+    shutil.rmtree(out)
     lab2 = FakeLabeler()
     rc, text, out = run_main(tmp_path, ["--train-reserve-s", "100000"], deps={"labeler": lab2},
                              deadline_ahead=3600.0)
-    assert rc == 0 and lab2.calls == 0 and "no_train_labels" in text
+    assert rc == 0 and lab2.calls == 0 and "label_skipped" in text and "no_train_labels" in text
 
 
 def test_main_no_corpus_is_fatal_not_crash(tmp_path, monkeypatch):

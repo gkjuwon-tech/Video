@@ -860,7 +860,7 @@ def test_finished_run_is_not_redone_by_a_relaunch_loop(corpus, capsys):
         assert rc == 0
         done = markers(out2, "D1_M2_DONE")
         assert done[-1]["status"] == "already_done" and done[-1]["step"] == 3
-        assert not [m for m in markers(out2) if "params_down" in m]          # nothing loaded
+        assert not [m for m in markers(out2) if "params_down" in m or "cache_done" in m]   # nothing loaded
     assert len(open(os.path.join(od, "metrics.jsonl")).read().splitlines()) == n_rows
     assert len(uploads) == n_up and not vae.dec_inputs and not vae.enc_inputs
     # a larger target is not blocked by the old DONE.json
@@ -919,12 +919,15 @@ def test_signal_final_eval_skips_the_decodes(corpus, monkeypatch):
         return real(*a, **k)
 
     monkeypatch.setattr(M, "evaluate", spying)
-    real_final = tr.checkpoint_and_eval
+    real_step = tr._train_step
 
-    def final(final=False, reason=None):
-        return real_final(final=final, reason=reason)
+    def step_then_stop(batch):
+        ok = real_step(batch)
+        if tr.step >= 1:
+            stop.set()                                                    # SIGTERM arrives after the first step
+        return ok
 
-    stop.set()
+    monkeypatch.setattr(tr, "_train_step", step_then_stop)
     res = tr.run()
     assert res["status"] == "signal"
     assert calls and calls[-1] is None                                    # no decode_fn on SIGTERM

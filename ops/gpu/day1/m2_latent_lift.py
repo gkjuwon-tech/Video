@@ -1689,10 +1689,6 @@ class Trainer:
     def run(self) -> dict:
         a = self.a
         os.makedirs(self.samples_dir, exist_ok=True)
-        done_step = self._already_done()
-        if done_step is not None:      # relaunched by a keep-alive loop after a normal finish: do nothing
-            log({"status": "already_done", "step": done_step}, marker=MARK + "_DONE")
-            return {"status": "already_done", "step": done_step}
         os.makedirs(os.path.join(self.out, "zd"), exist_ok=True)
         clean_tmp(self.out)
         token = os.environ.get("HF_TOKEN")
@@ -1700,6 +1696,10 @@ class Trainer:
             self.uploader = None if a.no_upload else make_uploader(token, a.repo_id)
         log({"start": True, "root": self.root, "hf_token": "yes" if token else "no",
              "upload": bool(self.uploader), "deadline": self.deadline, "torch": torch.__version__})
+        done_step = self._already_done()
+        if done_step is not None:      # relaunched by a keep-alive loop after a normal finish: load nothing, do nothing
+            log({"status": "already_done", "step": done_step}, marker=MARK + "_DONE")
+            return {"status": "already_done", "step": done_step}
 
         tae_path = a.tae_ckpt or os.path.join(self.root, "tae", "ckpt_best.pt")
         if not a.no_fetch:

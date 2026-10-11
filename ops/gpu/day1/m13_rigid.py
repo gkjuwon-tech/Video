@@ -59,6 +59,7 @@ FPS = 24
 MAX_LEN = 240                      # frames fed to the model (longer sequences are cut, shorter padded)
 FEAT_DIM = 10                      # rot6d(rel rotation) 6 + rel translation 3 + cumulative path 1
 ROT_SCALE = 20.0                   # per-frame relative rot6d is ~0.01-0.05 -> bring it to O(0.1-1)
+MAX_AUTO_PROCS = 12                # cap on auto-chosen datagen workers (M6 stage A shares the box)
 UNIT = 200                         # samples per cache unit (resumable work item)
 MAX_ATTEMPTS = 4                   # re-draws of a sample whose simulation fails or diverges
 MAX_CONSEC_ERRORS = 100            # consecutive failed training steps -> stop
@@ -455,6 +456,12 @@ def unit_bounds(u: int, n_total: int, unit: int = UNIT) -> Tuple[int, int]:
     return u * unit, min(n_total, (u + 1) * unit)
 
 
+def _worker_init() -> None:
+    """Pool children inherit main()'s flag-setting handlers; restore defaults so terminate() really kills them."""
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)      # Ctrl-C is handled by the parent, which then terminates the pool
+
+
 def _unit_task(args):
     split, u, start, stop, base_seed, cfg = args
     try:
@@ -503,6 +510,44 @@ def merged_is_complete(path: str, n_total: int) -> bool:
         return False
 
 
+def cgroup_cpu_limit(root: str = "/sys/fs/cgroup") -> Optional[float]:
+    """CPU quota of the container in cores (cgroup v2 ``cpu.max`` or v1 ``cpu.cfs_*``), None if unlimited/unknown."""
+    try:
+        with open(os.path.join(root, "cpu.max")) as f:
+            parts = f.read().split()
+        if parts[0] == "max":
+            return None
+        q, per = float(parts[0]), float(parts[1]) if len(parts) > 1 else 100000.0
+        return q / per if q > 0 and per > 0 else None
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        with open(os.path.join(root, "cpu", "cpu.cfs_quota_us")) as f:
+            q = float(f.read().strip())
+        with open(os.path.join(root, "cpu", "cpu.cfs_period_us")) as f:
+            per = float(f.read().strip())
+        return q / per if q > 0 and per > 0 else None
+    except (OSError, ValueError):
+        return None
+
+
+def available_cores(cgroup_root: str = "/sys/fs/cgroup") -> int:
+    """Cores this process may really use: min(cgroup quota, affinity mask, os.cpu_count())."""
+    n = os.cpu_count() or 4
+    try:
+        n = min(n, len(os.sched_getaffinity(0)))
+    except (AttributeError, OSError):
+        pass
+    lim = cgroup_cpu_limit(cgroup_root)
+    if lim is not None:
+        n = min(n, max(1, int(math.ceil(lim - 1e-9))))
+    return max(1, n)
+
+
+def default_procs(cgroup_root: str = "/sys/fs/cgroup", cap: int = MAX_AUTO_PROCS) -> int:
+    return max(1, min(cap, available_cores(cgroup_root) - 2))
+
+
 def ensure_split(cdir: str, split: str, per_rig: int, base_seed: int, cfg: NoiseCfg, procs: int,
                  should_stop: Callable[[], bool], now: Callable[[], float] = time.time,
                  log_every_s: float = 300.0, unit: int = UNIT) -> Optional[str]:
@@ -546,7 +591,7 @@ def ensure_split(cdir: str, split: str, per_rig: int, base_seed: int, cfg: Noise
     if todo and procs > 1:
         ctx = multiprocessing.get_context("fork" if "fork" in multiprocessing.get_all_start_methods()
                                           else "spawn")
-        pool = ctx.Pool(min(procs, len(todo)))
+        pool = ctx.Pool(min(procs, len(todo)), initializer=_worker_init)
         try:
             for u, arrays, err in pool.imap_unordered(_unit_task, tasks):
                 handle(u, arrays, err)
@@ -1107,7 +1152,7 @@ class Trainer:
              "deadline": self.deadline, "torch": torch.__version__})
 
         # ---- data ----
-        procs = a.procs if a.procs > 0 else max(1, (os.cpu_count() or 4) - 2)
+        procs = a.procs if a.procs > 0 else default_procs()
         cdir = os.path.join(self.out, "cache", cache_key(a.seed, self.noise))
         stop_fn = lambda: self._stop_reason() in ("signal", "deadline")  # noqa: E731
         paths = {}
@@ -1258,7 +1303,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="final save/eval/upload starts this many seconds before the deadline")
     ap.add_argument("--train-per-rig", type=int, default=2857, help="x14 rigs = 39,998 training sequences")
     ap.add_argument("--val-per-rig", type=int, default=285, help="x14 rigs = 3,990 validation sequences")
-    ap.add_argument("--procs", type=int, default=0, help="data workers (0 = cores - 2)")
+    ap.add_argument("--procs", type=int, default=0, help="data workers (0 = min(12, cgroup/affinity cores - 2))")
     ap.add_argument("--only-gen", action="store_true", help="build the data cache and stop")
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--batch", type=int, default=256)

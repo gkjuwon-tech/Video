@@ -1053,6 +1053,30 @@ class TLPIPSStudent(nn.Module):
         return {"d": st.sum(1), "stage": st, "map": total_map}
 
 
+@torch.no_grad()
+def calibrate_scale(model: TLPIPSStudent, batches: Sequence[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]) -> float:
+    """Rescale all channel weights so the student's mean log-distance starts at the teacher's.
+
+    The weights begin near 1/C and Adam moves them ~lr per step, so without this the first thousands of
+    steps are spent on the global scale. Returns the factor applied (1.0 when it could not be estimated)."""
+    was = model.training
+    model.eval()
+    ls, lt = [], []
+    for x, y, d in batches:
+        ls.append(torch.log(model(x, y)["d"].float() + LOG_EPS))
+        lt.append(torch.log(d.float() + LOG_EPS))
+    model.train(was)
+    if not ls:
+        return 1.0
+    shift = float(torch.cat(lt).mean() - torch.cat(ls).mean())
+    k = math.exp(max(-12.0, min(12.0, shift)))
+    if not math.isfinite(k):
+        return 1.0
+    for p in model.lin:
+        p.copy_(torch.log(torch.expm1(F.softplus(p) * k)))
+    return k
+
+
 def rank_loss(ls: torch.Tensor, lt: torch.Tensor, margin: float = 0.1, min_gap: float = 0.2) -> torch.Tensor:
     """Margin ranking over all pairs-of-pairs in the batch (log-distance domain), teacher order as target."""
     dt = lt[:, None] - lt[None, :]
@@ -1497,8 +1521,9 @@ def ensure_assets(root: str, tae_path: str, min_images: int, lister, fetcher, ne
         for name in names:
             try:
                 p = fetcher(name)
-                extract_shard(p, root)
+                added = extract_shard(p, root)
                 res["shards"] += 1
+                log({"shard": os.path.basename(name), "new_files": added})
                 try:
                     os.remove(p)
                 except OSError:
@@ -1582,8 +1607,10 @@ def load_teacher(device: str, cache_path: str, blocks: Sequence[int], sigma: flo
     if os.path.isfile(cache_path):
         try:
             cap = torch.load(cache_path, map_location="cpu", weights_only=True)["cap"]
-        except Exception as e:  # noqa: BLE001
-            warn("cap_cache_unreadable", err=err_str(e))
+            from diffusers import ZImageTransformer2DModel  # noqa: F401  (components load only if importable)
+        except Exception as e:  # noqa: BLE001 - fall back to the whole pipeline
+            warn("cap_cache_unusable", err=err_str(e))
+            cap = None
     if cap is None:
         from diffusers import ZImagePipeline
         pipe = ZImagePipeline.from_pretrained(path, torch_dtype=dtype, low_cpu_mem_usage=False)
@@ -1596,8 +1623,7 @@ def load_teacher(device: str, cache_path: str, blocks: Sequence[int], sigma: flo
         pipe.text_encoder = None
         del pipe
     else:
-        from diffusers import AutoencoderKL
-        from diffusers.models import ZImageTransformer2DModel
+        from diffusers import AutoencoderKL, ZImageTransformer2DModel
         transformer = ZImageTransformer2DModel.from_pretrained(path, subfolder="transformer", torch_dtype=dtype).to(device)
         vae = AutoencoderKL.from_pretrained(path, subfolder="vae", torch_dtype=dtype).to(device)
     transformer.eval().requires_grad_(False)
@@ -1739,6 +1765,23 @@ class Trainer:
             if th.is_alive():
                 warn("final_upload_timeout")
 
+    def _calibrate(self, loader, n: int = 8) -> float:
+        batches = []
+        for _ in range(n):
+            try:
+                imgs, d_t, _m = loader.next(timeout=self.a.loader_timeout_s)
+            except queue.Empty:
+                break
+            im = torch.from_numpy(imgs).to(self.device)
+            batches.append((im[:, 0].permute(0, 3, 1, 2).float() / 127.5 - 1.0,
+                            im[:, 1].permute(0, 3, 1, 2).float() / 127.5 - 1.0,
+                            torch.from_numpy(d_t).to(self.device)))
+        try:
+            return calibrate_scale(self.model, batches)
+        except Exception as e:  # noqa: BLE001 - calibration is an optimisation only
+            warn("calibrate_failed", err=err_str(e))
+            return 1.0
+
     def _train_step(self, batch) -> bool:
         imgs, d_t, map_t = batch
         dev = self.device
@@ -1829,6 +1872,9 @@ class Trainer:
         next_log = t0 + a.log_every_s
         next_eval = t0 + min(a.first_eval_s, a.eval_every_s)
         loader = BatchLoader(train, a.batch, a.seed * 1009 + self.step)
+        if not resumed:
+            k = self._calibrate(loader)
+            log({"phase": "calibrate", "scale": round(k, 4)})
         consec = 0
         reason: Optional[str] = None
         self.model.train()
@@ -2041,6 +2087,14 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
     else:
         write_manifest(out, man)
 
+    label_deadline = None
+    if deadline is not None:
+        label_deadline = deadline - args.finish_margin_s
+        if args.phase == "all":
+            label_deadline = min(label_deadline, deadline - args.train_reserve_s)
+        if now() >= label_deadline:
+            log({"phase": "label_skipped", "reason": "label_budget", "left_s": round(label_deadline - now())})
+            return 0
     pool = deps.get("pool")
     own_pool = False
     if pool is None:
@@ -2066,11 +2120,6 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
                 gpu_fns["tae"] = make_tae_roundtrip(load_tae(tae_path, dev), dev)
             except Exception as e:  # noqa: BLE001 - TAE pairs get dropped (ok=False), the rest goes on
                 warn("tae_unavailable", err=err_str(e))
-        label_deadline = None
-        if deadline is not None:
-            label_deadline = deadline - args.finish_margin_s
-            if args.phase == "all":
-                label_deadline = min(label_deadline, deadline - args.train_reserve_s)
         job = LabelJob(args, out, root, train_pool, val_pool, labeler, gpu_fns, pool, now, stop, label_deadline)
         res = job.run()
         log({"phase": "label_done", **res})

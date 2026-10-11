@@ -2,6 +2,7 @@
 import json
 import os
 import shutil
+import signal
 import sys
 import threading
 
@@ -323,6 +324,71 @@ def test_parallel_pool_matches_serial(tmp_path):
     za, zb = M.load_split(a), M.load_split(b)
     for k in za:
         np.testing.assert_array_equal(za[k], zb[k])
+
+
+def test_pool_terminates_even_with_flag_only_signal_handler(tmp_path):
+    """main() installs a flag-only SIGTERM handler before the fork; workers must not inherit it (pool.join hung)."""
+    old = {s: signal.getsignal(s) for s in (signal.SIGTERM, signal.SIGINT)}
+    seen = []
+    for s in old:
+        signal.signal(s, lambda n, _f: seen.append(n))
+    try:
+        n = {"k": 0}
+
+        def stop():
+            n["k"] += 1
+            return True
+
+        res = {}
+        t = threading.Thread(target=lambda: res.update(r=M.ensure_split(
+            str(tmp_path / "c"), "train", 30, 0, M.NoiseCfg(), 2, stop, unit=7)), daemon=True)
+        t.start()
+        t.join(60)
+        assert not t.is_alive(), "ensure_split hung: pool workers ignored terminate()"
+        assert res["r"] is None
+    finally:
+        for s, h in old.items():
+            signal.signal(s, h)
+
+
+def test_worker_init_restores_default_signals():
+    import multiprocessing
+    ctx = multiprocessing.get_context("fork")
+    with ctx.Pool(1, initializer=M._worker_init) as p:
+        assert p.apply(signal.getsignal, (signal.SIGTERM,)) == signal.SIG_DFL
+        assert p.apply(signal.getsignal, (signal.SIGINT,)) == signal.SIG_IGN
+
+
+def test_cgroup_cpu_limit_v2_v1_and_unlimited(tmp_path):
+    v2 = tmp_path / "v2"
+    v2.mkdir()
+    (v2 / "cpu.max").write_text("1400000 100000\n")
+    assert M.cgroup_cpu_limit(str(v2)) == pytest.approx(14.0)
+    (v2 / "cpu.max").write_text("max 100000\n")
+    assert M.cgroup_cpu_limit(str(v2)) is None
+    v1 = tmp_path / "v1" / "cpu"
+    v1.mkdir(parents=True)
+    (v1 / "cpu.cfs_quota_us").write_text("1200000\n")
+    (v1 / "cpu.cfs_period_us").write_text("100000\n")
+    assert M.cgroup_cpu_limit(str(tmp_path / "v1")) == pytest.approx(12.0)
+    (v1 / "cpu.cfs_quota_us").write_text("-1\n")
+    assert M.cgroup_cpu_limit(str(tmp_path / "v1")) is None
+    assert M.cgroup_cpu_limit(str(tmp_path / "nothing")) is None
+
+
+def test_default_procs_respects_quota_affinity_and_cap(tmp_path, monkeypatch):
+    monkeypatch.setattr(M.os, "cpu_count", lambda: 128)
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda _p: set(range(128)), raising=False)
+    (tmp_path / "cpu.max").write_text("800000 100000\n")
+    assert M.default_procs(str(tmp_path)) == 6                 # 8-core quota on a 128-core host -> 8 - 2
+    (tmp_path / "cpu.max").write_text("1600000 100000\n")
+    assert M.default_procs(str(tmp_path)) == 12                # capped
+    (tmp_path / "cpu.max").write_text("max 100000\n")
+    assert M.default_procs(str(tmp_path)) == 12
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda _p: set(range(4)), raising=False)
+    assert M.default_procs(str(tmp_path)) == 2                 # affinity mask wins
+    monkeypatch.setattr(M.os, "cpu_count", lambda: 2)
+    assert M.default_procs(str(tmp_path)) == 1                 # never below one
 
 
 def test_cache_key_changes_with_config():
