@@ -1,0 +1,7 @@
+{
+ "tests/cam_06/cam06_helpers.py": "2b99880055d98b6d5f4c62329c1b17954b168bb45f6db27373bd433e56b60db1",
+ "tests/cam_06/test_cam06_augment.py": "b2728e1247defb2f51907605629d881bcc7ad1e17d5ff657e5f7c2f96e1011dd",
+ "tests/cam_06/test_cam06_dataset.py": "69c3a7df88888ba4085d462f70b4abe380ac4d3306b6162694bbe2ff672bda39",
+ "tests/cam_06/test_cam06_parsers.py": "9d223fe3234d84e4211038c5a518e7d5b6ec7421a514f401668ea60e11765745",
+ "tests/cam_06/test_cam06_resample_align.py": "ec0ef016d98ed54e9e6f048bd6445621e6ca42d7697ff3c897ea294b7840089e"
+}

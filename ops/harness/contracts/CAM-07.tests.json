@@ -1,0 +1,7 @@
+{
+ "tests/cam_07/cam07_helpers.py": "c2f1f061a33e0fe4dd22c0ae68e6d47226744ac5de10c8263e676b9092604fcb",
+ "tests/cam_07/test_cam07_path.py": "dcb738cd8207fbc5338b7ea34f59e57bfd972fa955243a4d6054dd2e55caac88",
+ "tests/cam_07/test_cam07_sdf.py": "a9810ae7f413cfad49b2712aae641c61ccef5d09b0d47616d46b76b74bb63a82",
+ "tests/cam_07/test_cam07_seams.py": "8efc7b4b008313f465e0a9871046108dfbb480bd8b7aac2c6a7f41574bf69fb1",
+ "tests/cam_07/test_cam07_visibility.py": "a9a9e43ed626deb43ec36486f2a3de66816004c334a8e34f682cd8f5ca81a742"
+}

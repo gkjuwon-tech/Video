@@ -71,3 +71,5 @@
 {"id": "LNS-07", "ts": 1791679286, "event": "done", "models": "contract:sonnet,build:haiku", "note": ""}
 {"id": "LNS-08", "ts": 1791681593, "event": "done", "models": "contract:sonnet,build:sonnet,review:opus", "note": ""}
 {"id": "CAM-04", "ts": 1791681593, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "CAM-06", "ts": 1791682784, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
+{"id": "CAM-07", "ts": 1791682784, "event": "done", "models": "contract:sonnet,build:sonnet", "note": ""}
