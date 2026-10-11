@@ -1,6 +1,14 @@
 # 운영 상태
 
-## 🏭 15일 스프린트 가동 중 (D0 = 2026-10-10)
+## ⏸️ 일시 정지 (D1 03:45Z, 창업자 지시: "공장 다 스톱, 사용량 99%, 월요일 9시에 보자, 돈 안 나가게")
+- 재개: **2026-10-12(월) 21:00 KST = 12:00Z**, Claude 주간 한도 리셋 뒤.
+- 멈춘 것: 공장장 정기 트리거 `trig_01GL7Ww48KbFj51yDHhG5EQW`(꺼짐), 5시간 보고 `trig_01BFrwWLxm7wufRA4SEwgYNQ`(꺼짐), night2 체크인(삭제), 공장장 세션 중지 요청, M14 빌드 워크플로 중지, M3 빌드 워크플로(빌드 단계에서 멈춤).
+- GPU 55234730: M6 라벨·로그를 HF `backup/day1_stop/`에 백업 후 자체 정지 → 확인되면 파기(저장비도 0).
+- 완성 모델: M1(`ckpt/night1/tae_t/`), M13(`ckpt/day1/m13/`), M2(`ckpt/day1/m2/`, 30k 스텝, +7.4/+5.6 dB, 야크 +4.7/+3.6 dB). M6는 라벨 단계 중 정지(라벨 백업으로 재개 가능).
+- 재개 순서: (1) 트리거 2개 다시 켜기, (2) M3 워크플로 `Workflow({scriptPath: .../m3-spike-pull-forward-wf_e4247626-c45.js, resumeFromRunId: "wf_e4247626-c45"})`로 이어서(읽기·명세 캐시, `ops/gpu/day1/m3_mrh.py` 5.1k줄 WIP 커밋됨), M14 워크플로도 `wf_4a2dc1bf-673` 재개, (3) 새 5090 띄우고 M6(라벨 HF에서 복원) → M3 → 파이프라인 야크 v2.
+- **돈:** Vast 크레딧 약 $29(03:00Z 기준). 창업자: 22일 이후 최대 30만원 충전 가능. 그 전까지 24시간 가동 금지, 할 일 있을 때만 켜기(하루 평균 약 4.7 GPU-시간). 5090 $0.508/h.
+
+## 🏭 15일 스프린트 (D0 = 2026-10-10)
 - **하네스 v1 가동:** 헌법 `ops/harness/README.md`, 백로그 `ops/harness/backlog.json`(167단위, 수직 슬라이스 45개 우선), 선택기 `pick.py`, 기계 게이트 `gate.py`(동결 테스트 해시·compile·ruff·pytest), 상태 갱신 `update.py`, 장부 `ledger.jsonl`. 교대조 워크플로 `ops/workflows/buc-shift.js`(args batches 4, k 2). 교대조가 끝나면 오케스트레이터가 바로 다음 교대조를 띄운다.
 - 모델 배정: 선택·게이트·커밋 Haiku, 계약서+테스트 Sonnet(난이도·위험 ≥4는 Opus medium), 구현은 백로그 impl_model, 수리 Sonnet→Opus, 위험 ≥4 검토 Opus low. Fable은 교대조에서 쓰지 않음.
 - 보고: 5시간마다(트리거 `trig_01BFrwWLxm7wufRA4SEwgYNQ`, cron 0 */5). 창업자 질문 시 즉시.
