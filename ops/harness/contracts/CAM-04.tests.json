@@ -1,0 +1,7 @@
+{
+ "tests/cam_04/cam04_helpers.py": "d5d87e7dffde960cf0245320898b64067a98cc176ef66a2828bb52090f459358",
+ "tests/cam_04/test_cam04_exposure.py": "72ee1837a2c7c84462e4980b4d7cd02d07392d4de363f83e5bb5fb2f78ca5590",
+ "tests/cam_04/test_cam04_paths.py": "7dd41f0af4fa559c765d2a9bf5e26ea8b52f699bcd88936aed74f7b868173c14",
+ "tests/cam_04/test_cam04_rules.py": "8be4c273b01434471a187334c34c68f6b092df630bf82b713bbcd79bfa364b29",
+ "tests/cam_04/test_cam04_seams.py": "764fd1d0fb72fcd3c3f54df10592575a3bc220384ea8dfac31307d5f33fa9c4e"
+}

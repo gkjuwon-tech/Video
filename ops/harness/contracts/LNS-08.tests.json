@@ -1,0 +1,7 @@
+{
+ "tests/lns_08/lns08_helpers.py": "2c0405f2f928b653dc0900086e4af14fdad58d62786cb0b2226237206fe30756",
+ "tests/lns_08/test_lns08_api.py": "17a8f6a6090793949ac83e0c32b22bb5a26bafe1059e7ad13d5b957fa579adfd",
+ "tests/lns_08/test_lns08_chain.py": "bb5d28c5da158150cc2e67de94742e815115abd1ebe053482be12bfe793d4a5a",
+ "tests/lns_08/test_lns08_lut.py": "63a620c13ec7115c513c27b3344a749357086dbda960950cfa837d041b1a1d64",
+ "tests/lns_08/test_lns08_roundtrip.py": "169def46cbc5f77c027962bd124a5a21ba23ba605dca88ba1b18637bb1d7f000"
+}

@@ -1673,9 +1673,14 @@
    "slice": false,
    "rank": 43,
    "why": "look∘explain≈id 성질이 관측 소유권의 토대",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": [],
+   "log": [
+    {
+     "ts": 1791679306,
+     "event": "claimed"
+    }
+   ],
    "demo": "d15-yak"
   },
   {
@@ -1803,9 +1808,14 @@
    "slice": false,
    "rank": 47,
    "why": "인물 입력의 하드 제약",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791679306,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "CAM-05",
