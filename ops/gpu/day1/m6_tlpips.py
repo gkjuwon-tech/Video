@@ -870,7 +870,10 @@ def label_resilient(labeler, x_u8: np.ndarray, y_u8: np.ndarray, ids: Sequence[i
     # `e` is gone here, so the failed attempt's tensors are collectable
     state["errors"] += 1
     if oom:
-        gc.collect()
+        t = time.monotonic()
+        if t - state.get("gc_t", -1e9) > 2.0:          # a full collection is slow; once per OOM episode is enough
+            gc.collect()
+            state["gc_t"] = t
         free_cuda_cache()
         if n > 1:
             state["cap"], state["good"] = max(1, n // 2), 0

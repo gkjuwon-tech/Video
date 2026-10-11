@@ -2,6 +2,7 @@
 fake corpus, fake uploader."""
 import io
 import json
+import math
 import multiprocessing as mp
 import os
 import random
@@ -10,6 +11,7 @@ import sys
 import tarfile
 import threading
 import time
+import weakref
 from contextlib import redirect_stdout
 from types import SimpleNamespace
 
@@ -1111,3 +1113,266 @@ def test_cli_defaults_match_spec():
     assert a.finish_margin_s == 600 and a.label_batch == 32 and a.crop == 256 and a.eval_every_s == 900
     assert M.parse_blocks(a.blocks) == (8, 15, 23) and a.phase == "all"
     assert a.log_every_s <= 300 and a.progress_every_s <= 300
+
+
+# ---------------------------------------------------------------- review round 2: OOM retry, workers, shared corpus,
+# transient GPU-op failures, calibrate overflow
+
+class _Sentinel:
+    pass
+
+
+class PinningLabeler(FakeLabeler):
+    """The first 8-pair forward fails with an OOM while holding a local object; retries record whether that
+    object is already gone (it is not if the retry runs inside the ``except`` block: the traceback pins it)."""
+
+    def __init__(self):
+        super().__init__()
+        self.refs, self.dead_at_retry = [], []
+
+    def label_pairs(self, x, y, ids):
+        if len(ids) == 8 and not self.refs:
+            blob = _Sentinel()                                   # stands for the failed forward's activations
+            self.refs.append(weakref.ref(blob))
+            raise RuntimeError("CUDA out of memory (fake) " + str(blob is not None))
+        if self.refs:
+            self.dead_at_retry.append(self.refs[0]() is None)
+        return super().label_pairs(x, y, ids)
+
+
+def test_oom_retry_runs_after_the_failed_forward_is_released():
+    lab = PinningLabeler()
+    x, y = rand_u8(8, seed=1), rand_u8(8, seed=2)
+    st = {"fail_run": 0, "errors": 0}
+    res, ok = M.label_resilient(lab, x, y, np.arange(8), st)
+    assert ok.all() and np.isfinite(res["d"]).all()
+    assert lab.dead_at_retry == [True, True]                     # both half-size retries saw free memory
+    assert st["cap"] == 4 and st["errors"] == 1
+
+
+def test_label_batch_stays_small_after_an_oom_and_grows_back():
+    st = {"fail_run": 0, "errors": 0, "cap": 4}
+    fl = FakeLabeler()
+    x, y = rand_u8(4, seed=1), rand_u8(4, seed=2)
+    for b in range(M.CAP_GROW_AFTER):
+        M.label_resilient(fl, x, y, np.arange(4) + 4 * b, st)
+    assert st["cap"] == 8
+    # driver level: a labeler that cannot take more than 8 pairs OOMs once, not once per batch
+    class Limited(FakeLabeler):
+        def __init__(self):
+            super().__init__()
+            self.sizes = []
+
+        def label_pairs(self, x, y, ids):
+            self.sizes.append(len(ids))
+            if len(ids) > 8:
+                raise RuntimeError("CUDA out of memory (fake)")
+            return super().label_pairs(x, y, ids)
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        make_corpus(tmp, n=12)
+        lab = Limited()
+        job, _, _, res = run_job(tmp, labeler=lab)          # label_batch 16: 8 full batches would all OOM first
+        assert res["reason"] == "complete" and res["pairs_bad"] == 0
+        assert lab.sizes.count(16) <= 3, lab.sizes
+        assert job._batch_size() in (8, 16)
+
+
+def test_workers_default_is_capped_for_a_shared_container(monkeypatch):
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda pid: set(range(64)), raising=False)
+    assert M.default_workers() == 8 and M.build_parser().parse_args([]).workers == 8
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda pid: set(range(6)), raising=False)
+    assert M.default_workers() == 4
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda pid: {0, 1}, raising=False)
+    assert M.default_workers() == 1                              # never 0 or negative
+    monkeypatch.setattr(M.os, "sched_getaffinity", lambda pid: set(range(16)), raising=False)
+    assert M.default_workers() == 8
+    assert M.build_parser().parse_args(["--workers", "3"]).workers == 3
+
+
+def _tar_with_images(path, src_root, n):
+    with tarfile.open(path, "w") as t:
+        for i in range(n):
+            t.add(os.path.join(src_root, "img", f"{i:08d}.webp"), arcname=f"img/{i:08d}.webp")
+
+
+def test_shard_extraction_uses_process_unique_temp_names(tmp_path, monkeypatch):
+    src = tmp_path / "src"
+    make_corpus(str(src), n=3)
+    tar_path = str(tmp_path / "gen_0000.tar")
+    _tar_with_images(tar_path, str(src), 3)
+    root = tmp_path / "root"
+    root.mkdir()
+    seen = []
+    real_replace = os.replace
+    monkeypatch.setattr(M.os, "replace", lambda a, b: (seen.append(os.path.basename(a)), real_replace(a, b))[1])
+    assert M.extract_shard(tar_path, str(root)) == 3
+    assert seen and all(f".{os.getpid()}.tmp" in n for n in seen)
+    assert not [n for n in os.listdir(root / "img") if n.endswith(".tmp")]
+    assert M.extract_shard(tar_path, str(root)) == 0             # a second job finds everything there already
+
+
+def test_hf_downloads_go_to_a_dir_of_our_own(tmp_path, monkeypatch):
+    import types
+    calls = []
+    fake = types.ModuleType("huggingface_hub")
+    fake.hf_hub_download = lambda repo, remote, **kw: calls.append(kw["local_dir"]) or "x"
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake)
+    _, fetcher = M.make_hf_fetchers("tok", str(tmp_path))
+    fetcher("corpus/night1/gen_0000.tar")
+    assert calls == [os.path.join(str(tmp_path), "_hf_dl_m6")] and M.HF_DL_DIR != "_hf_dl"
+
+
+def _age_corpus(root, seconds):
+    t = time.time() - seconds
+    for f in os.scandir(os.path.join(str(root), "img")):
+        os.utime(f.path, (t, t))
+
+
+def test_wait_until_quiet_waits_for_a_corpus_another_job_is_unpacking(tmp_path):
+    make_corpus(str(tmp_path), n=3)                              # files are seconds old: "still being written"
+    clock = {"t": time.time()}
+    slept = []
+
+    def sleep(dt):
+        slept.append(dt)
+        clock["t"] += dt
+
+    waited = M.wait_until_quiet(str(tmp_path), 30.0, sleep=sleep, clock=lambda: clock["t"])
+    assert waited > 0 and slept
+    assert clock["t"] - M.newest_corpus_mtime(str(tmp_path)) >= 30.0    # returned only once the corpus was quiet
+    assert M.wait_until_quiet(str(tmp_path), 0.0) == 0.0                # disabled
+    _age_corpus(tmp_path, 3600)
+    assert M.wait_until_quiet(str(tmp_path), 30.0, sleep=lambda dt: 1 / 0) == 0.0     # an old corpus costs nothing
+    assert M.wait_until_quiet(str(tmp_path / "nowhere"), 30.0, sleep=lambda dt: 1 / 0) == 0.0
+    # an endless writer cannot hold us forever
+    def endless(dt):
+        os.utime(tmp_path / "img" / "00000000.webp", None)
+
+    os.utime(tmp_path / "img" / "00000000.webp", None)
+    assert M.wait_until_quiet(str(tmp_path), 30.0, max_wait_s=40.0, sleep=endless) >= 40.0
+
+
+def test_ensure_assets_counts_the_corpus_after_the_other_job_finished(tmp_path):
+    src = tmp_path / "late"
+    make_corpus(str(src), n=6)
+    root = tmp_path / "root"
+    make_corpus(str(root), n=3)
+    root_s = str(root)
+
+    def sleep(dt):                                               # M2 finishes unpacking while we wait
+        for i in range(3, 6):
+            shutil.copy(src / "img" / f"{i:08d}.webp", root / "img" / f"{i:08d}.webp")
+        _age_corpus(root, 3600)
+
+    res = M.ensure_assets(root_s, str(root / "tae.pt"), 1, None, None, need_tae=False, quiet_s=30.0, sleep=sleep)
+    assert res["quiet_wait_s"] > 0 and res["images"] == 6
+    res2 = M.ensure_assets(root_s, str(root / "tae.pt"), 1, None, None, need_tae=False, quiet_s=30.0,
+                           sleep=lambda dt: 1 / 0)
+    assert "quiet_wait_s" not in res2 and res2["images"] == 6
+
+
+def test_distort_many_reports_why_a_gpu_pair_was_lost():
+    xs = [rand_u8(1, seed=s)[0] for s in range(4)]
+    ops = [[{"op": "tae"}], [{"op": "vae"}], [{"op": "tae"}], [{"op": "vae"}]]
+    rep = {}
+    ys = M.distort_many(xs, ops, None, {"tae": lambda x: 1 / 0}, report=rep)
+    assert rep == {"gpu_errors": 2, "gpu_missing": 2}
+    assert ys[0] is None and ys[1] is None and ys[2] is None and ys[3] is None
+
+
+def _job_with(tmp_path, gpu_fns):
+    args = small_args(tmp_path)
+    out = os.path.join(str(tmp_path), "o")
+    os.makedirs(out, exist_ok=True)
+    pool = list(range(12))
+    return M.LabelJob(args, out, str(tmp_path), pool, pool, FakeLabeler(), gpu_fns, None), out
+
+
+def test_transient_gpu_op_failure_never_stores_lost_pairs(tmp_path):
+    make_corpus(str(tmp_path), n=12)
+    state = {"calls": 0}
+
+    def flaky_tae(x):                                            # an OOM spike from a sibling job, once
+        state["calls"] += 1
+        if state["calls"] == 1:
+            raise RuntimeError("CUDA out of memory (fake)")
+        return 255 - x
+
+    job, out = _job_with(tmp_path, {"tae": flaky_tae, "vae": lambda x: x})
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        res = job.run()
+    text = buf.getvalue()
+    assert res["reason"] == "complete" and res["retried"] >= 1 and "chunk_retry_later" in text
+    assert res["pairs_bad"] == 0 and res["pairs_ok"] == 64 + 32 + 16        # nothing was lost for good
+    assert "gpu_op_persistent" not in text
+    for split, c in job.tasks():
+        assert np.load(M.labels_path(out, split, c))["ok"].all()
+        assert np.load(M.ok_path(out, split, c)).all()
+
+
+def test_persistent_gpu_op_failure_is_dropped_only_after_a_second_attempt(tmp_path):
+    make_corpus(str(tmp_path), n=12)
+    job, out = _job_with(tmp_path, {"tae": lambda x: 1 / 0, "vae": lambda x: x})
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        res = job.run()
+    text = buf.getvalue()
+    assert res["reason"] == "complete" and "gpu_op_persistent" in text and "label_retry" in text
+    assert res["retried"] >= 1 and res["pairs_bad"] > 0 and res["pairs_ok"] > 0     # progress, not a dead run
+    assert all(os.path.exists(M.labels_path(out, s, c)) for s, c in job.tasks())
+
+
+def test_missing_tae_means_sampling_without_it_and_the_manifest_says_so(tmp_path, monkeypatch):
+    make_corpus(str(tmp_path), n=12)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    rc, text, out = run_main(tmp_path, ["--phase", "label"], deps={"labeler": FakeLabeler()})
+    assert rc == 0 and "tae_unavailable" in text
+    man = M.load_manifest(out)
+    assert man["gpu_ops"] == ["vae"] and man["degraded"] == ["tae"]
+    specs = [M.make_spec(0, "train", k, list(range(12)), ("vae",)) for k in range(64)]
+    assert not any(o["op"] == "tae" for s in specs for o in s["ops"])
+    for name in os.listdir(out):                                 # no pair of any chunk was dropped
+        if name.startswith("labels_"):
+            assert np.load(os.path.join(out, name))["ok"].all(), name
+    # the TAE shows up later: the folder keeps its recipe (no manifest mismatch, no tae pairs mixed in)
+    os.remove(os.path.join(out, "labels_train_00000.npz"))
+    os.remove(os.path.join(out, "pairs", "train_00000.npy"))
+    os.remove(os.path.join(out, "pairs", "train_00000.ok.npy"))
+    used = []
+    monkeypatch.setattr(M, "load_tae", lambda path, dev: object())
+    monkeypatch.setattr(M, "make_tae_roundtrip", lambda tae, dev, **k: (lambda x: used.append(1) or x))
+    rc, text2, _ = run_main(tmp_path, ["--phase", "label"], deps={"labeler": FakeLabeler()})
+    assert rc == 0 and "manifest mismatch" not in text2 and '"from":"manifest"' in text2
+    assert not used and os.path.exists(os.path.join(out, "labels_train_00000.npz"))
+    assert np.load(os.path.join(out, "labels_train_00000.npz"))["ok"].all()
+
+
+def test_calibrate_scale_survives_a_huge_scale_factor():
+    torch.manual_seed(0)
+    st = M.TLPIPSStudent()
+    x, y = torch.randn(4, 3, CROP, CROP), torch.randn(4, 3, CROP, CROP) * 0.5
+    d_t = torch.full((4,), 1e12)                                 # shift way past the e^12 clamp: k = e^12
+    k = M.calibrate_scale(st, [(x, y, d_t)])
+    assert k == pytest.approx(math.exp(12.0))
+    assert all(torch.isfinite(p).all() for p in st.lin)
+    assert all((F.softplus(p) > 0).all() for p in st.lin)
+    out = st(x, y)["d"]
+    assert torch.isfinite(out).all() and (out > 0).all()
+
+
+def test_calibrate_scale_leaves_weights_alone_when_the_result_would_not_be_finite():
+    torch.manual_seed(0)
+    st = M.TLPIPSStudent()
+    x, y = torch.randn(4, 3, CROP, CROP), torch.randn(4, 3, CROP, CROP) * 0.5
+    before = [p.detach().clone() for p in st.lin]
+    with torch.no_grad():
+        st.lin[0][0] = float("inf")
+        before[0] = st.lin[0].detach().clone()
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        k = M.calibrate_scale(st, [(x, y, torch.full((4,), 0.3))])
+    assert k == 1.0 and "calibrate_nonfinite" in buf.getvalue()
+    assert all(torch.equal(a, p.detach()) for a, p in zip(before, st.lin))
