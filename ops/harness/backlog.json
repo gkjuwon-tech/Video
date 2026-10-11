@@ -1597,9 +1597,20 @@
    "slice": false,
    "rank": 41,
    "why": "예측 L1–L2. 근사식 대체가 기본",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791678472,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791679286,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet,review:sonnet",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "LNS-07",
@@ -1623,9 +1634,20 @@
    "slice": false,
    "rank": 42,
    "why": "한 줄 수식",
-   "status": "todo",
-   "attempts": 0,
-   "log": []
+   "status": "done",
+   "attempts": 1,
+   "log": [
+    {
+     "ts": 1791678472,
+     "event": "claimed"
+    },
+    {
+     "ts": 1791679286,
+     "event": "done",
+     "models": "contract:sonnet,build:haiku",
+     "note": ""
+    }
+   ]
   },
   {
    "id": "LNS-08",
