@@ -1560,9 +1560,14 @@
    "slice": false,
    "rank": 40,
    "why": "근사식으로 충분",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": []
+   "log": [
+    {
+     "ts": 1791676993,
+     "event": "claimed"
+    }
+   ]
   },
   {
    "id": "LNS-06",
@@ -2757,9 +2762,14 @@
    "slice": true,
    "rank": 79,
    "why": "예측상 실제 출하 경로. 먼저 만들고 나머지가 이것을 이긴다",
-   "status": "todo",
+   "status": "doing",
    "attempts": 0,
-   "log": [],
+   "log": [
+    {
+     "ts": 1791676993,
+     "event": "claimed"
+    }
+   ],
    "demo": "d15-yak"
   },
   {
