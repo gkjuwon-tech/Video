@@ -12,6 +12,7 @@ IDLE_MAX=${IDLE_MAX:-9000}
 export HF_HUB_ENABLE_HF_TRANSFER=1 PYTHONUNBUFFERED=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export PYTHONPATH="$N1_ROOT/repo:$N1_ROOT/code:${PYTHONPATH:-}"
 mkdir -p "$N1_ROOT/code" "$N1_ROOT/logs" "$N1_ROOT/repo"; cd "$N1_ROOT" || exit 1
+rm -f "$N1_ROOT/.main_done"
 
 fetch() { python -c "import urllib.request,sys; sys.stdout.write(urllib.request.urlopen(sys.argv[1]+'?t='+sys.argv[2], timeout=30).read().decode())" "$BASE/$1" "$(date +%s)"; }
 self_stop() {
