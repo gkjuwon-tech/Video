@@ -639,6 +639,10 @@ class _Captured(Exception):
     """Raised from the last hook to skip the rest of the transformer (blocks after the deepest tap)."""
 
 
+class TooManyFailures(RuntimeError):
+    """MAX_CONSEC_ERRORS failures in a row: the run stops (spec)."""
+
+
 def vae_consts(vae) -> Tuple[float, float]:
     cfg = getattr(vae, "config", None)
     scale = float(getattr(cfg, "scaling_factor", 1.0) or 1.0)
@@ -819,7 +823,7 @@ def label_resilient(labeler, x_u8: np.ndarray, y_u8: np.ndarray, ids: Sequence[i
             return ({"d": np.full(1, np.nan, np.float32), "dl": np.full((1, 3), np.nan, np.float32),
                      "map": np.zeros((1, 1, 1), np.float16)}, np.zeros(1, bool))
         if state["fail_run"] >= MAX_CONSEC_ERRORS:
-            raise
+            raise TooManyFailures(f"{state['fail_run']} consecutive label failures") from e
         h = n // 2
         ra, oa = label_resilient(labeler, x_u8[:h], y_u8[:h], ids[:h], state)
         rb, ob = label_resilient(labeler, x_u8[h:], y_u8[h:], ids[h:], state)
@@ -949,11 +953,12 @@ class LabelJob:
                 self.done_pairs += int(len(sel))
             self._progress(split, c)
             if self.state["fail_run"] >= MAX_CONSEC_ERRORS:
-                raise RuntimeError("too many consecutive label failures")
+                raise TooManyFailures(f"{self.state['fail_run']} consecutive label failures")
         return d, dl, tmap, ok2
 
     def run(self) -> dict:
         reason = "complete"
+        chunk_fail = 0
         for split, c in self.tasks():
             r = self._stop_reason()
             if r:
@@ -961,17 +966,18 @@ class LabelJob:
                 break
             try:
                 status = self.process_chunk(split, c)
+            except TooManyFailures as e:
+                reason = "fatal"
+                log({"fatal": err_str(e)}, marker=MARK + "_DONE")
+                break
             except Exception as e:  # noqa: BLE001
-                if "too many consecutive" in str(e):
-                    reason = "fatal"
-                    log({"fatal": err_str(e)}, marker=MARK + "_DONE")
-                    break
                 warn("chunk_failed", split=split, chunk=c, err=err_str(e))
-                self.state["fail_run"] += 1
-                if self.state["fail_run"] >= MAX_CONSEC_ERRORS:
+                chunk_fail += 1
+                if chunk_fail >= MAX_CONSEC_ERRORS:
                     reason = "fatal"
                     break
                 continue
+            chunk_fail = 0
             if status == "stop":
                 reason = self._stop_reason() or "stop"
                 break
@@ -1100,24 +1106,18 @@ class SplitData:
         self.trip = split == "trip"
         self.k = 3 if self.trip else 2
         cs, rows, d, maps, ids = [], [], [], [], []
-        c = 0
-        misses = 0
-        while misses < 3 or c < 4096:                  # chunk files are consecutive; tolerate a few holes
-            lp = labels_path(out, split, c)
-            if not os.path.exists(lp):
-                misses += 1
-                c += 1
-                if misses >= 3:
-                    break
-                continue
-            misses = 0
-            z = read_labels(lp)
-            c += 1
+        pat = re.compile(rf"labels_{split}_(\d+)\.npz")
+        try:
+            found = sorted(int(m.group(1)) for m in (pat.fullmatch(n) for n in os.listdir(out)) if m)
+        except FileNotFoundError:
+            found = []
+        for c in found:
+            z = read_labels(labels_path(out, split, c))
             if z is None or int(z.get("cfg", -1)) != h:
                 continue
             ok = z["ok"].astype(bool) & np.all(np.isfinite(z["d"]).reshape(len(z["ok"]), -1), axis=1)
             sel = np.nonzero(ok)[0]
-            cs.append(np.full(len(sel), c - 1, np.int32))
+            cs.append(np.full(len(sel), c, np.int32))
             rows.append(sel.astype(np.int32))
             d.append(z["d"][sel])
             ids.append(z["ids"][sel])
@@ -1169,12 +1169,11 @@ class BatchLoader:
             rng = np.random.default_rng(self.seed * 1_000_003 + self.epoch)
             perm = rng.permutation(n)
             self.epoch += 1
-            for s in range(0, n - self.batch + 1, self.batch) if n >= self.batch else [0]:
+            starts = list(range(0, n - self.batch + 1, self.batch)) if n >= self.batch else [0]
+            for s in starts:
                 if self.stop.is_set():
                     return
-                idx = perm[s:s + self.batch]
-                if n < self.batch:
-                    idx = rng.choice(n, self.batch, replace=True)
+                idx = perm[s:s + self.batch] if n >= self.batch else rng.choice(n, self.batch, replace=True)
                 try:
                     item = (self.data.images(idx), self.data.d[idx].copy(),
                             None if self.data.map is None else self.data.map[idx].copy())
@@ -1990,50 +1989,37 @@ def main(argv: Optional[Sequence[str]] = None, deps: Optional[dict] = None) -> i
 
     os.makedirs(os.path.join(out, "pairs"), exist_ok=True)
     clean_tmp(out)
-    pool = deps.get("pool")
-    own_pool = False
-    summary: dict = {}
-    try:
-        h = cfg_hash({"sigma": args.sigma, "blocks": list(args.blocks), "seed": args.seed, "crop": args.crop,
-                      "patch": PATCH, "teacher": ZIMAGE_ID})
-        if args.phase in ("all", "label"):
-            rc, summary = _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sleep, pool)
-            own_pool = summary.pop("_own_pool", None)
-            if rc:
-                return rc
-        if args.phase in ("all", "train") and not stop.is_set():
-            if args.phase == "all":
-                free_cuda_cache()                       # the teacher is already released by _label_phase
-            if args.mem_gb > 0 and torch.cuda.is_available():
-                try:
-                    frac = min(1.0, args.mem_gb * 2**30 / torch.cuda.get_device_properties(0).total_memory)
-                    torch.cuda.set_per_process_memory_fraction(frac)
-                except Exception as e:  # noqa: BLE001
-                    warn("mem_cap_failed", err=err_str(e))
-            tr = Trainer(args, out, h, uploader=uploader, now=now, sleep=sleep, stop=stop, deadline=deadline,
-                         device=deps.get("device"))
+    h = cfg_hash({"sigma": args.sigma, "blocks": list(args.blocks), "seed": args.seed, "crop": args.crop,
+                  "patch": PATCH, "teacher": ZIMAGE_ID})
+    if args.phase in ("all", "label"):
+        rc = _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sleep)
+        if rc:
+            return rc
+    if args.phase in ("all", "train") and not stop.is_set():
+        if args.mem_gb > 0 and torch.cuda.is_available():
             try:
-                res = tr.run()
-            except Exception as e:  # noqa: BLE001 - last resort: save what we have and say why
-                log({"fatal": err_str(e, 400)}, marker=MARK + "_DONE")
-                try:
-                    if tr.model is not None and tr.opt is not None:
-                        save_atomic(tr._ckpt_obj(), os.path.join(out, "ckpt_last.pt"))
-                except Exception:  # noqa: BLE001
-                    pass
-                return 2
-            return 2 if res.get("status") == "fatal" else 0
-        return 0
-    finally:
-        if own_pool and pool is not None:
+                frac = min(1.0, args.mem_gb * 2**30 / torch.cuda.get_device_properties(0).total_memory)
+                torch.cuda.set_per_process_memory_fraction(frac)
+            except Exception as e:  # noqa: BLE001
+                warn("mem_cap_failed", err=err_str(e))
+        tr = Trainer(args, out, h, uploader=uploader, now=now, sleep=sleep, stop=stop, deadline=deadline,
+                     device=deps.get("device"))
+        try:
+            res = tr.run()
+        except Exception as e:  # noqa: BLE001 - last resort: save what we have and say why
+            log({"fatal": err_str(e, 400)}, marker=MARK + "_DONE")
             try:
-                pool.terminate()
+                if tr.model is not None and tr.opt is not None:
+                    save_atomic(tr._ckpt_obj(), os.path.join(out, "ckpt_last.pt"))
             except Exception:  # noqa: BLE001
                 pass
+            return 2
+        return 2 if res.get("status") == "fatal" else 0
+    return 0
 
 
-def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sleep, pool):
-    """Steps A+B. Returns (rc, summary); rc != 0 aborts the run."""
+def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sleep) -> int:
+    """Steps A+B. Returns a process exit code (0 = continue)."""
     tae_path = os.path.join(root, "tae", "ckpt_best.pt")
     gpu_ops = tuple(g for g in args.gpu_ops.split(",") if g)
     lister, fetcher = make_hf_fetchers(token, root, args.repo_id)
@@ -2041,41 +2027,43 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
     corpus = list_corpus(root)
     log({"assets": assets, "corpus": len(corpus)})
     if not corpus:
-        return _fatal("no corpus images under " + root), {}
+        return _fatal("no corpus images under " + root)
     train_pool, val_pool = split_corpus(corpus)
 
     man = {"version": 1, "seed": args.seed, "crop": args.crop, "chunk": args.chunk, "n_train": args.n_train,
            "n_val": args.n_val, "n_trip": args.n_trip, "gpu_ops": list(gpu_ops), "sigma": args.sigma,
-           "blocks": list(args.blocks), "corpus_n": len(corpus)}
+           "blocks": list(args.blocks)}
     old = load_manifest(out)
     if old is not None:
         bad = manifest_mismatch(old, man)
         if bad:
-            return _fatal("manifest mismatch (use a new --out): " + ",".join(bad)), {}
+            return _fatal("manifest mismatch (use a new --out): " + ",".join(bad))
     else:
         write_manifest(out, man)
 
+    pool = deps.get("pool")
     own_pool = False
     if pool is None:
         pool = make_pool(args.workers, args.mp_context)
         own_pool = pool is not None
-    summary: dict = {"_own_pool": own_pool}
+    labeler = None
     try:
         labeler = deps.get("labeler")
         gpu_fns = dict(deps.get("gpu_fns") or {})
         dev_name = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
         if labeler is None:
             try:
-                cache = os.path.join(out, "empty_prompt_embed.pt")
-                labeler = load_teacher(dev_name, cache, args.blocks, args.sigma, args.seed * 1_000_003)
+                labeler = load_teacher(dev_name, os.path.join(out, "empty_prompt_embed.pt"), args.blocks,
+                                       args.sigma, args.seed * 1_000_003)
                 log({"teacher": "loaded", "blocks": list(args.blocks), "vram_GB": vram_gb()})
             except Exception as e:  # noqa: BLE001
-                return _fatal("teacher_load_failed: " + err_str(e, 250)), summary
+                return _fatal("teacher_load_failed: " + err_str(e, 250))
         if "vae" in gpu_ops and "vae" not in gpu_fns:
             gpu_fns["vae"] = labeler.vae_roundtrip
         if "tae" in gpu_ops and "tae" not in gpu_fns:
             try:
-                gpu_fns["tae"] = make_tae_roundtrip(load_tae(tae_path, torch.device(dev_name)), torch.device(dev_name))
+                dev = torch.device(dev_name)
+                gpu_fns["tae"] = make_tae_roundtrip(load_tae(tae_path, dev), dev)
             except Exception as e:  # noqa: BLE001 - TAE pairs get dropped (ok=False), the rest goes on
                 warn("tae_unavailable", err=err_str(e))
         label_deadline = None
@@ -2085,34 +2073,26 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
                 label_deadline = min(label_deadline, deadline - args.train_reserve_s)
         job = LabelJob(args, out, root, train_pool, val_pool, labeler, gpu_fns, pool, now, stop, label_deadline)
         res = job.run()
-        summary.update(res)
-        log({"phase": "label_done", **res}, marker=MARK)
+        log({"phase": "label_done", **res})
         if uploader is not None:
             upload_with_retry(uploader, out, REMOTE_DIR + "/labels", allow=["labels_*.npz", "manifest.json"],
                               sleep=sleep)
-        try:
-            labeler.close()
-        except Exception:  # noqa: BLE001
-            pass
-        del labeler, job
-        gc.collect()
-        free_cuda_cache()
-        log({"teacher": "released", "vram_GB": vram_gb()})
-        if res["reason"] == "fatal":
-            return 2, summary
-        return 0, summary
+        return 2 if res["reason"] == "fatal" else 0
     finally:
-        if own_pool:
-            summary["_own_pool"] = True
-
-
-def _hard_exit(rc: int) -> None:
-    for st in (sys.stdout, sys.stderr):
-        try:
-            st.flush()
-        except Exception:  # noqa: BLE001
-            pass
-    os._exit(rc)
+        if own_pool and pool is not None:
+            try:
+                pool.terminate()
+            except Exception:  # noqa: BLE001
+                pass
+        if labeler is not None:                      # Z-Image comes down before the training phase starts
+            try:
+                labeler.close()
+            except Exception:  # noqa: BLE001
+                pass
+            labeler = None
+            gc.collect()
+            free_cuda_cache()
+            log({"teacher": "released", "vram_GB": vram_gb()})
 
 
 if __name__ == "__main__":
