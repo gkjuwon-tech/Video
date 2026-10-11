@@ -470,9 +470,14 @@ def pmap(pool, fn, items: Sequence, timeout: float = 600.0) -> list:
 
 def distort_many(xs: Sequence[Optional[np.ndarray]], ops_lists: Sequence[Sequence[dict]], pool=None,
                  gpu_fns: Optional[Dict[str, Callable]] = None, gpu_batch: int = 32,
-                 timeout: float = 600.0) -> List[Optional[np.ndarray]]:
-    """y_i = ops_i(x_i). GPU ops (always first) run batched in this process, the rest on the pool."""
+                 timeout: float = 600.0, report: Optional[dict] = None) -> List[Optional[np.ndarray]]:
+    """y_i = ops_i(x_i). GPU ops (always first) run batched in this process, the rest on the pool.
+
+    A pair whose GPU op failed comes back None. ``report`` (optional) tells WHY: ``gpu_errors`` counts pairs
+    lost because a round-trip function that exists raised / returned garbage (possibly transient: an OOM
+    spike from a sibling job), ``gpu_missing`` pairs for which there is no such function at all."""
     gpu_fns = gpu_fns or {}
+    report = report if report is not None else {}
     n = len(xs)
     base: List[Optional[np.ndarray]] = [x for x in xs]
     for name in GPU_OPS:
@@ -492,6 +497,8 @@ def distort_many(xs: Sequence[Optional[np.ndarray]], ops_lists: Sequence[Sequenc
                     base[i] = out[j]
             except Exception as e:  # noqa: BLE001 - these pairs are dropped, the run goes on
                 warn("gpu_op_failed", op=name, n=len(part), err=err_str(e))
+                key = "gpu_missing" if fn is None else "gpu_errors"
+                report[key] = report.get(key, 0) + len(part)
                 for i in part:
                     base[i] = None
                 if is_oom(e):
@@ -513,17 +520,18 @@ def distort_many(xs: Sequence[Optional[np.ndarray]], ops_lists: Sequence[Sequenc
 
 
 def build_chunk(specs: Sequence[dict], root: str, crop: int, pool=None, gpu_fns=None,
-                timeout: float = 600.0) -> Tuple[np.ndarray, np.ndarray]:
-    """(arr, ok): arr (n, 2|3, crop, crop, 3) uint8 = [x, y] or [ref, a, b]; ok (n,) bool."""
+                timeout: float = 600.0, report: Optional[dict] = None) -> Tuple[np.ndarray, np.ndarray]:
+    """(arr, ok): arr (n, 2|3, crop, crop, 3) uint8 = [x, y] or [ref, a, b]; ok (n,) bool.
+    ``report`` is filled as in :func:`distort_many`."""
     n = len(specs)
     trip = bool(specs) and specs[0]["split"] == "trip"
     xs = pmap(pool, _w_load, [(root, s, crop) for s in specs], timeout)
     if trip:
-        ya = distort_many(xs, [s["ops_a"] for s in specs], pool, gpu_fns, timeout=timeout)
-        yb = distort_many(xs, [s["ops_b"] for s in specs], pool, gpu_fns, timeout=timeout)
+        ya = distort_many(xs, [s["ops_a"] for s in specs], pool, gpu_fns, timeout=timeout, report=report)
+        yb = distort_many(xs, [s["ops_b"] for s in specs], pool, gpu_fns, timeout=timeout, report=report)
         cols = [xs, ya, yb]
     else:
-        cols = [xs, distort_many(xs, [s["ops"] for s in specs], pool, gpu_fns, timeout=timeout)]
+        cols = [xs, distort_many(xs, [s["ops"] for s in specs], pool, gpu_fns, timeout=timeout, report=report)]
     arr = np.zeros((n, len(cols), crop, crop, 3), np.uint8)
     ok = np.ones(n, bool)
     for i in range(n):
@@ -665,6 +673,10 @@ class _Captured(Exception):
 
 class TooManyFailures(RuntimeError):
     """MAX_CONSEC_ERRORS failures in a row: the run stops (spec)."""
+
+
+class ChunkRetry(RuntimeError):
+    """A GPU distortion failed while building a chunk: nothing is stored, the chunk is built again later."""
 
 
 def vae_consts(vae) -> Tuple[float, float]:
@@ -826,38 +838,57 @@ class TeacherLabeler:
                 "map": tmap.cpu().numpy().astype(np.float16)}
 
 
+CAP_GROW_AFTER = 8                # good batches at the reduced size before the label batch doubles again
+
+
 def label_resilient(labeler, x_u8: np.ndarray, y_u8: np.ndarray, ids: Sequence[int],
                     state: Optional[dict] = None) -> Tuple[Dict[str, np.ndarray], np.ndarray]:
-    """Label a batch; on failure bisect so a single bad pair is isolated. Returns (arrays, ok)."""
+    """Label a batch; on failure bisect so a single bad pair is isolated. Returns (arrays, ok).
+
+    The retries run OUTSIDE the ``except`` block: while the exception object is alive its traceback pins the
+    failed forward's frames (activations, hook store), which would starve the half-size retry of the very
+    memory it needs. After an OOM ``state['cap']`` keeps later batches small (it doubles back after
+    CAP_GROW_AFTER good ones) instead of re-OOMing every 32-pair batch before bisecting."""
     state = state if state is not None else {"fail_run": 0, "errors": 0}
     n = len(ids)
+    err, oom = "", False
     try:
         res = labeler.label_pairs(x_u8, y_u8, ids)
         if not all(np.isfinite(res["d"])):
             raise FloatingPointError("non-finite teacher distance")
         state["fail_run"] = 0
+        cap = state.get("cap")
+        if cap and n >= cap:
+            state["good"] = state.get("good", 0) + 1
+            if state["good"] >= CAP_GROW_AFTER:
+                state["cap"], state["good"] = cap * 2, 0
         return res, np.ones(n, bool)
     except Exception as e:  # noqa: BLE001
-        state["errors"] += 1
-        if is_oom(e):
-            free_cuda_cache()
-        if n == 1:
-            state["fail_run"] += 1
-            warn("label_pair_failed", id=int(ids[0]), run=state["fail_run"], err=err_str(e))
-            return ({"d": np.full(1, np.nan, np.float32), "dl": np.full((1, 3), np.nan, np.float32),
-                     "map": np.zeros((1, 1, 1), np.float16)}, np.zeros(1, bool))
-        if state["fail_run"] >= MAX_CONSEC_ERRORS:
-            raise TooManyFailures(f"{state['fail_run']} consecutive label failures") from e
-        h = n // 2
-        ra, oa = label_resilient(labeler, x_u8[:h], y_u8[:h], ids[:h], state)
-        rb, ob = label_resilient(labeler, x_u8[h:], y_u8[h:], ids[h:], state)
-        ma, mb = ra["map"], rb["map"]
-        if ma.shape[1:] != mb.shape[1:]:           # a failed single pair carries a dummy map
-            tgt = ma.shape[1:] if oa.any() else mb.shape[1:]
-            ma = ma if ma.shape[1:] == tgt else np.zeros((len(ma),) + tgt, np.float16)
-            mb = mb if mb.shape[1:] == tgt else np.zeros((len(mb),) + tgt, np.float16)
-        return ({"d": np.concatenate([ra["d"], rb["d"]]), "dl": np.concatenate([ra["dl"], rb["dl"]]),
-                 "map": np.concatenate([ma, mb])}, np.concatenate([oa, ob]))
+        err, oom = err_str(e), is_oom(e)
+    # `e` is gone here, so the failed attempt's tensors are collectable
+    state["errors"] += 1
+    if oom:
+        gc.collect()
+        free_cuda_cache()
+        if n > 1:
+            state["cap"], state["good"] = max(1, n // 2), 0
+    if n == 1:
+        state["fail_run"] += 1
+        warn("label_pair_failed", id=int(ids[0]), run=state["fail_run"], err=err)
+        return ({"d": np.full(1, np.nan, np.float32), "dl": np.full((1, 3), np.nan, np.float32),
+                 "map": np.zeros((1, 1, 1), np.float16)}, np.zeros(1, bool))
+    if state["fail_run"] >= MAX_CONSEC_ERRORS:
+        raise TooManyFailures(f"{state['fail_run']} consecutive label failures")
+    h = n // 2
+    ra, oa = label_resilient(labeler, x_u8[:h], y_u8[:h], ids[:h], state)
+    rb, ob = label_resilient(labeler, x_u8[h:], y_u8[h:], ids[h:], state)
+    ma, mb = ra["map"], rb["map"]
+    if ma.shape[1:] != mb.shape[1:]:           # a failed single pair carries a dummy map
+        tgt = ma.shape[1:] if oa.any() else mb.shape[1:]
+        ma = ma if ma.shape[1:] == tgt else np.zeros((len(ma),) + tgt, np.float16)
+        mb = mb if mb.shape[1:] == tgt else np.zeros((len(mb),) + tgt, np.float16)
+    return ({"d": np.concatenate([ra["d"], rb["d"]]), "dl": np.concatenate([ra["dl"], rb["dl"]]),
+             "map": np.concatenate([ma, mb])}, np.concatenate([oa, ob]))
 
 
 # ---------------------------------------------------------------------------
@@ -884,7 +915,8 @@ class LabelJob:
         self.done_pairs = 0
         self.t0 = now()
         self.last_progress = self.t0
-        self.stats = {"chunks": 0, "skipped": 0, "pairs_ok": 0, "pairs_bad": 0}
+        self.stats = {"chunks": 0, "skipped": 0, "pairs_ok": 0, "pairs_bad": 0, "retried": 0}
+        self.warned_missing = False
 
     def tasks(self) -> List[Tuple[str, int]]:
         a = self.a
@@ -900,6 +932,11 @@ class LabelJob:
         return [(split, c) for split, c in self.tasks()
                 if not labels_valid(labels_path(self.out, split, c), self.h,
                                     len(chunk_ids(split, c, a.chunk, n_for(split, a.n_train, a.n_val, a.n_trip))))]
+
+    def _batch_size(self) -> int:
+        """Pairs per teacher forward: ``--label-batch`` unless an OOM shrank it (see label_resilient)."""
+        cap = self.state.get("cap")
+        return self.a.label_batch if not cap else max(1, min(self.a.label_batch, int(cap)))
 
     def _stop_reason(self) -> Optional[str]:
         if self.stop.is_set():
@@ -917,8 +954,9 @@ class LabelJob:
                  "vram_GB": vram_gb(), "free_GB": round(free_disk_gb(self.out), 1)})
             self.last_progress = t
 
-    def process_chunk(self, split: str, c: int) -> str:
-        """'done' | 'skipped' | 'stop' | 'disk' for one chunk."""
+    def process_chunk(self, split: str, c: int, accept_gpu_loss: bool = False) -> str:
+        """'done' | 'skipped' | 'stop' | 'disk' for one chunk. Raises ChunkRetry (nothing stored) when a GPU
+        round trip failed, unless ``accept_gpu_loss`` (the second attempt): then the lost pairs are dropped."""
         a = self.a
         total = n_for(split, a.n_train, a.n_val, a.n_trip)
         ids = chunk_ids(split, c, a.chunk, total)
@@ -934,7 +972,17 @@ class LabelJob:
                 return "disk"
             pool = self.val_pool if split in ("val", "trip") else self.train_pool
             specs = [make_spec(a.seed, split, i, pool, self.gpu_ops) for i in ids]
-            arr, ok = build_chunk(specs, self.root, a.crop, self.pool, self.gpu_fns)
+            rep: dict = {}
+            arr, ok = build_chunk(specs, self.root, a.crop, self.pool, self.gpu_fns, report=rep)
+            if rep.get("gpu_missing") and not self.warned_missing:
+                self.warned_missing = True
+                warn("gpu_fn_missing", n=rep["gpu_missing"], note="those pairs are dropped for good")
+            if rep.get("gpu_errors"):
+                # a round trip that EXISTS failed (OOM spike, ...): storing the chunk would lose those pairs
+                # for ever, because a stored chunk is never rebuilt. Raise instead; the chunk is retried.
+                if not accept_gpu_loss:
+                    raise ChunkRetry(f"{rep['gpu_errors']} pairs lost to a failed GPU round trip")
+                warn("gpu_op_persistent", split=split, chunk=c, n=rep["gpu_errors"], note="dropped after 2 attempts")
             save_pairs(self.out, split, c, arr, ok)
             stored = (arr, ok)
         arr, ok = stored
@@ -961,10 +1009,13 @@ class LabelJob:
         msz = a.crop // 16
         tmap = None if trip else np.zeros((n, msz, msz), np.float16)
         ok2 = ok.copy()
-        for s in range(0, n, a.label_batch):
+        s = 0
+        while s < n:
             if self._stop_reason():
                 return None
-            sel = np.arange(s, min(n, s + a.label_batch))
+            bs = self._batch_size()
+            sel = np.arange(s, min(n, s + bs))
+            s += bs
             sel = sel[ok[sel]]
             if len(sel):
                 ref = np.ascontiguousarray(arr[sel, 0])
@@ -990,32 +1041,45 @@ class LabelJob:
     def run(self) -> dict:
         reason = "complete"
         chunk_fail = 0
-        for split, c in self.tasks():
-            r = self._stop_reason()
-            if r:
-                reason = r
-                break
-            try:
-                status = self.process_chunk(split, c)
-            except TooManyFailures as e:
-                reason = "fatal"
-                log({"fatal": err_str(e)}, marker=MARK + "_DONE")
-                break
-            except Exception as e:  # noqa: BLE001
-                warn("chunk_failed", split=split, chunk=c, err=err_str(e))
-                chunk_fail += 1
-                if chunk_fail >= MAX_CONSEC_ERRORS:
-                    reason = "fatal"
+        retry: List[Tuple[str, int]] = []
+        todo = self.tasks()
+        for attempt in (0, 1):             # pass 2 re-builds the chunks a failed GPU round trip kept us from storing
+            for split, c in todo:
+                r = self._stop_reason()
+                if r:
+                    reason = r
                     break
-                continue
-            chunk_fail = 0
-            if status == "stop":
-                reason = self._stop_reason() or "stop"
+                try:
+                    status = self.process_chunk(split, c, accept_gpu_loss=attempt == 1)
+                except TooManyFailures as e:
+                    reason = "fatal"
+                    log({"fatal": err_str(e)}, marker=MARK + "_DONE")
+                    break
+                except ChunkRetry as e:
+                    warn("chunk_retry_later", split=split, chunk=c, err=err_str(e))
+                    retry.append((split, c))
+                    continue
+                except Exception as e:  # noqa: BLE001
+                    warn("chunk_failed", split=split, chunk=c, err=err_str(e))
+                    chunk_fail += 1
+                    if chunk_fail >= MAX_CONSEC_ERRORS:
+                        reason = "fatal"
+                        break
+                    continue
+                chunk_fail = 0
+                if attempt == 1:
+                    self.stats["retried"] += 1
+                if status == "stop":
+                    reason = self._stop_reason() or "stop"
+                    break
+                if status == "disk":
+                    reason = "disk"
+                    break
+                self._progress(split, c)
+            if reason != "complete" or not retry:
                 break
-            if status == "disk":
-                reason = "disk"
-                break
-            self._progress(split, c)
+            todo, retry = retry, []
+            log({"phase": "label_retry", "chunks": len(todo)})
         self._progress("-", -1, force=True)
         return {"reason": reason, **self.stats, "errors": self.state["errors"]}
 
@@ -2163,10 +2227,17 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
         return _fatal("no corpus images under " + root)
     train_pool, val_pool = split_corpus(corpus)
 
+    old = load_manifest(out)
+    if old is not None and old.get("degraded") and isinstance(old.get("gpu_ops"), list):
+        # an earlier run lost a GPU distortion (the TAE) and re-sampled without it: keep that op set so every
+        # chunk of this folder comes from one recipe, even if the op is back now
+        gpu_ops = tuple(str(g) for g in old["gpu_ops"])
+        args.gpu_ops = ",".join(gpu_ops)
+        log({"gpu_ops": list(gpu_ops), "from": "manifest", "degraded": old["degraded"]})
+
     man = {"version": 1, "seed": args.seed, "crop": args.crop, "chunk": args.chunk, "n_train": args.n_train,
            "n_val": args.n_val, "n_trip": args.n_trip, "gpu_ops": list(gpu_ops), "sigma": args.sigma,
            "blocks": list(args.blocks)}
-    old = load_manifest(out)
     if old is not None:
         bad = manifest_mismatch(old, man)
         if bad:
@@ -2214,8 +2285,14 @@ def _label_phase(args, root, out, deps, token, uploader, deadline, stop, now, sl
             try:
                 dev = torch.device(dev_name)
                 gpu_fns["tae"] = make_tae_roundtrip(load_tae(tae_path, dev), dev)
-            except Exception as e:  # noqa: BLE001 - TAE pairs get dropped (ok=False), the rest goes on
-                warn("tae_unavailable", err=err_str(e))
+            except Exception as e:  # noqa: BLE001
+                # No TAE: do NOT store its pairs as dropped (7% of every chunk lost for good, even after the
+                # checkpoint shows up). Re-sample the not-yet-built chunks without it and say so in the manifest.
+                warn("tae_unavailable", err=err_str(e), note="sampling without the tae distortion")
+                gpu_ops = tuple(g for g in gpu_ops if g != "tae")
+                args.gpu_ops = ",".join(gpu_ops)
+                man.update({"gpu_ops": list(gpu_ops), "degraded": sorted(set(man.get("degraded", [])) | {"tae"})})
+                write_manifest(out, man)
         job = LabelJob(args, out, root, train_pool, val_pool, labeler, gpu_fns, pool, now, stop, label_deadline)
         res = job.run()
         log({"phase": "label_done", **res})
