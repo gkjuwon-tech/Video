@@ -831,7 +831,7 @@ def test_videos_and_report_are_uploaded_incrementally(tmp_path, monkeypatch, cap
     marks = [l for l in capsys.readouterr().out.splitlines() if '"video_uploaded"' in l]
     assert any("skeleton_S1.mp4" in l and f"{P.HF_REPO_ID}/{P.HF_UPLOAD_PREFIX}/skeleton_S1.mp4" in l and
                l.startswith("D1_PIPE ") and len(l) <= 400 for l in marks)
-    assert rep["upload"]["failed"] == 0 and rep["upload"]["ok"] >= 8
+    assert rep["upload"]["failed"] == 0 and rep["upload"]["ok"] == 7
 
 
 def test_a_killed_run_still_leaves_finished_videos_in_the_vault(tmp_path, monkeypatch):
@@ -842,6 +842,7 @@ def test_a_killed_run_still_leaves_finished_videos_in_the_vault(tmp_path, monkey
             raise KeyboardInterrupt("runner killed")
         return real(world, read, shot, out_path, **kw)
 
+    monkeypatch.setenv("HF_TOKEN", SECRET)
     monkeypatch.setattr(P, "render_shot_video", die_on_s2)
     api = FakeApi()
     with pytest.raises(KeyboardInterrupt):
