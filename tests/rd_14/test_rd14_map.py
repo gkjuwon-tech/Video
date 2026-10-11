@@ -168,16 +168,18 @@ def test_block_lower_quantile_rule():
     far = np.zeros((16, 16), bool)
     far[0, 0] = True                                      # 블록 (0,0): 64 화소 중 1 개
     far[0:2, 8:13] = True                                 # 블록 (0,1): 10 개
+    far[8, 0:7] = True                                    # 블록 (1,0): 7 개 (= ⌊0.1·63⌋+1: 인덱스 6 이 아직 '먼' 쪽)
+    far[8, 8:14] = True                                   # 블록 (1,1): 6 개 (인덱스 6 은 '가까운' 쪽)
     z[far] = 40.0
     near_l = int(build(np.full((16, 16), 2.0), K).l_hard[0, 0])
     far_l = int(build(np.full((16, 16), 40.0), K).l_hard[0, 0])
     assert far_l < near_l - 3
     default = build(z, K, opts=om.ObsOpts(block_px=8))                       # q = 0.1 -> v[⌊0.1·63⌋] = v[6]
     assert default.blk_l_hard[0, 0] == near_l and default.blk_l_hard[0, 1] == far_l
-    assert default.blk_l_hard[1, 0] == near_l and default.blk_l_hard[1, 1] == near_l
+    assert default.blk_l_hard[1, 0] == far_l and default.blk_l_hard[1, 1] == near_l
     assert default.blk_l_part[0, 1] == far_l + 1
     zero = build(z, K, opts=om.ObsOpts(block_px=8, block_quantile=0.0))      # 최소
-    assert zero.blk_l_hard[0, 0] == far_l and zero.blk_l_hard[1, 0] == near_l
+    assert zero.blk_l_hard[0, 0] == far_l and zero.blk_l_hard[1, 1] == far_l and zero.blk_l_hard[0, 1] == far_l
     half = build(z, K, opts=om.ObsOpts(block_px=8, block_quantile=0.5))      # 중앙(하한) v[31]
     assert half.blk_l_hard[0, 0] == near_l and half.blk_l_hard[0, 1] == near_l
     # ν_obs 블록값도 같은 규칙 (여기서는 전부 0.5)
@@ -234,6 +236,9 @@ def test_mrh_veto_only_lowers_and_matches_oracle():
     assert (m.l_hard[:, 32:] == base.l_hard[:, 32:] - 1).all()          # cap 1/4 -> φ_eff ×2 -> 정확히 한 단
     assert (m.l_hard[:32, :32] == base.l_hard[:32, :32]).all()
     assert (m.l_hard[32:, :16] == base.l_hard[32:, :16] - 4).all()      # cap 1/32 -> ×16 -> 네 단
+    # w 요약: 거부된 대역은 0(중심 ν_b > cap), 나머지 대역은 MRH 가 없을 때와 같다
+    assert (m.blk_w[0, :, 2:] == 0).all() and (m.blk_w[:, 2, 0] == 0).all()
+    assert np.array_equal(m.blk_w[1:, :2, 2:], base.blk_w[1:, :2, 2:]) and np.array_equal(m.blk_w[:, :2, :2], base.blk_w[:, :2, :2])
     assert np.allclose(m.nu_obs[:, 32:], 0.25) and np.allclose(m.nu_obs[32:, :16], 1 / 32)
     # 전부 관측이면 비트 동일 (MRH 는 한 번도 소유를 늘리지 못한다)
     full = build(z, K, mrh_obs=np.ones((4, h, w), np.float32))

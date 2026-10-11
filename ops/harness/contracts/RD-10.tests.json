@@ -1,0 +1,7 @@
+{
+ "tests/rd_10/rd10_helpers.py": "d076dd2d98899ced410a19faad7d856de40749d93ac9b63397b575376f62fab9",
+ "tests/rd_10/test_rd10_api.py": "d6cca7361877358cc8392717562d7c449cd7046ee465965870971ce6fd09e3a1",
+ "tests/rd_10/test_rd10_fit.py": "150ef407c5324e46bafe51c632d6da62faaac318862816fcab56dc40713db8ee",
+ "tests/rd_10/test_rd10_shadow.py": "6682cedc4379eb1050d1e6cc403b876dfdfe882525a6e530309c09bb8f61e514",
+ "tests/rd_10/test_rd10_solve.py": "f2971dd245e53908fe93c1563d84e6be7631de45c8d4c7b334f31b9b127e46df"
+}

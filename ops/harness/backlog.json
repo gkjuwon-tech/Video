@@ -2307,12 +2307,18 @@
    "slice": false,
    "rank": 60,
    "why": "예측 L1. 기본은 복사휘도 굽기로 폴백",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791686921,
      "event": "claimed"
+    },
+    {
+     "ts": 1791688354,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet,review:sonnet",
+     "note": ""
     }
    ]
   },
@@ -2421,12 +2427,18 @@
    "slice": false,
    "rank": 64,
    "why": "소유권 수학의 핵심. MRH.obs는 소프트 의존",
-   "status": "doing",
-   "attempts": 0,
+   "status": "done",
+   "attempts": 1,
    "log": [
     {
      "ts": 1791686921,
      "event": "claimed"
+    },
+    {
+     "ts": 1791688354,
+     "event": "done",
+     "models": "contract:sonnet,build:sonnet,review:sonnet",
+     "note": ""
     }
    ],
    "demo": "d15-yak"
