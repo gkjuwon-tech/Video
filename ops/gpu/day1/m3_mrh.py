@@ -835,7 +835,7 @@ def _depth_mask_arrays(depth, mask) -> Tuple[np.ndarray, np.ndarray]:
     return df, valid
 
 
-def reduce_gt_half(depth, mask) -> Tuple[np.ndarray, np.ndarray]:
+def reduce_gt_half(depth, mask, out_dtype=np.float16) -> Tuple[np.ndarray, np.ndarray]:
     """Full-resolution laser depth -> half resolution: ``depth_m`` f16 (H/2, W/2) = geometric mean of the valid
     pixels of each 2x2 cell (0 if none) and ``vcnt`` u8 = number of valid pixels (0..4)."""
     df, valid = _depth_mask_arrays(depth, mask)
@@ -846,7 +846,7 @@ def reduce_gt_half(depth, mask) -> Tuple[np.ndarray, np.ndarray]:
     cnt = valid.reshape(h // 2, 2, w // 2, 2).sum(axis=(1, 3))
     s = ld.reshape(h // 2, 2, w // 2, 2).sum(axis=(1, 3))
     gm = np.where(cnt > 0, np.exp(s / np.maximum(cnt, 1)), 0.0)
-    return np.clip(gm, 0.0, 60000.0).astype(np.float16), cnt.astype(np.uint8)
+    return np.clip(gm, 0.0, 60000.0).astype(out_dtype), cnt.astype(np.uint8)
 
 
 def pack_val_gt(depth, mask) -> Dict[str, np.ndarray]:
@@ -1187,6 +1187,8 @@ def choose_selection(paths: Paths, free_gb: Optional[float] = None) -> Selection
 def update_source(paths: Paths, split: str, info: dict) -> None:
     src = read_json(paths.source_diode, {}) or {}
     src[split] = info
+    src.setdefault("selection", info.get("selection"))
+    src.setdefault("sel_hash", info.get("sel_hash"))
     write_json_atomic(paths.source_diode, src)
 
 
