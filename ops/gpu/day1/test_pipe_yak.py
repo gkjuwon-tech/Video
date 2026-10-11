@@ -1,7 +1,6 @@
 """CPU tests for pipe_yak.py (no GPU, no network, no diffusers, no HF): synthetic yak, fake disparity function,
 fake teacher, fake uploader.  Mode A runs on a tiny synthetic image; mode B checks the stage-fallback logic and the
 report schema with fakes."""
-import hashlib
 import json
 import os
 import sys
@@ -696,3 +695,64 @@ def test_cli_args_validation(capsys):
 
 def test_blake3_shim_is_idempotent_when_real_present():
     assert P.ensure_blake3() is False                       # real blake3 installed here: nothing replaced
+
+
+def test_find_teacher_cache_pins_snapshot_without_refs(tmp_path, monkeypatch):
+    for k in ("HF_HUB_CACHE", "HF_HOME"):
+        monkeypatch.delenv(k, raising=False)
+    hub = tmp_path / "hub"
+    snap = hub / "models--Tongyi-MAI--Z-Image-Turbo" / "snapshots" / "abc123"
+    for d in ("transformer", "vae", "text_encoder", "tokenizer"):
+        (snap / d).mkdir(parents=True)
+    monkeypatch.setenv("HF_HUB_CACHE", str(hub))
+    from buc.teacher import zimage
+    c, rev = P.find_teacher_cache(zimage.snapshot_dir, zimage.TeacherSpec())
+    assert c == str(hub) and rev == "abc123"
+    (hub / "models--Tongyi-MAI--Z-Image-Turbo" / "refs").mkdir()
+    (hub / "models--Tongyi-MAI--Z-Image-Turbo" / "refs" / "main").write_text("abc123")
+    assert P.find_teacher_cache(zimage.snapshot_dir, zimage.TeacherSpec()) == (str(hub), None)
+    monkeypatch.setenv("HF_HUB_CACHE", str(tmp_path / "nothing"))
+    monkeypatch.setattr(P, "hub_cache_candidates", lambda: [str(tmp_path / "nothing")])
+    with pytest.raises(FileNotFoundError):
+        P.find_teacher_cache(zimage.snapshot_dir, zimage.TeacherSpec())
+
+
+def test_teacher_handle_without_cuda_is_unavailable_not_a_crash():
+    import torch
+    if torch.cuda.is_available():
+        pytest.skip("CUDA box")
+    with pytest.raises(P.TeacherUnavailable):
+        P.TeacherHandle().get()
+
+
+def test_report_headline_and_temp_depth_record(full_run):
+    rep = full_run["rep"]
+    h = rep["headline"]
+    assert h["skeleton"] == "ok" and h["scaffold_shots_ok"] == sorted(P.SHOT_ORDER) and h["scaffold_shots_not_ok"] == {}
+    assert h["depth_source"] == "mrh"
+    assert P.U_R5 in h["units_by_verdict"]["temp"] and P.U_W8 in h["units_by_verdict"]["unavailable"]
+    assert P.U_POLISH in h["units_by_verdict"]["stub_only"]
+    td = rep["scaffold"]["temp_depth"]
+    assert td["model"] == P.DEPTH_MODEL and td["license"] == "Apache-2.0" and td["label"] == P.SCAFFOLD_LABEL
+    assert rep["scaffold"]["lens_knobs"]["S5_f_stop"] == P.S5_F_STOP
+
+
+def test_main_with_fake_teacher_runs_wld08_and_forced_matte(tmp_path):
+    t = FakeTeacherHandle("ok")
+    rc, out, rep = run_main(tmp_path, modes="scaffold", teacher=t, extra=["--shots", "S1,S3"])
+    assert rc == 0
+    u = rep["units"]
+    assert u[P.U_W8]["verdict"] == "real" and u[P.U_W3]["verdict"] == "real" and u[P.U_MATTE]["verdict"] == "real"
+    wb = {e["unit"]: e for e in rep["scaffold"]["world_build"]}
+    assert wb[P.U_W8]["status"] == "real" and wb[P.U_W8]["detail"]["name"] == "sdedit_avg"
+    assert wb[P.U_MATTE]["status"] == "real"
+    assert t.released == 1                                    # S2 ran once, the teacher was freed right after
+    for n in ("S1", "S3"):
+        assert rep["scaffold"]["shots"][n]["status"] == "ok"
+        assert rep["scaffold"]["shots"][n]["stages"]["S2"]["kind"] == "real"
+
+
+def test_width_candidates_never_exceed_request(tmp_path):
+    dl = P.Deadline(time.time() + 10_000.0)
+    rc, out, rep = run_main(tmp_path, modes="skeleton", deadline=dl, extra=["--width", "96"])
+    assert rep["config"]["width"] <= 96 and rep["config"]["requested_width"] == 96

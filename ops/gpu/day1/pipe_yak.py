@@ -520,14 +520,27 @@ def hub_cache_candidates() -> List[str]:
     return out
 
 
-def find_teacher_cache(snapshot_dir_fn: Callable, spec) -> str:
+def find_teacher_cache(snapshot_dir_fn: Callable, spec, required=("transformer", "vae", "text_encoder", "tokenizer")):
+    """-> (hub_cache, revision|None).  First candidate cache whose ``refs/main`` snapshot is complete; else the
+    newest complete snapshot folder found in any candidate (revision pinned explicitly)."""
     last = None
-    for c in hub_cache_candidates():
+    cands = hub_cache_candidates()
+    for c in cands:
         try:
             snapshot_dir_fn(spec, hub_cache=c)
-            return c
+            return c, None
         except Exception as e:  # noqa: BLE001
             last = e
+    repo_dir = "models--" + spec.repo.replace("/", "--")
+    for c in cands:
+        snaps = Path(c) / repo_dir / "snapshots"
+        try:
+            dirs = sorted((d for d in snaps.iterdir() if d.is_dir() and all((d / r).is_dir() for r in required)),
+                          key=lambda d: d.stat().st_mtime, reverse=True)
+        except OSError:
+            continue
+        if dirs:
+            return c, dirs[0].name
     raise FileNotFoundError(f"Z-Image-Turbo snapshot not found in any HF cache ({err_text(last) if last else '-'})")
 
 
@@ -552,9 +565,11 @@ class TeacherHandle:
             raise TeacherUnavailable("no CUDA: Z-Image teacher not loaded")
         spec = zimage.TeacherSpec()
         try:
-            hub = find_teacher_cache(zimage.snapshot_dir, spec)
+            hub, rev = find_teacher_cache(zimage.snapshot_dir, spec)
         except FileNotFoundError as e:
             raise TeacherUnavailable(str(e)) from e
+        if rev:
+            spec = zimage.TeacherSpec(revision=rev)
         try:
             try:
                 teacher = zimage.load_teacher(spec, device="cuda", te_device="cuda", hub_cache=hub)
@@ -1408,6 +1423,13 @@ def run_scaffold(image_u8: np.ndarray, out_dir: Path, report: dict, ledger: Ledg
     rec["status"] = "running"
     Phase.name = "scaffold-setup"
     trace: dict = {}
+    rec["temp_depth"] = {"model": DEPTH_MODEL, "license": "Apache-2.0", "lane": "R-EVAL eval-only",
+                         "label": SCAFFOLD_LABEL, "calibration": {"people_box_ref": list(PERSON_BOX),
+                                                                   "ref_size": list(REF_SIZE), "people_depth_rel": 1.0,
+                                                                   "far_rel": FAR_LIMIT, "near_rel": NEAR_LIMIT},
+                         "r5_cfg": {k: list(v) if isinstance(v, tuple) else v for k, v in R5_CFG.items()},
+                         "s6_scale": "RD-08 estimate_metric_scale from two hand-annotated people (person_adult prior)"}
+    rec["lens_knobs"] = {"S5_f_stop": S5_F_STOP, "S5_scene_scale": S5_LENS_DEPTH_SCALE, "S5_stops_x_people_depth": list(S5_STOPS)}
     img = make_input_image(image_u8, "demo/d15_hero_yak.webp")
     reg, reader = build_scaffold_registry(image_u8.shape[:2], disparity_fn=disparity_fn, teacher=teacher, cfg=cfg,
                                           trace=trace, ledger=ledger)
@@ -1522,8 +1544,11 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def default_workers() -> int:
-    n = os.cpu_count() or 1
-    return max(1, min(8, n - 1))
+    try:
+        n = len(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        n = os.cpu_count() or 1
+    return max(1, min(6, n - 1))
 
 
 def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optional[TeacherHandle] = None,
@@ -1569,7 +1594,8 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
         if not args.fixed_width and deadline.ts is not None:
             try:
                 spp = (bench_fn or bench_s_per_px)()
-                width = plan_width([args.width, 1440, 1280, 960, 640], spp, frame_equiv, workers, deadline.budget_s(0.6))
+                cands = [w for w in (args.width, 1440, 1280, 960, 640, 480) if w <= args.width]
+                width = plan_width(cands, spp, frame_equiv, workers, deadline.budget_s(0.6))
             except Exception as e:  # noqa: BLE001
                 report["errors"].append({"where": "bench", "error": err_text(e)})
         size = out_size_for(width)
@@ -1614,6 +1640,7 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
             sheet_ok = make_contact_sheet({k: thumbs[k] for k in order if k in thumbs}, sheet)
         report["units"] = ledger.summary()
         report["real_vs_stub"] = real_vs_stub(report)
+        report["headline"] = headline(report)
         report["outputs"] = [p.name for p in outputs] + (["contact_sheet.jpg"] if sheet_ok else []) + ["stages_report.json"]
         atomic_write_json(report_path, report)
         if not args.no_upload:
@@ -1636,6 +1663,22 @@ def main(argv=None, *, disparity_fn: Optional[Callable] = None, teacher: Optiona
     finally:
         hb.set()
     return code
+
+
+def headline(report: dict) -> dict:
+    """Two-line answer for a human: what ran, which units were real / temp / not."""
+    units = report.get("units", {})
+    by: Dict[str, List[str]] = {}
+    for name, u in units.items():
+        by.setdefault(u["verdict"], []).append(name)
+    shots = report.get("scaffold", {}).get("shots", {})
+    return {
+        "skeleton": report.get("skeleton", {}).get("status"),
+        "scaffold_shots_ok": sorted(n for n, s in shots.items() if s.get("status") == "ok"),
+        "scaffold_shots_not_ok": {n: s.get("status") for n, s in shots.items() if s.get("status") != "ok"},
+        "units_by_verdict": by,
+        "depth_source": report.get("scaffold", {}).get("read_summary", {}).get("depth_source"),
+    }
 
 
 def real_vs_stub(report: dict) -> dict:
