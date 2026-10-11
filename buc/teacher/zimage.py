@@ -151,8 +151,22 @@ def snapshot_dir(spec: TeacherSpec, hub_cache=None, env: Optional[Mapping] = Non
 
 # --------------------------------------------------------------------------- 결정론
 
+def _disable_uninitialized_fill() -> None:
+    """``torch.use_deterministic_algorithms(True)`` also turns on ``torch.utils.deterministic.fill_uninitialized_memory``:
+    every ``torch.empty*`` (ours, diffusers', and ATen-internal ones inside fused kernels) then comes back NaN-filled.
+    That is a debugging poison, not part of the reproducibility contract (same input -> same bits), and it turns any
+    read of an allocated-but-unwritten buffer (e.g. a padded tile that a kernel masks out later: 0 * NaN = NaN) into a
+    NaN transformer output that plain diffusers, which never enables it, does not see. We keep every determinism
+    guarantee and drop only the poison."""
+    try:
+        torch.utils.deterministic.fill_uninitialized_memory = False
+    except Exception:  # noqa: BLE001  (torch < 2.1 has no such switch: nothing to disable)
+        pass
+
+
 def enable_determinism_mode(seed=None) -> dict:
     det.enable_determinism(seed)
+    _disable_uninitialized_fill()
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = False

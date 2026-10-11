@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import contextlib
 import math
 import struct
 from collections.abc import Sequence
@@ -226,6 +227,7 @@ class TeacherSampler:
         self.teacher = teacher
         self.table = table
         self.max_views_per_call = None if max_views_per_call is None else int(max_views_per_call)
+        self.numeric_events: list = []      # 비유한 출력이 환경 재시도로 고쳐진 기록(최근 64개)
 
     # -- 입력 검증 ---------------------------------------------------------
     def _check_latent(self, z, name: str) -> torch.Tensor:
@@ -314,11 +316,26 @@ class TeacherSampler:
         m = self.max_views_per_call or b
         return [(lo, min(lo + m, b)) for lo in range(0, b, m)]
 
+    def _transformer_v(self, x_list: list, t: torch.Tensor, caps_chunk: list, n: int, want: tuple) -> torch.Tensor:
+        """변환기 한 번 호출 -> 속도 v [n,C,h,w] float32 (= -out). 개수·모양 검증만 하고 유한성은 보지 않는다."""
+        out = self.teacher.transformer(x_list, t, caps_chunk, return_dict=False)
+        if isinstance(out, tuple):
+            out = out[0]
+        if isinstance(out, torch.Tensor):
+            out = list(out.unbind(0)) if out.ndim == 5 else out
+        if not isinstance(out, (list, tuple)) or len(out) != n:
+            raise TeacherError(f"변환기 출력 개수가 입력 {n}과 다르다")
+        vs = []
+        for o in out:
+            if not isinstance(o, torch.Tensor) or tuple(o.shape) != (want[0], 1, want[1], want[2]):
+                raise TeacherError(f"변환기 출력 모양이 [C,1,h,w]={(want[0], 1, want[1], want[2])} 가 아니다")
+            vs.append(o.to(torch.float32).squeeze(1))
+        return -torch.stack(vs)
+
     def _forward_step(self, z: torch.Tensor, caps: list, step: int, sigma: float, sigma_next: float,
                       observer) -> tuple:
         """z[B,C,h,w] float32 에서 x0_hat[B,C,h,w] float32 를 구한다. (x0_hat, 호출 수)."""
-        t_mod = self.teacher.transformer
-        tdt, dev = self.teacher.dtype, z.device
+        dev = z.device
         outs = []
         calls = 0
         for lo, hi in self._chunks(z.shape[0]):
@@ -327,28 +344,125 @@ class TeacherSampler:
                                   view_lo=int(lo), view_hi=int(hi)))
             n = hi - lo
             zc = z[lo:hi]
-            x_list = [zi.to(dtype=tdt).unsqueeze(1) for zi in zc]           # [C,1,h,w]
+            x_list = [zi.to(dtype=self.teacher.dtype).unsqueeze(1) for zi in zc]   # [C,1,h,w]
             t = torch.full((n,), 1.0 - sigma, dtype=torch.float32, device=dev)
-            out = t_mod(x_list, t, caps[lo:hi], return_dict=False)
-            calls += 1
-            if isinstance(out, tuple):
-                out = out[0]
-            if isinstance(out, torch.Tensor):
-                out = list(out.unbind(0)) if out.ndim == 5 else out
-            if not isinstance(out, (list, tuple)) or len(out) != n:
-                raise TeacherError(f"변환기 출력 개수가 입력 {n}과 다르다")
             want = tuple(zc.shape[1:])
-            vs = []
-            for o in out:
-                if not isinstance(o, torch.Tensor) or tuple(o.shape) != (want[0], 1, want[1], want[2]):
-                    raise TeacherError(f"변환기 출력 모양이 [C,1,h,w]={(want[0], 1, want[1], want[2])} 가 아니다")
-                vs.append(o.to(torch.float32).squeeze(1))
-            v = -torch.stack(vs)
+            v = self._transformer_v(x_list, t, caps[lo:hi], n, want)
+            calls += 1
             if not bool(torch.isfinite(v.detach()).all()):
-                raise TeacherNumericError("변환기 출력에 NaN/Inf가 있다")
+                v = self._recover_nonfinite(v, x_list, t, caps[lo:hi], n, want, step, sigma, lo, hi)
             outs.append(zc - sigma * v)
         x0_hat = outs[0] if len(outs) == 1 else torch.cat(outs, dim=0)
         return x0_hat, calls
+
+    # -- 비유한 출력: 진단과 환경 재시도 -----------------------------------------
+    #: 변환기 출력이 비유한이면 같은 입력으로 (프로브 -> 환경 완화 누적) 다시 불러 본다. 입력·가중치는 건드리지 않는다.
+    nonfinite_retry = True
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _env_fill_off():
+        prev = torch.utils.deterministic.fill_uninitialized_memory
+        torch.utils.deterministic.fill_uninitialized_memory = False
+        try:
+            yield
+        finally:
+            torch.utils.deterministic.fill_uninitialized_memory = prev
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _env_math_sdpa():
+        from torch.nn.attention import SDPBackend, sdpa_kernel
+        with sdpa_kernel(SDPBackend.MATH):
+            yield
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _env_default_gemm():
+        m = torch.backends.cuda.matmul
+        prev = (m.allow_bf16_reduced_precision_reduction, m.allow_fp16_reduced_precision_reduction)
+        m.allow_bf16_reduced_precision_reduction = True
+        m.allow_fp16_reduced_precision_reduction = True
+        try:
+            yield
+        finally:
+            m.allow_bf16_reduced_precision_reduction, m.allow_fp16_reduced_precision_reduction = prev
+
+    def _retry_ladder(self) -> list:
+        """[(이름, 이 단계에서 누적으로 켜는 컨텍스트 팩토리 목록)]. 첫 단계(probe)는 설정을 바꾸지 않는다."""
+        ladder = [("probe", [])]
+        mitig = []
+        if torch.are_deterministic_algorithms_enabled() and getattr(torch.utils.deterministic, "fill_uninitialized_memory", False):
+            mitig.append(self._env_fill_off)
+            ladder.append(("no_nan_fill", list(mitig)))
+        mitig.append(self._env_math_sdpa)
+        ladder.append(("math_sdpa", list(mitig)))
+        m = torch.backends.cuda.matmul
+        if not (m.allow_bf16_reduced_precision_reduction and m.allow_fp16_reduced_precision_reduction):
+            mitig.append(self._env_default_gemm)
+            ladder.append(("default_gemm", list(mitig)))
+        return ladder
+
+    @staticmethod
+    def _first_nonfinite_module(model: torch.nn.Module, fn: Callable) -> tuple:
+        """fn() 을 모든 하위 모듈 출력 훅과 함께 실행해 처음으로 비유한 출력을 낸 모듈 이름을 찾는다. (fn 결과, 이름|None)."""
+        first: list = []
+
+        def bad(o) -> bool:
+            if isinstance(o, torch.Tensor):
+                return o.is_floating_point() and not bool(torch.isfinite(o.detach()).all())
+            if isinstance(o, (list, tuple)):
+                return any(bad(e) for e in o)
+            return False
+
+        def mk(name):
+            def hook(_m, _a, out):
+                if not first and bad(out):
+                    first.append(name)
+            return hook
+
+        handles = [m.register_forward_hook(mk(nm)) for nm, m in model.named_modules() if nm]
+        try:
+            res = fn()
+        finally:
+            for h in handles:
+                h.remove()
+        return res, (first[0] if first else None)
+
+    def _recover_nonfinite(self, v, x_list, t, caps_chunk, n, want, step, sigma, lo, hi) -> torch.Tensor:
+        """비유한 v 를 받았을 때. 환경(프로브 -> 포이즌 끔 -> math SDPA -> 기본 GEMM) 완화를 누적해 재시도하고, 끝내 안 되면
+        무슨 일이 있었는지 한 줄에 담아 TeacherNumericError. 고쳐지면 self.numeric_events 에 남기고 그 v 를 돌려준다."""
+        fin = torch.isfinite(v.detach()).flatten(1).all(dim=1)
+        bad_rows = [int(i) for i in range(n) if not bool(fin[i])]
+        absmax = lambda ts: max([float(a.detach().float().abs().max()) for a in ts if a.numel()] or [0.0])  # noqa: E731
+        x_ok = all(bool(torch.isfinite(a.detach().float()).all()) for a in x_list)
+        c_ok = all(bool(torch.isfinite(c.detach().float()).all()) for c in caps_chunk)
+        head = (f"변환기 출력에 NaN/Inf가 있다 | step={step} sigma={sigma:.4g} views={lo}:{hi} "
+                f"dtype={str(self.teacher.dtype).replace('torch.', '')} dev={t.device} bad_rows={bad_rows} "
+                f"x_finite={x_ok} x_absmax={absmax(x_list):.3g} cap_finite={c_ok} cap_absmax={absmax(caps_chunk):.3g}")
+        tried, first_bad = [], None
+        if self.nonfinite_retry:
+            model = self.teacher.transformer
+            for name, makers in self._retry_ladder():
+                try:
+                    with contextlib.ExitStack() as st:
+                        for mk in makers:
+                            st.enter_context(mk())
+                        if name == "probe":
+                            v2, first_bad = self._first_nonfinite_module(
+                                model, lambda: self._transformer_v(x_list, t, caps_chunk, n, want))
+                        else:
+                            v2 = self._transformer_v(x_list, t, caps_chunk, n, want)
+                except Exception as e:  # noqa: BLE001  재시도 자체의 실패(OOM, 훅 중복 발화 등)는 진단에만 쓴다
+                    tried.append(f"{name}:err({type(e).__name__})")
+                    continue
+                if bool(torch.isfinite(v2.detach()).all()):
+                    self.numeric_events.append({"step": int(step), "sigma": float(sigma), "views": (int(lo), int(hi)),
+                                                "healed_by": name, "first_bad": first_bad, "tried": list(tried)})
+                    del self.numeric_events[:-64]
+                    return v2
+                tried.append(f"{name}:nonfinite")
+        raise TeacherNumericError(f"{head} first_bad={first_bad} tried={','.join(tried) or 'none'}")
 
     def _run(self, z: torch.Tensor, caps: list, start_index: int, steps: int, x0_hook, observer, grad: bool,
              requested: float) -> SampleResult:
