@@ -19,6 +19,11 @@ if [ -n "$P" ]; then
 fi
 python -c "import transformers; print('transformers', transformers.__version__)" 2>&1 | tail -1 | x deps
 
+# 2차 진단(02:10Z): WLD-08 교사 NaN 문맥, pipe 진행, M6 시작 여부
+grep -nE 'NaN|TeacherNumeric|WLD-08|load_teacher|te_device|caption' logs/pipe.log 2>/dev/null | tail -n 25 | x pipenan
+tail -n 6 logs/pipe.log 2>/dev/null | x pipetail
+tail -n 5 logs/m6.run.log 2>/dev/null | x m6tail
+
 # --- 파이프라인 첫 야크 ---
 PIPE_RUN=1
 if [ ! -f "$R/.pipe_launched_$PIPE_RUN" ]; then
